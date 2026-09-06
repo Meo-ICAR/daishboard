@@ -5,6 +5,7 @@ namespace App\Filament\Resources\DashboardWidgets;
 use App\Filament\Resources\DashboardWidgets\Pages\CreateDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Pages\EditDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Pages\ListDashboardWidgets;
+use App\Filament\Resources\DashboardWidgets\Pages\ViewDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Schemas\DashboardWidgetForm;
 use App\Filament\Resources\DashboardWidgets\Tables\DashboardWidgetsTable;
 use App\Models\DashboardWidget;
@@ -20,7 +21,7 @@ class DashboardWidgetResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema
     {
@@ -42,9 +43,10 @@ class DashboardWidgetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListDashboardWidgets::route('/'),
+            'index'  => ListDashboardWidgets::route('/'),
             'create' => CreateDashboardWidget::route('/create'),
-            'edit' => EditDashboardWidget::route('/{record}/edit'),
+            'view'   => ViewDashboardWidget::route('/{record}'),
+            'edit'   => EditDashboardWidget::route('/{record}/edit'),
         ];
     }
 }

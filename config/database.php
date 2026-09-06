@@ -114,6 +114,24 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /*
+         * Connessione al database esterno DBAI.
+         * Il driver viene letto da DB_CONNECTION_DBAI (es. mysql, pgsql, sqlsrv).
+         */
+        'dbai' => [
+            'driver'    => env('DB_CONNECTION_DBAI', 'mysql'),
+            'host'      => env('DB_HOST_DBAI', '127.0.0.1'),
+            'port'      => env('DB_PORT_DBAI', '3306'),
+            'database'  => env('DB_DATABASE_DBAI', ''),
+            'username'  => env('DB_USERNAME_DBAI', ''),
+            'password'  => env('DB_PASSWORD_DBAI', ''),
+            'charset'   => env('DB_CHARSET_DBAI', 'utf8mb4'),
+            'collation' => env('DB_COLLATION_DBAI', 'utf8mb4_unicode_ci'),
+            'prefix'    => '',
+            'prefix_indexes' => true,
+            'strict'    => false,
+        ],
+
     ],
 
     /*
