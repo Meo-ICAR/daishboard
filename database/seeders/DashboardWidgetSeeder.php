@@ -1,7 +1,5 @@
 <?php
 
-<?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -32,7 +30,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Ultime 10 call',
-                'sqlstatement' => "SELECT id, numero_chiamato, data_inizio, durata, stato_chiamata, esito, utente FROM calls ORDER BY id DESC LIMIT 10",
+                'sqlstatement' => 'SELECT id, numero_chiamato, data_inizio, durata, stato_chiamata, esito, utente FROM calls ORDER BY id DESC LIMIT 10',
                 'charttype' => 'Table',
             ],
             [
@@ -57,7 +55,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Provvigioni per produttore',
-                'sqlstatement' => "select fornitore, sum(total_amount) as provvigioni from invoices where fornitori_id is not null group by fornitore",
+                'sqlstatement' => 'select fornitore, sum(total_amount) as provvigioni from invoices where fornitori_id is not null group by fornitore',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -67,7 +65,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Provvigioni per  competenza',
-                'sqlstatement' => "select competenza, sum(total_amount) from invoices where fornitore = ?  group by competenza",
+                'sqlstatement' => 'select competenza, sum(total_amount) from invoices where fornitore = ?  group by competenza',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -97,12 +95,12 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'visualizza ultime 3 fatture',
-                'sqlstatement' => "SELECT * FROM invoices ORDER BY invoice_date DESC LIMIT 3",
+                'sqlstatement' => 'SELECT * FROM invoices ORDER BY invoice_date DESC LIMIT 3',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'visualizza agenti in ordine alfabetico',
-                'sqlstatement' => "SELECT name FROM fornitoris ORDER BY name ASC",
+                'sqlstatement' => 'SELECT name FROM fornitoris ORDER BY name ASC',
                 'charttype' => 'Table',
             ],
             [
@@ -142,12 +140,12 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Enasarco',
-                'sqlstatement' => "select * from vwenasarcotot",
+                'sqlstatement' => 'select * from vwenasarcotot',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'ultime 3 visite',
-                'sqlstatement' => "SELECT * FROM patient_visits ORDER BY visitadel DESC LIMIT 3",
+                'sqlstatement' => 'SELECT * FROM patient_visits ORDER BY visitadel DESC LIMIT 3',
                 'charttype' => 'Table',
             ],
             [
@@ -157,7 +155,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'lista pazienti 0-18 anni',
-                'sqlstatement' => "SELECT p.iniziali,  DATE_FORMAT(p.datanascita, \"%Y-%m\") as Nascita , p.centro, u.last_name as Specialista FROM patients p left outer join users u on p.created_by = u.id WHERE (YEAR(CURDATE()) - YEAR(p.datanascita)) BETWEEN 0 AND 18",
+                'sqlstatement' => 'SELECT p.iniziali,  DATE_FORMAT(p.datanascita, "%Y-%m") as Nascita , p.centro, u.last_name as Specialista FROM patients p left outer join users u on p.created_by = u.id WHERE (YEAR(CURDATE()) - YEAR(p.datanascita)) BETWEEN 0 AND 18',
                 'charttype' => 'Table',
             ],
             [
@@ -167,7 +165,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'dalle visite raggruppa i trattamenti attuali campo Trattamentonuovo  contando il numero di pazienti',
-                'sqlstatement' => "SELECT pv.Trattamentonuovo, COUNT(DISTINCT pv.patient_id) AS numero_pazienti FROM patient_visits pv WHERE pv.Trattamentonuovo IS NOT NULL GROUP BY pv.Trattamentonuovo ORDER BY numero_pazienti DESC",
+                'sqlstatement' => 'SELECT pv.Trattamentonuovo, COUNT(DISTINCT pv.patient_id) AS numero_pazienti FROM patient_visits pv WHERE pv.Trattamentonuovo IS NOT NULL GROUP BY pv.Trattamentonuovo ORDER BY numero_pazienti DESC',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -177,7 +175,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'raggruppa pazienti per centro',
-                'sqlstatement' => "SELECT p.centro, COUNT(p.id) AS numero_pazienti FROM patients p GROUP BY p.centro",
+                'sqlstatement' => 'SELECT p.centro, COUNT(p.id) AS numero_pazienti FROM patients p GROUP BY p.centro',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -187,7 +185,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'dammi  ultimi 5 pazienti',
-                'sqlstatement' => "SELECT p.* FROM patients p ORDER BY p.id DESC LIMIT 5",
+                'sqlstatement' => 'SELECT p.* FROM patients p ORDER BY p.id DESC LIMIT 5',
                 'charttype' => 'Table',
             ],
             [
@@ -197,12 +195,12 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'show users',
-                'sqlstatement' => "SELECT id, azure_id, company_id, name, email, cf, email_verified_at, password, microsoft_id, remember_token, created_at, updated_at, deleted_at FROM users",
+                'sqlstatement' => 'SELECT id, azure_id, company_id, name, email, cf, email_verified_at, password, microsoft_id, remember_token, created_at, updated_at, deleted_at FROM users',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'SELECT   f.name AS fornitore_name,   SUM(i.total_amount) AS total_invoiced_amount FROM invoices AS i JOIN fornitoris AS f   ON i.fornitori_id = f.id WHERE   i.competenza = 2025 GROUP BY   f.name;',
-                'sqlstatement' => "SELECT   f.name AS fornitore_name,   SUM(i.total_amount) AS total_invoiced_amount FROM invoices AS i JOIN fornitoris AS f   ON i.fornitori_id = f.id WHERE   i.competenza = 2025 GROUP BY   f.name;",
+                'sqlstatement' => 'SELECT   f.name AS fornitore_name,   SUM(i.total_amount) AS total_invoiced_amount FROM invoices AS i JOIN fornitoris AS f   ON i.fornitori_id = f.id WHERE   i.competenza = 2025 GROUP BY   f.name;',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -212,32 +210,32 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Ultime fatture ricevute',
-                'sqlstatement' => "SELECT fornitore, invoice_date, total_amount, invoice_number FROM invoices WHERE fornitori_id IS NOT NULL AND -datediff( now(), invoice_date ) < 40  order by invoice_date desc limit 20",
+                'sqlstatement' => 'SELECT fornitore, invoice_date, total_amount, invoice_number FROM invoices WHERE fornitori_id IS NOT NULL AND -datediff( now(), invoice_date ) < 40  order by invoice_date desc limit 20',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'visualizza fornitori',
-                'sqlstatement' => "SELECT * FROM fornitoris",
+                'sqlstatement' => 'SELECT * FROM fornitoris',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'show distinct fornitore_piva from invoices',
-                'sqlstatement' => "SELECT DISTINCT fornitore_piva FROM invoices",
+                'sqlstatement' => 'SELECT DISTINCT fornitore_piva FROM invoices',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'visualizza users',
-                'sqlstatement' => "SELECT * FROM users",
+                'sqlstatement' => 'SELECT * FROM users',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'Pazienti per specialista 2025',
-                'sqlstatement' => "select * from vwpatientuserinsertedtots where anno = year(now())",
+                'sqlstatement' => 'select * from vwpatientuserinsertedtots where anno = year(now())',
                 'charttype' => 'Table',
             ],
             [
                 'message' => 'SELECT   * FROM invoices ORDER BY   created_at DESC LIMIT 3;',
-                'sqlstatement' => "SELECT   * FROM invoices ORDER BY   created_at DESC LIMIT 3;",
+                'sqlstatement' => 'SELECT   * FROM invoices ORDER BY   created_at DESC LIMIT 3;',
                 'charttype' => 'Table',
             ],
             [
@@ -257,7 +255,7 @@ class DashboardWidgetSeeder extends Seeder
             ],
             [
                 'message' => 'Pazienti ultimo anno',
-                'sqlstatement' => "select * from vwpatientuserinsertedsums",
+                'sqlstatement' => 'select * from vwpatientuserinsertedsums',
                 'charttype' => 'Pie Chart',
             ],
             [
@@ -326,14 +324,13 @@ class DashboardWidgetSeeder extends Seeder
 
         foreach ($widgets as $index => $widget) {
             DB::table('dashboard_widgets')->insert([
-                'message'         => $widget['message'],
-                'sqlstatement'    => $widget['sqlstatement'],
-                'charttype'       => $widget['charttype'],
-                'dashboardorder'  => $index + 1,
-                'slavedashboard'  => 0,
-                'nviewed'         => 0,
-                'created_at'      => $now,
-                'updated_at'      => $now,
+                'title' => $widget['message'],
+                'query' => $widget['sqlstatement'],
+                'type' => $widget['charttype'],
+                'dashboard_id' => 1, // Assuming you want to associate it with a specific dashboard, set the appropriate ID here
+                'order' => $index + 1,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
         }
     }

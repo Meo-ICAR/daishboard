@@ -5,11 +5,11 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CategoryMenuSeeder extends Seeder
+class MenuCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('category_menus')->upsert([
+        DB::table('menu_categories')->upsert([
             [
                 'id' => 1,
                 'name' => 'Produzione',
