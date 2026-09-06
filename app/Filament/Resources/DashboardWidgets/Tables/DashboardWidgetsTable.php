@@ -24,6 +24,15 @@ class DashboardWidgetsTable
                     ->searchable(),
                 TextColumn::make('type')
                     ->searchable(),
+                TextColumn::make('masterWidget.title')
+                    ->label('Widget master')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('master_filter_column')
+                    ->label('Colonna filtro master')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('order')
                     ->numeric()
                     ->sortable(),
