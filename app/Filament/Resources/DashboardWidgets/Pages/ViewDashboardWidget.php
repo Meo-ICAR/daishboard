@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DashboardWidgets\Pages;
 
+use App\Exports\WidgetDatasetExport;
 use App\Filament\Resources\DashboardWidgets\Concerns\InteractsWithWidgetDataset;
 use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\DashboardWidget;
@@ -21,8 +22,10 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ViewDashboardWidget extends Page implements HasTable
 {
@@ -47,6 +50,10 @@ class ViewDashboardWidget extends Page implements HasTable
      */
     #[Locked]
     public array $drilldowns = [];
+
+    /** URL dell'ultimo link di condivisione creato, mostrato in un banner. */
+    #[Locked]
+    public ?string $lastShareUrl = null;
 
     public function mount(int|string $record): void
     {
@@ -190,6 +197,24 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->action(fn () => $this->runQuery()),
 
+            Action::make('exportExcel')
+                ->label('Esporta Excel')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->visible(fn (): bool => $this->queryRows !== [])
+                ->action(function () {
+                    $name = Str::slug($this->widgetTitle ?? ('widget-'.$this->recordId)) ?: 'export';
+
+                    return Excel::download(
+                        new WidgetDatasetExport(
+                            $this->queryColumns,
+                            $this->queryRows,
+                            $this->widgetTitle ?? ('Widget '.$this->recordId),
+                        ),
+                        $name.'-'.now()->format('Ymd-His').'.xlsx',
+                    );
+                }),
+
             Action::make('chart')
                 ->label('Grafico')
                 ->icon(Heroicon::OutlinedChartBar)
@@ -239,13 +264,32 @@ class ViewDashboardWidget extends Page implements HasTable
                             : null,
                     ]);
 
+                    $this->lastShareUrl = $share->publicUrl();
+
                     Notification::make()
                         ->title('Link pubblico creato')
-                        ->body($share->publicUrl())
+                        ->body($this->lastShareUrl)
                         ->success()
                         ->persistent()
                         ->send();
                 }),
+
+            Action::make('sharesList')
+                ->label('Link condivisi')
+                ->icon(Heroicon::OutlinedLink)
+                ->color('gray')
+                ->badge(fn (): ?string => ($n = DashboardWidgetShare::query()
+                    ->where('dashboard_widget_id', $this->recordId)->count()) > 0 ? (string) $n : null)
+                ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
+                ->modalHeading('Link pubblici di questa tabella')
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Chiudi')
+                ->modalContent(fn () => view('filament.resources.dashboard-widgets.partials.shares-list', [
+                    'shares' => DashboardWidgetShare::query()
+                        ->where('dashboard_widget_id', $this->recordId)
+                        ->latest()
+                        ->get(),
+                ])),
 
             Action::make('revokeShares')
                 ->label('Revoca link')
@@ -258,6 +302,8 @@ class ViewDashboardWidget extends Page implements HasTable
                     $deleted = DashboardWidgetShare::query()
                         ->where('dashboard_widget_id', $this->recordId)
                         ->delete();
+
+                    $this->lastShareUrl = null;
 
                     Notification::make()
                         ->title($deleted === 1 ? '1 link revocato' : "{$deleted} link revocati")
