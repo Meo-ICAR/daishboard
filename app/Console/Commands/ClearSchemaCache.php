@@ -15,6 +15,7 @@ class ClearSchemaCache extends Command
     {
         foreach (['patients', 'patient_visits'] as $table) {
             Cache::forget("schema.date_columns.{$table}");
+            Cache::forget("schema.date_columns.dbai.{$table}");
         }
         $this->info('Schema cache invalidata.');
     }

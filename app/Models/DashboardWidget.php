@@ -60,4 +60,12 @@ class DashboardWidget extends Model
     {
         return $this->hasMany(self::class, 'master_widget_id');
     }
+
+    /**
+     * Link pubblici di condivisione di questa tabella.
+     */
+    public function shares(): HasMany
+    {
+        return $this->hasMany(DashboardWidgetShare::class);
+    }
 }

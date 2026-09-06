@@ -2,9 +2,15 @@
 
 namespace App\Filament\Resources\DashboardWidgets\Pages;
 
+use App\Filament\Resources\DashboardWidgets\Concerns\InteractsWithWidgetDataset;
 use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\DashboardWidget;
+use App\Models\DashboardWidgetShare;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Icons\Heroicon;
@@ -15,32 +21,17 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
-use Throwable;
 
 class ViewDashboardWidget extends Page implements HasTable
 {
     use InteractsWithTable;
+    use InteractsWithWidgetDataset;
 
     protected static string $resource = DashboardWidgetResource::class;
 
     protected string $view = 'filament.resources.dashboard-widgets.pages.view-dashboard-widget';
-
-    /**
-     * Solo la chiave del widget viene mantenuta lato Livewire: nessun model
-     * Eloquent viene serializzato o ricaricato dal database a ogni interazione
-     * con la tabella (ordinamento, paginazione, "esegui di nuovo").
-     */
-    #[Locked]
-    public int|string $recordId;
-
-    #[Locked]
-    public ?string $widgetTitle = null;
-
-    #[Locked]
-    public ?string $widgetQuery = null;
 
     /**
      * Valore della prima colonna del master relativo alla riga da cui si è
@@ -57,37 +48,9 @@ class ViewDashboardWidget extends Page implements HasTable
     #[Locked]
     public array $drilldowns = [];
 
-    /**
-     * Nomi delle colonne estratti dinamicamente dal primo record della query.
-     *
-     * @var list<string>
-     */
-    public array $queryColumns = [];
-
-    /**
-     * Sottoinsieme di queryColumns i cui valori sono tutti numerici.
-     *
-     * @var list<string>
-     */
-    public array $numericColumns = [];
-
-    /**
-     * Righe risultanti dalla query, come array associativi indicizzati.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    public array $queryRows = [];
-
-    /** Messaggio di errore in caso di query non valida o non eseguibile. */
-    public ?string $errorMessage = null;
-
     public function mount(int|string $record): void
     {
-        $widget = DashboardWidget::query()->findOrFail($record);
-
-        $this->recordId = $widget->getKey();
-        $this->widgetTitle = $widget->title;
-        $this->widgetQuery = $widget->query;
+        $widget = $this->bootWidgetDataset($record);
 
         if ($this->masterFilterField === '') {
             $this->masterFilterField = null;
@@ -108,54 +71,8 @@ class ViewDashboardWidget extends Page implements HasTable
         $this->runQuery();
     }
 
-    /**
-     * Esegue la query SQL del widget sulla connessione DBAI.
-     * Accetta solo statement SELECT per sicurezza.
-     */
-    public function runQuery(): void
+    protected function afterQueryRefreshed(): void
     {
-        $this->queryColumns = [];
-        $this->numericColumns = [];
-        $this->queryRows = [];
-        $this->errorMessage = null;
-
-        $query = trim((string) $this->widgetQuery);
-
-        if ($query === '') {
-            $this->errorMessage = 'Nessuna query definita per questo widget.';
-
-            return;
-        }
-
-        if (! preg_match('/^\s*SELECT\b/i', $query)) {
-            $this->errorMessage = 'Sono consentite solo istruzioni SELECT.';
-
-            return;
-        }
-
-        try {
-            $results = DB::connection('dbai')->select($query);
-        } catch (Throwable $e) {
-            $this->errorMessage = 'Errore nell\'esecuzione della query: '.$e->getMessage();
-
-            return;
-        }
-
-        if ($results === []) {
-            return;
-        }
-
-        $this->queryColumns = array_keys((array) $results[0]);
-        $this->queryRows = array_values(array_map(
-            static fn ($row): array => (array) $row,
-            $results,
-        ));
-
-        $this->numericColumns = array_values(array_filter(
-            $this->queryColumns,
-            fn (string $column): bool => $this->columnIsNumeric($column),
-        ));
-
         $this->resetTable();
     }
 
@@ -187,6 +104,7 @@ class ViewDashboardWidget extends Page implements HasTable
                 );
             })
             ->heading($this->widgetTitle ?? ('Widget #'.$this->recordId))
+            ->description($this->activeDateFilterDescription())
             ->columns($this->buildColumns())
             ->paginated([25, 50, 100, 'all'])
             ->defaultPaginationPageOption(25)
@@ -262,43 +180,95 @@ class ViewDashboardWidget extends Page implements HasTable
         return null;
     }
 
-    /**
-     * Una colonna è numerica se ha almeno un valore valorizzato e tutti i valori
-     * non nulli sono numerici.
-     */
-    protected function columnIsNumeric(string $column): bool
-    {
-        $hasValue = false;
-
-        foreach ($this->queryRows as $row) {
-            $value = $row[$column] ?? null;
-
-            if ($value === null || $value === '') {
-                continue;
-            }
-
-            if (! is_numeric($value)) {
-                return false;
-            }
-
-            $hasValue = true;
-        }
-
-        return $hasValue;
-    }
-
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->dateFilterHeaderActions(),
+
             Action::make('runQuery')
                 ->label('Esegui di nuovo')
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->action(fn () => $this->runQuery()),
 
+            Action::make('chart')
+                ->label('Grafico')
+                ->icon(Heroicon::OutlinedChartBar)
+                ->color('gray')
+                ->url(fn (): string => $this->widgetResourceUrl('chart')),
+
+            Action::make('share')
+                ->label('Condividi')
+                ->icon(Heroicon::OutlinedShare)
+                ->color('gray')
+                ->modalHeading('Crea un link pubblico')
+                ->modalDescription('Genera un link, accessibile senza login, che mostra questa tabella con i filtri correnti memorizzati.')
+                ->modalSubmitActionLabel('Crea link')
+                ->fillForm(fn (): array => [
+                    'title' => $this->widgetTitle,
+                    'expiry' => '30',
+                    'include_children' => true,
+                ])
+                ->schema([
+                    TextInput::make('title')
+                        ->label('Titolo mostrato')
+                        ->maxLength(255),
+                    Select::make('expiry')
+                        ->label('Scadenza')
+                        ->options([
+                            '7' => '7 giorni',
+                            '30' => '30 giorni',
+                            '90' => '90 giorni',
+                            '' => 'Nessuna scadenza',
+                        ])
+                        ->default('30')
+                        ->selectablePlaceholder(false),
+                    Toggle::make('include_children')
+                        ->label('Consenti di aprire le tabelle figlio')
+                        ->default(true),
+                ])
+                ->action(function (array $data): void {
+                    $share = DashboardWidgetShare::create([
+                        'token' => DashboardWidgetShare::generateToken(),
+                        'dashboard_widget_id' => $this->recordId,
+                        'created_by' => auth()->id(),
+                        'title' => filled($data['title'] ?? null) ? $data['title'] : null,
+                        'parameters' => ['dateFilters' => $this->activeDateFilters()],
+                        'include_children' => (bool) ($data['include_children'] ?? true),
+                        'expires_at' => filled($data['expiry'] ?? null)
+                            ? now()->addDays((int) $data['expiry'])
+                            : null,
+                    ]);
+
+                    Notification::make()
+                        ->title('Link pubblico creato')
+                        ->body($share->publicUrl())
+                        ->success()
+                        ->persistent()
+                        ->send();
+                }),
+
+            Action::make('revokeShares')
+                ->label('Revoca link')
+                ->icon(Heroicon::OutlinedTrash)
+                ->color('danger')
+                ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
+                ->requiresConfirmation()
+                ->modalDescription('Tutti i link pubblici di questa tabella smetteranno di funzionare.')
+                ->action(function (): void {
+                    $deleted = DashboardWidgetShare::query()
+                        ->where('dashboard_widget_id', $this->recordId)
+                        ->delete();
+
+                    Notification::make()
+                        ->title($deleted === 1 ? '1 link revocato' : "{$deleted} link revocati")
+                        ->success()
+                        ->send();
+                }),
+
             Action::make('edit')
                 ->label('Modifica')
                 ->icon(Heroicon::OutlinedPencilSquare)
-                ->url(DashboardWidgetResource::getUrl('edit', ['record' => $this->recordId])),
+                ->url(fn (): string => $this->widgetResourceUrl('edit')),
         ];
     }
 

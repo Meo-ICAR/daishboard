@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DashboardWidgets;
 
+use App\Filament\Resources\DashboardWidgets\Pages\ChartDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Pages\CreateDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Pages\EditDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Pages\ListDashboardWidgets;
@@ -43,10 +44,11 @@ class DashboardWidgetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListDashboardWidgets::route('/'),
+            'index' => ListDashboardWidgets::route('/'),
             'create' => CreateDashboardWidget::route('/create'),
-            'view'   => ViewDashboardWidget::route('/{record}'),
-            'edit'   => EditDashboardWidget::route('/{record}/edit'),
+            'view' => ViewDashboardWidget::route('/{record}'),
+            'chart' => ChartDashboardWidget::route('/{record}/chart'),
+            'edit' => EditDashboardWidget::route('/{record}/edit'),
         ];
     }
 }

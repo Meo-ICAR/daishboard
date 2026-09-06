@@ -10,19 +10,21 @@ class TableSchemaInspector
 {
     protected array $dateTypes = ['date', 'datetime', 'timestamp', 'datetimetz', 'timestamptz'];
 
-    public function getDateFilterableColumns(string $table): array
+    public function getDateFilterableColumns(string $table, ?string $connection = null): array
     {
+        $suffix = $connection ? "{$connection}." : '';
+
         return Cache::remember(
-            "schema.date_columns.{$table}",
+            "schema.date_columns.{$suffix}{$table}",
             now()->addHours(6),
-            fn () => $this->buildDateFilterableColumns($table)
+            fn () => $this->buildDateFilterableColumns($table, $connection)
         );
     }
 
-    protected function buildDateFilterableColumns(string $table): array
+    protected function buildDateFilterableColumns(string $table, ?string $connection = null): array
     {
-        $columns = Schema::getColumns($table);
-        $comments = $this->getColumnComments($table);
+        $columns = Schema::connection($connection)->getColumns($table);
+        $comments = $this->getColumnComments($table, $connection);
 
         return collect($columns)
             ->filter(fn ($col) => $this->isDateType($col['type_name'] ?? $col['type']))
@@ -37,10 +39,10 @@ class TableSchemaInspector
             ->all();
     }
 
-    public function getAllColumnsWithComments(string $table): array
+    public function getAllColumnsWithComments(string $table, ?string $connection = null): array
     {
-        $columns = Schema::getColumns($table);
-        $comments = $this->getColumnComments($table);
+        $columns = Schema::connection($connection)->getColumns($table);
+        $comments = $this->getColumnComments($table, $connection);
 
         return collect($columns)->map(fn ($col) => [
             'name' => $col['name'],
@@ -50,22 +52,22 @@ class TableSchemaInspector
         ])->all();
     }
 
-    protected function getColumnComments(string $table): array
+    protected function getColumnComments(string $table, ?string $connection = null): array
     {
-        $driver = DB::connection()->getDriverName();
+        $driver = DB::connection($connection)->getDriverName();
 
         return match ($driver) {
-            'mysql' => $this->getMysqlComments($table),
-            'pgsql' => $this->getPgsqlComments($table),
+            'mysql' => $this->getMysqlComments($table, $connection),
+            'pgsql' => $this->getPgsqlComments($table, $connection),
             default => [],
         };
     }
 
-    protected function getMysqlComments(string $table): array
+    protected function getMysqlComments(string $table, ?string $connection = null): array
     {
-        $database = DB::connection()->getDatabaseName();
+        $database = DB::connection($connection)->getDatabaseName();
 
-        $rows = DB::select("
+        $rows = DB::connection($connection)->select("
             SELECT COLUMN_NAME as column_name, COLUMN_COMMENT as comment
             FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_COMMENT != ''
@@ -74,9 +76,9 @@ class TableSchemaInspector
         return collect($rows)->pluck('comment', 'column_name')->all();
     }
 
-    protected function getPgsqlComments(string $table): array
+    protected function getPgsqlComments(string $table, ?string $connection = null): array
     {
-        $rows = DB::select('
+        $rows = DB::connection($connection)->select('
             SELECT a.attname as column_name,
                    col_description(a.attrelid, a.attnum) as comment
             FROM pg_attribute a
