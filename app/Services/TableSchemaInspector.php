@@ -44,12 +44,111 @@ class TableSchemaInspector
         $columns = Schema::connection($connection)->getColumns($table);
         $comments = $this->getColumnComments($table, $connection);
 
-        return collect($columns)->map(fn ($col) => [
+        return collect($columns)->values()->map(fn ($col, $index) => [
             'name' => $col['name'],
             'type' => $col['type_name'] ?? $col['type'],
             'nullable' => $col['nullable'],
+            'position' => $index,
             'comment' => $comments[$col['name']] ?? null,
         ])->all();
+    }
+
+    /**
+     * Commento della tabella (TABLE_COMMENT su MySQL).
+     */
+    public function getTableComment(string $table, ?string $connection = null): ?string
+    {
+        $suffix = $connection ? "{$connection}." : '';
+
+        return Cache::remember("schema.table_comment.{$suffix}{$table}", now()->addHours(6), function () use ($table, $connection) {
+            $db = DB::connection($connection);
+
+            if ($db->getDriverName() !== 'mysql') {
+                return null;
+            }
+
+            $row = $db->selectOne(
+                'SELECT TABLE_COMMENT AS c FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+                [$db->getDatabaseName(), $table],
+            );
+
+            $comment = trim((string) ($row->c ?? ''));
+
+            return $comment === '' ? null : $comment;
+        });
+    }
+
+    /**
+     * Chiavi esterne (indici secondari) della tabella, indicizzate per colonna.
+     *
+     * @return array<string, array{table: string, column: string, name: ?string}>
+     */
+    public function getForeignKeys(string $table, ?string $connection = null): array
+    {
+        $suffix = $connection ? "{$connection}." : '';
+
+        return Cache::remember("schema.foreign_keys.{$suffix}{$table}", now()->addHours(6), function () use ($table, $connection) {
+            try {
+                $foreignKeys = Schema::connection($connection)->getForeignKeys($table);
+            } catch (\Throwable) {
+                return [];
+            }
+
+            $map = [];
+
+            foreach ($foreignKeys as $foreignKey) {
+                $localColumn = $foreignKey['columns'][0] ?? null;
+                $foreignTable = $foreignKey['foreign_table'] ?? null;
+
+                if ($localColumn === null || $foreignTable === null) {
+                    continue;
+                }
+
+                $map[$localColumn] ??= [
+                    'table' => $foreignTable,
+                    'column' => $foreignKey['foreign_columns'][0] ?? 'id',
+                    'name' => $foreignKey['name'] ?? null,
+                ];
+            }
+
+            return $map;
+        });
+    }
+
+    /**
+     * Valori di una tabella di lookup: [{value, label}]. `label` è la prima
+     * colonna testuale diversa dalla chiave, altrimenti coincide con `value`.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    public function getLookupValues(string $table, string $keyColumn = 'id', ?string $connection = null, int $limit = 500): array
+    {
+        $suffix = $connection ? "{$connection}." : '';
+
+        return Cache::remember("schema.lookup.{$suffix}{$table}.{$keyColumn}.{$limit}", now()->addHours(6), function () use ($table, $keyColumn, $connection, $limit) {
+            $db = DB::connection($connection);
+
+            try {
+                if (! Schema::connection($connection)->hasTable($table)) {
+                    return [];
+                }
+
+                $columnNames = collect(Schema::connection($connection)->getColumns($table))->pluck('name');
+                $labelColumn = $columnNames->first(fn (string $name): bool => strtolower($name) !== strtolower($keyColumn));
+
+                $rows = $db->table($table)
+                    ->orderBy($keyColumn)
+                    ->limit($limit)
+                    ->get([$keyColumn, ...($labelColumn && $labelColumn !== $keyColumn ? [$labelColumn] : [])]);
+            } catch (\Throwable) {
+                return [];
+            }
+
+            return $rows->map(fn ($row): array => [
+                'value' => (string) $row->{$keyColumn},
+                'label' => (string) ($labelColumn && $labelColumn !== $keyColumn ? ($row->{$labelColumn} ?? $row->{$keyColumn}) : $row->{$keyColumn}),
+            ])->all();
+        });
     }
 
     protected function getColumnComments(string $table, ?string $connection = null): array

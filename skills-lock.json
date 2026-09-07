@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skills": {
+    "neuron-agent-builder": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "0f59fc78df37e13e59557860336e657f12ebe6299f0677309919f87a23b9bc69"
+    },
+    "neuron-debugger": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "e16f1fc7643c7a92c6eb4645d2f35e27c4256767849090d019d4c166c6d2a73e"
+    },
+    "neuron-evaluation-engineer": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "e9961866d2a9344fd69dea65f6b61c1e3020f6eab1e99624c8c4cc2fca614f25"
+    },
+    "neuron-rag-specialist": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "090134674ffab7b1cc9dcad4bf0a57e52e6f5268e6f23fca7f0eee99a47d4737"
+    },
+    "neuron-structured-output": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "1c154ead1671a9d05cf1b9837f9857fb6fc96d3276b6a620f505de3d6b5e4446"
+    },
+    "neuron-test-engineer": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "bec5814b7bd6b99624a9facc109a2cafbd33a2900e1b1b81409b8de9fe08ddd0"
+    },
+    "neuron-tool-creator": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "7d8144f006afb8337b25a2656a9021f5d1e72cbd8f79d096bcb7c2cbd3f4e472"
+    },
+    "neuron-workflow-architect": {
+      "source": "./vendor/neuron-core/neuron-ai/skills",
+      "sourceType": "local",
+      "computedHash": "51e84416467d356ba2a6fe67545048696b50577600350c229527e5d9a7091c07"
+    }
+  }
+}

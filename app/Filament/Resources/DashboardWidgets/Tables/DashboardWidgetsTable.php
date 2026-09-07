@@ -24,12 +24,14 @@ class DashboardWidgetsTable
             ->columns([
                 TextColumn::make('dashboard.title')
                     ->searchable(),
-                TextColumn::make('chatHistory.id')
-                    ->searchable(),
+
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('type')
                     ->searchable(),
+                TextColumn::make('order')
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('masterWidget.title')
                     ->label('Widget master')
                     ->placeholder('—')
@@ -39,19 +41,10 @@ class DashboardWidgetsTable
                     ->label('Colonna filtro master')
                     ->placeholder('—')
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('order')
-                    ->numeric()
-                    ->sortable(),
+
                 IconColumn::make('is_active')
                     ->boolean(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
             ])
             ->filters([
                 SelectFilter::make('dashboard_id')
