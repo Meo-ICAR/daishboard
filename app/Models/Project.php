@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,32 +33,33 @@ class Project extends Model
         ];
     }
 
-    protected static function booted(): void
+    protected static function bootedx(): void
     {
 
         static::addGlobalScope('owned', function (Builder $builder): void {
+            /** @var User|null $user */
+            $user = auth()->user();
 
-            $isSuperAdmin = auth()->isSuperAdmin();
+            // Nessun utente autenticato: nessun risultato
+            if ($user === null) {
+                $builder->whereRaw('0 = 1');
 
-            if (! $isSuperAdmin) {
-                $isAdmin = auth()->isAdmin();
-
-                if ($isAdmin) {
-                    $companyId = auth()->company_id();
-                    $builder->where(function (Builder $query): void {
-                        $query->whereNull('company_id')
-                            ->orWhere('company_id', $companyId);
-
-                    });
-                } else {
-                    $userId = auth()->id();
-                    $builder->where(function (Builder $query) use ($userId): void {
-                        $query->whereNull('user_id')
-                            ->orWhere('user_id', $userId);
-
-                    });
-                }
+                return;
             }
+
+            // Super-admin (is_admin = true e company_id nullo): vede tutto
+            if ($user->isSuperAdmin()) {
+                return;
+            }
+
+            // Admin di azienda: vede i widget della stessa azienda
+
+            $companyId = $user->company_id;
+            $builder->where(function (Builder $query) use ($companyId): void {
+                $query->whereNull('company_id')
+                    ->orWhere('company_id', $companyId);
+            });
+
         });
     }
 

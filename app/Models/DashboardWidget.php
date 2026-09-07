@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class DashboardWidget extends Model
 {
@@ -41,13 +41,24 @@ class DashboardWidget extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $widget): void {
+            if ($widget->user_id === null && auth()->check() && ! auth()->user()?->isAdmin()) {
+                $widget->user_id = auth()->id();
+            }
+
+            if ($widget->company_id === null && auth()->check() && ! auth()->user()?->isSuperAdmin()) {
+                $widget->company_id = auth()->user()->company_id;
+            }
+        });
+
         static::addGlobalScope('owned', function (Builder $builder): void {
-            /** @var \App\Models\User|null $user */
+            /** @var User|null $user */
             $user = auth()->user();
 
             // Nessun utente autenticato: nessun risultato
             if ($user === null) {
                 $builder->whereRaw('0 = 1');
+
                 return;
             }
 
@@ -61,8 +72,9 @@ class DashboardWidget extends Model
                 $companyId = $user->company_id;
                 $builder->where(function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')
-                          ->orWhere('company_id', $companyId);
+                        ->orWhere('company_id', $companyId);
                 });
+
                 return;
             }
 
@@ -70,7 +82,7 @@ class DashboardWidget extends Model
             $userId = $user->id;
             $builder->where(function (Builder $query) use ($userId): void {
                 $query->whereNull('user_id')
-                      ->orWhere('user_id', $userId);
+                    ->orWhere('user_id', $userId);
             });
         });
     }

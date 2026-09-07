@@ -33,6 +33,39 @@ class User extends Authenticatable
         ];
     }
 
+    protected $orderBy = 'name';
+
+    protected $orderDirection = 'asc';
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            // Se l'utente in fase di creazione non ha una password impostata (es. tramite Socialite)
+            if (empty($user->password)) {
+                $user->password = Hash::make('password');
+            }
+        });
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if ($this->avatar_url) {
+            return $this->avatar_url;
+        }
+
+        $socialUser = $this->socialiteUsers()->whereNotNull('avatar')->first();
+        if ($socialUser) {
+            return $socialUser->avatar;
+        }
+
+        return null;
+    }
+
+    public function socialiteUsers(): HasMany
+    {
+        return $this->hasMany(SocialiteUser::class);
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

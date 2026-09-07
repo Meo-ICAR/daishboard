@@ -13,11 +13,34 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user === null) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        if ($user->isSuperAdmin()) {
+            return $query;
+        }
+
+        if ($user->isAdmin()) {
+            return $query->where(fn (Builder $q) => $q
+                ->whereNull('company_id')
+                ->orWhere('company_id', $user->company_id));
+        }
+
+        return $query->whereKey($user->getKey());
+    }
 
     public static function shouldRegisterNavigation(): bool
     {
