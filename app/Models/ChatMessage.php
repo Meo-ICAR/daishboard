@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use NeuronAI\Laravel\Models\ChatMessage as BaseChatMessage;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Estende il modello NeuronAI aggiungendo l'appartenenza a utente e company:
