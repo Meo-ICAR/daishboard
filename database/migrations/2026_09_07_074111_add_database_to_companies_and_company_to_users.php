@@ -14,6 +14,7 @@ return new class extends Migration
 
         Schema::table('users', function (Blueprint $table) {
             $table->foreignId('company_id')->nullable()->after('id')->constrained()->nullOnDelete();
+            $table->boolean('is_admin')->default(true)->comment('Admin user can manage the company and its users')->after('company_id');
         });
     }
 
@@ -25,6 +26,7 @@ return new class extends Migration
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropConstrainedForeignId('company_id');
+            $table->dropColumn('is_admin');
         });
     }
 };

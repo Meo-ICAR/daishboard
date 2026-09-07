@@ -8,11 +8,6 @@ use App\Models\Dashboard;
 use App\Models\DashboardWidget;
 use App\Support\ChartType;
 use App\Support\CompanyScope;
-use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -80,17 +75,10 @@ class DashboardWidgetsTable
                     ->searchable(),
             ])
             ->recordActions([
-                ViewAction::make(),
-                Action::make('chart')
-                    ->label('Grafico')
-                    ->icon(Heroicon::OutlinedChartBar)
-                    ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl('chart', ['record' => $record])),
-                EditAction::make(),
+
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+
             ]);
     }
 }

@@ -47,4 +47,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Project::class)->where('is_current', true)->latestOfMany('updated_at');
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_admin && $this->company_id === null;
+    }
 }

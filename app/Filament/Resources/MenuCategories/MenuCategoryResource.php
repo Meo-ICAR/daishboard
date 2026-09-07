@@ -6,7 +6,6 @@ use App\Filament\Resources\MenuCategories\Pages\ManageMenuCategories;
 use App\Models\MenuCategory;
 use App\Support\CompanyScope;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -19,12 +18,19 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class MenuCategoryResource extends Resource
 {
     protected static ?string $model = MenuCategory::class;
 
-     protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBars3;
 
     protected static ?string $navigationLabel = 'Categorie menu';

@@ -19,10 +19,16 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-      protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
-      protected static ?string $navigationLabel = 'Utenti';
+    protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
+
+    protected static ?string $navigationLabel = 'Utenti';
 
     protected static ?string $recordTitleAttribute = 'name';
 

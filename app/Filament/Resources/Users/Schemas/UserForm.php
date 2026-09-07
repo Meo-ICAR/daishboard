@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class UserForm
@@ -28,6 +29,9 @@ class UserForm
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
+                    ->required(),
+                Toggle::make('is_admin')
+                    ->label('Admin')
                     ->required(),
             ]);
     }
