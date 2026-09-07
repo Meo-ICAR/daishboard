@@ -5,6 +5,7 @@ namespace App\Filament\Resources\DashboardWidgets\Tables;
 use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\Dashboard;
 use App\Models\DashboardWidget;
+use App\Support\CompanyScope;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -21,6 +22,7 @@ class DashboardWidgetsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => CompanyScope::byOwner($query))
             ->columns([
                 TextColumn::make('dashboard.title')
                     ->searchable(),

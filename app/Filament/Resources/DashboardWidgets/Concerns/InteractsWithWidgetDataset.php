@@ -34,6 +34,18 @@ trait InteractsWithWidgetDataset
     #[Locked]
     public ?string $widgetQuery = null;
 
+    #[Locked]
+    public ?int $widgetProjectId = null;
+
+    /**
+     * Filtri di coorte (data + valore) ereditati dallo studio del widget,
+     * applicati alla query in AND prima del raggruppamento.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    #[Locked]
+    public array $projectCohortFilters = [];
+
     /**
      * Colonne data della coorte su cui è possibile filtrare: [chiave => etichetta].
      *
@@ -78,12 +90,14 @@ trait InteractsWithWidgetDataset
 
     protected function bootWidgetDataset(int|string $record): DashboardWidget
     {
-        $widget = DashboardWidget::query()->findOrFail($record);
+        $widget = DashboardWidget::query()->with('project')->findOrFail($record);
 
         $this->recordId = $widget->getKey();
         $this->widgetTitle = $widget->title;
         $this->widgetType = $widget->type;
         $this->widgetQuery = $widget->query;
+        $this->widgetProjectId = $widget->project_id;
+        $this->projectCohortFilters = $widget->project?->cohortFilters() ?? [];
 
         $metadata = app(WidgetDatasetRunner::class)->dateFilterMetadata($widget->query);
 
@@ -104,7 +118,7 @@ trait InteractsWithWidgetDataset
     {
         $result = app(WidgetDatasetRunner::class)->run(
             $this->widgetQuery,
-            $this->activeDateFilters(),
+            $this->cohortFilters(),
         );
 
         $this->queryColumns = $result['columns'];
@@ -121,6 +135,17 @@ trait InteractsWithWidgetDataset
     protected function hasActiveDateFilter(): bool
     {
         return $this->activeDateFilters() !== [];
+    }
+
+    /**
+     * Filtri applicati alla query: quelli dello studio del widget seguiti dai
+     * filtri data impostati manualmente sulla pagina (tutti in AND).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function cohortFilters(): array
+    {
+        return [...$this->projectCohortFilters, ...$this->activeDateFilters()];
     }
 
     /**
@@ -146,7 +171,7 @@ trait InteractsWithWidgetDataset
     {
         return app(WidgetDatasetRunner::class)->describeFilters(
             $this->widgetQuery,
-            $this->activeDateFilters(),
+            $this->cohortFilters(),
         );
     }
 

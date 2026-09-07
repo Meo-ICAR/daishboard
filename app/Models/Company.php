@@ -27,6 +27,7 @@ class Company extends Model
         'db_host',
         'db_port',
         'db_database',
+        'database',
         'db_username',
         'db_password',
         'aibackground',

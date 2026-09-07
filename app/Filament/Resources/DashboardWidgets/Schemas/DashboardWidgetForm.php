@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\DashboardWidgets\Schemas;
 
+use App\Models\Dashboard;
 use App\Models\DashboardWidget;
+use App\Models\Project;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -22,7 +24,36 @@ class DashboardWidgetForm
             ->components([
                 Select::make('dashboard_id')
                     ->relationship('dashboard', 'title')
+                    ->live()
                     ->required(),
+                Select::make('project_id')
+                    ->label('Studio (filtri di coorte)')
+                    ->helperText('Applica i filtri di coorte dello studio (date, flag, lookup) alla query del widget. Sono elencati solo gli studi dello stesso database della dashboard.')
+                    ->relationship(
+                        name: 'project',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: function (Builder $query, Get $get): Builder {
+                            $database = Dashboard::find($get('dashboard_id'))?->database;
+
+                            return $query
+                                ->when(
+                                    filled($database),
+                                    fn (Builder $inner): Builder => $inner->where(
+                                        fn (Builder $scoped) => $scoped
+                                            ->whereNull('database')
+                                            ->orWhere('database', $database),
+                                    ),
+                                )
+                                ->orderByDesc('is_current')
+                                ->orderBy('name');
+                        },
+                    )
+                    ->getOptionLabelFromRecordUsing(fn (Project $record): string => trim(
+                        $record->name.($record->user?->name ? ' — '.$record->user->name : ''),
+                    ))
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
                 Select::make('chat_history_id')
                     ->relationship('chatHistory', 'id'),
                 Select::make('master_widget_id')

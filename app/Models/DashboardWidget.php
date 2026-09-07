@@ -13,6 +13,9 @@ class DashboardWidget extends Model
 
     protected $fillable = [
         'dashboard_id',
+        'company_id',
+        'user_id',
+        'project_id',
         'chat_history_id',
         'master_widget_id',
         'master_filter_column',
@@ -38,6 +41,24 @@ class DashboardWidget extends Model
     public function dashboard(): BelongsTo
     {
         return $this->belongsTo(Dashboard::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Studio i cui filtri di coorte vengono applicati alla query del widget.
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function chatHistory(): BelongsTo

@@ -32,6 +32,7 @@ class SyncSchemaLegend extends Command
         ResearchDateRangeResolver $research,
     ): int {
         $connection = config('legend.connection', 'dbai');
+        $database = DB::connection($connection)->getDatabaseName();
         $limit = (int) config('legend.lookup_value_limit', 500);
         $enumMax = (int) config('legend.lookup_enum_max', 150);
         $entityTables = (array) config('legend.tables', []);
@@ -47,6 +48,7 @@ class SyncSchemaLegend extends Command
             $legend = SchemaLegend::query()->updateOrCreate(
                 ['connection' => $connection, 'table_name' => $table],
                 [
+                    'database' => $database,
                     'label' => Str::headline($table),
                     'description' => $inspector->getTableComment($table, $connection),
                     'order' => $order,

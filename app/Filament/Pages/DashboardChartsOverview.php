@@ -8,6 +8,7 @@ use App\Models\Dashboard;
 use App\Models\DashboardWidget;
 use App\Models\Project;
 use App\Services\WidgetDatasetRunner;
+use App\Support\CompanyScope;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -180,7 +181,7 @@ class DashboardChartsOverview extends Page
      */
     protected function topLevelMasters()
     {
-        return DashboardWidget::query()
+        return CompanyScope::byOwner(DashboardWidget::query())
             ->whereNull('master_widget_id')
             ->where('is_active', true)
             ->when($this->dashboardId !== null, fn ($query) => $query->where('dashboard_id', $this->dashboardId))

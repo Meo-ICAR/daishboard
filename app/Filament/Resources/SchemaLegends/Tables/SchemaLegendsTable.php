@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SchemaLegends\Tables;
 
 use App\Models\SchemaLegend;
+use App\Support\CompanyScope;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -14,11 +15,16 @@ class SchemaLegendsTable
     {
         return $table
             ->defaultSort('order')
+            ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('table_name')
                     ->label('Tabella')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('database')
+                    ->label('Database')
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('label')
                     ->label('Nome')
                     ->searchable(),

@@ -26,7 +26,7 @@ class WidgetDatasetRunner
     ) {}
 
     /**
-     * @param  array<int, array{column?: ?string, from?: ?string, to?: ?string}>  $columnFilters
+     * @param  array<int, array<string, mixed>>  $columnFilters  voci data ({column, from, to}) e/o valore ({column, values})
      * @return array{columns: list<string>, rows: array<int, array<string, mixed>>, numericColumns: list<string>, error: ?string}
      */
     public function run(?string $sql, array $columnFilters = []): array
@@ -113,9 +113,9 @@ class WidgetDatasetRunner
     }
 
     /**
-     * Descrizione testuale dei filtri data attivi, o null se nessuno.
+     * Descrizione testuale dei filtri di coorte attivi (data e valore), o null.
      *
-     * @param  array<int, array{column?: ?string, from?: ?string, to?: ?string}>  $columnFilters
+     * @param  array<int, array<string, mixed>>  $columnFilters
      */
     public function describeFilters(?string $sql, array $columnFilters): ?string
     {
@@ -132,6 +132,15 @@ class WidgetDatasetRunner
             };
 
             $parts[] = "{$label} {$range}";
+        }
+
+        foreach ($this->normalizeValueFilters($columnFilters, (string) $sql) as $filter) {
+            $values = implode(', ', array_map(
+                static fn (string $value): string => $value === '' ? '∅' : $value,
+                $filter['values'],
+            ));
+
+            $parts[] = "{$filter['column']} in [{$values}]";
         }
 
         return $parts === [] ? null : 'Coorte filtrata · '.implode('   ·   ', $parts);
@@ -165,6 +174,12 @@ class WidgetDatasetRunner
             }
         }
 
+        foreach ($this->normalizeValueFilters($columnFilters, $query) as $filter) {
+            $placeholders = implode(', ', array_fill(0, count($filter['values']), '?'));
+            $predicates[] = "{$filter['expr']} IN ({$placeholders})";
+            $bindings = array_merge($bindings, $filter['values']);
+        }
+
         if ($predicates === []) {
             return [$query, []];
         }
@@ -191,6 +206,53 @@ class WidgetDatasetRunner
             if (is_string($column) && isset($metadata[$column]) && ($from !== null || $to !== null)) {
                 $normalized[] = ['column' => $column, 'from' => $from, 'to' => $to];
             }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Normalizza i filtri per valore (flag / lookup): la colonna deve essere
+     * `tabella.campo` di una tabella di coorte effettivamente referenziata nella
+     * query e almeno un valore deve essere selezionato. Ritorna l'espressione
+     * SQL già qualificata con l'alias e i valori (stringa) da confrontare in IN.
+     *
+     * @param  array<int, array{column?: ?string, values?: mixed}>  $columnFilters
+     * @return array<int, array{column: string, expr: string, values: list<string>}>
+     */
+    protected function normalizeValueFilters(array $columnFilters, string $sql): array
+    {
+        $aliases = $this->resolveCohortTableAliases($sql);
+        $normalized = [];
+
+        foreach ($columnFilters as $filter) {
+            $column = $filter['column'] ?? null;
+
+            if (! is_string($column) || ! str_contains($column, '.')) {
+                continue;
+            }
+
+            [$table, $field] = explode('.', $column, 2);
+            $alias = $aliases[strtolower($table)] ?? null;
+
+            if ($alias === null || $field === '') {
+                continue;
+            }
+
+            // La stringa vuota è un valore lookup legittimo (es. etnia non indicata).
+            $values = collect(is_array($filter['values'] ?? null) ? $filter['values'] : [])
+                ->map(static fn ($value): string => (string) $value)
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($values === []) {
+                continue;
+            }
+
+            $expr = '`'.str_replace('`', '', $alias).'`.`'.str_replace('`', '', $field).'`';
+
+            $normalized[] = ['column' => $column, 'expr' => $expr, 'values' => $values];
         }
 
         return $normalized;

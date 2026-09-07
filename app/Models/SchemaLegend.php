@@ -16,6 +16,7 @@ class SchemaLegend extends Model
 
     protected $fillable = [
         'connection',
+        'database',
         'table_name',
         'label',
         'description',

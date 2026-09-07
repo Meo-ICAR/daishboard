@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MenuCategories;
 
 use App\Filament\Resources\MenuCategories\Pages\ManageMenuCategories;
 use App\Models\MenuCategory;
+use App\Support\CompanyScope;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -32,6 +33,9 @@ class MenuCategoryResource extends Resource
             ->components([
                 TextInput::make('name')
                     ->required(),
+                TextInput::make('database')
+                    ->label('Database')
+                    ->maxLength(255),
                 TextInput::make('description'),
                 TextInput::make('icon'),
                 TextInput::make('order')
@@ -47,9 +51,14 @@ class MenuCategoryResource extends Resource
     {
         return $table
             ->recordTitleAttribute('name')
+            ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('name')
                     ->searchable(),
+                TextColumn::make('database')
+                    ->label('Database')
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('description')
                     ->searchable(),
                 TextColumn::make('icon')

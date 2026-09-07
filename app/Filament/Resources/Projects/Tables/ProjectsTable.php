@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Projects\Tables;
 
+use App\Support\CompanyScope;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -14,11 +15,16 @@ class ProjectsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('user.name')
                     ->searchable(),
                 TextColumn::make('name')
                     ->searchable(),
+                TextColumn::make('database')
+                    ->label('Database')
+                    ->placeholder('—')
+                    ->toggleable(),
                 IconColumn::make('is_current')
                     ->boolean(),
                 TextColumn::make('created_at')

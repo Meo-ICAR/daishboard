@@ -13,6 +13,8 @@ class Dashboard extends Model
 
     protected $fillable = [
         'user_id',
+        'company_id',
+        'database',
         'menu_category_id',
         'title',
         'description',
@@ -32,6 +34,11 @@ class Dashboard extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function menuCategory(): BelongsTo

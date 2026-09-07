@@ -255,6 +255,7 @@ class ViewDashboardWidget extends Page implements HasTable
                     $share = DashboardWidgetShare::create([
                         'token' => DashboardWidgetShare::generateToken(),
                         'dashboard_widget_id' => $this->recordId,
+                        'project_id' => $this->widgetProjectId,
                         'created_by' => auth()->id(),
                         'title' => filled($data['title'] ?? null) ? $data['title'] : null,
                         'parameters' => ['dateFilters' => $this->activeDateFilters()],

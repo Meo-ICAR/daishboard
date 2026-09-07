@@ -14,6 +14,7 @@ class DashboardWidgetShare extends Model
     protected $fillable = [
         'token',
         'dashboard_widget_id',
+        'project_id',
         'created_by',
         'title',
         'parameters',
@@ -39,6 +40,14 @@ class DashboardWidgetShare extends Model
     public function dashboardWidget(): BelongsTo
     {
         return $this->belongsTo(DashboardWidget::class);
+    }
+
+    /**
+     * Studio i cui filtri di coorte vengono applicati alla tabella pubblica.
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function creator(): BelongsTo

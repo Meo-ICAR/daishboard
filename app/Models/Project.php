@@ -17,7 +17,9 @@ class Project extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'database',
         'date_filters',
+        'value_filters',
         'is_current',
     ];
 
@@ -25,6 +27,7 @@ class Project extends Model
     {
         return [
             'date_filters' => 'array',
+            'value_filters' => 'array',
             'is_current' => 'boolean',
         ];
     }
@@ -51,12 +54,18 @@ class Project extends Model
     }
 
     /**
-     * Crea/aggiorna lo studio in corso dell'utente con i filtri indicati.
+     * Crea/aggiorna lo studio in corso dell'utente con i filtri indicati. I
+     * filtri per valore vengono preservati se non esplicitamente passati.
      *
      * @param  array<int, array{column: ?string, from: ?string, to: ?string}>  $dateFilters
+     * @param  array<int, array{column: ?string, values: list<string>}>|null  $valueFilters
      */
-    public static function storeCurrentFilters(int|string $userId, array $dateFilters, ?string $name = null): self
-    {
+    public static function storeCurrentFilters(
+        int|string $userId,
+        array $dateFilters,
+        ?string $name = null,
+        ?array $valueFilters = null,
+    ): self {
         $project = static::currentFor($userId) ?? new self(['user_id' => $userId, 'is_current' => true]);
 
         $project->fill([
@@ -64,6 +73,10 @@ class Project extends Model
             'is_current' => true,
             'date_filters' => array_values($dateFilters),
         ]);
+
+        if ($valueFilters !== null) {
+            $project->value_filters = array_values($valueFilters);
+        }
 
         if ($name !== null && $name !== '') {
             $project->name = $name;
@@ -75,15 +88,16 @@ class Project extends Model
     }
 
     /**
-     * Filtri nella forma attesa da WidgetDatasetRunner.
+     * Filtri di coorte (data + valore) nella forma attesa da WidgetDatasetRunner:
+     * le voci data hanno `from`/`to`, quelle per valore hanno `values`.
      *
-     * @return array<int, array{column: ?string, from: ?string, to: ?string}>
+     * @return array<int, array<string, mixed>>
      */
     public function cohortFilters(): array
     {
         return array_values(array_filter(
-            (array) $this->date_filters,
-            static fn ($filter): bool => is_array($filter),
+            array_merge((array) $this->date_filters, (array) $this->value_filters),
+            static fn ($filter): bool => is_array($filter) && ! empty($filter['column']),
         ));
     }
 }

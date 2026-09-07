@@ -18,6 +18,9 @@ class SchemaLegendForm
                 TextInput::make('connection')
                     ->label('Connessione')
                     ->disabled(),
+                TextInput::make('database')
+                    ->label('Database')
+                    ->maxLength(255),
                 TextInput::make('label')
                     ->label('Nome leggibile')
                     ->maxLength(255),

@@ -60,7 +60,7 @@ class SharedWidgetController extends Controller
     protected function resolveShare(string $token): DashboardWidgetShare
     {
         $share = DashboardWidgetShare::query()
-            ->with('dashboardWidget')
+            ->with(['dashboardWidget', 'project'])
             ->where('token', $token)
             ->first();
 
@@ -112,10 +112,13 @@ class SharedWidgetController extends Controller
         ?string $masterField,
         bool $isChild,
     ): View {
-        $dateFilters = $share->dateFilters();
+        $filters = [
+            ...$share->project?->cohortFilters() ?? [],
+            ...$share->dateFilters(),
+        ];
 
-        $result = $this->runner->run($widget->query, $dateFilters);
-        $filterDescription = $this->runner->describeFilters($widget->query, $dateFilters);
+        $result = $this->runner->run($widget->query, $filters);
+        $filterDescription = $this->runner->describeFilters($widget->query, $filters);
 
         $children = $result['error'] === null && $share->include_children
             ? $widget->detailWidgets()->orderBy('order')->orderBy('id')->get(['id', 'title', 'master_filter_column'])
