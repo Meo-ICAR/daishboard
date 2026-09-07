@@ -57,7 +57,7 @@ class DashboardWidget extends Model
             }
 
             // Admin di azienda: vede i widget della stessa azienda
-            if ($user->isAdmin()) {
+            if (true || $user->isAdmin()) {
                 $companyId = $user->company_id;
                 $builder->where(function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')

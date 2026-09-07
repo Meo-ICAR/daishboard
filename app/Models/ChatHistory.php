@@ -25,15 +25,35 @@ class ChatHistory extends Model
         ];
     }
 
-    protected static function booted(): void
+       protected static function booted(): void
     {
         static::addGlobalScope('owned', function (Builder $builder): void {
-            $userId = auth()->id();
+            /** @var \App\Models\User|null $user */
+            $user = auth()->user();
 
-            $builder->where(function (Builder $query) use ($userId): void {
-                $query->whereNull('user_id')
-                      ->orWhere('user_id', $userId);
-            });
+            // Nessun utente autenticato: nessun risultato
+            if ($user === null) {
+                $builder->whereRaw('0 = 1');
+                return;
+            }
+
+            // Super-admin (is_admin = true e company_id nullo): vede tutto
+            if ($user->isSuperAdmin()) {
+                return;
+            }
+
+            // Admin di azienda: vede gli utenti della stessa azienda
+            if ($user->isAdmin()) {
+                $companyId = $user->company_id;
+                $builder->where(function (Builder $query) use ($companyId): void {
+                    $query->whereNull('company_id')
+                          ->orWhere('company_id', $companyId);
+                });
+                return;
+            }
+
+            // Utente normale: vede solo se stesso
+            $builder->where('user_id', $user->id);
         });
     }
 
