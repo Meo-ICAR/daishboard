@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DashboardWidgets\Schemas;
 
+use App\Support\ChartType;
 use App\Models\Dashboard;
 use App\Models\DashboardWidget;
 use App\Models\Project;
@@ -23,6 +24,7 @@ class DashboardWidgetForm
         return $schema
             ->components([
                 Select::make('dashboard_id')
+                    ->label('Dashboard')
                     ->relationship('dashboard', 'title')
                     ->live()
                     ->required(),
@@ -55,6 +57,7 @@ class DashboardWidgetForm
                     ->preload()
                     ->nullable(),
                 Select::make('chat_history_id')
+                    ->label('Cronologia chat')
                     ->relationship('chatHistory', 'id'),
                 Select::make('master_widget_id')
                     ->label('Widget master')
@@ -77,17 +80,29 @@ class DashboardWidgetForm
                     ->datalist(fn (Get $get): array => static::masterQueryColumns($get('master_widget_id')))
                     ->maxLength(255)
                     ->nullable(),
-                TextInput::make('title'),
-                TextInput::make('type'),
+                TextInput::make('title')
+                    ->label('Titolo'),
+                Select::make('type')
+                    ->label('Tipo grafico')
+                    ->options(array_map(
+                        fn (array $meta): string => $meta['label'].' — '.$meta['description'],
+                        ChartType::all(),
+                    ))
+                    ->required(),
                 Textarea::make('query')
+                    ->label('Query SQL')
                     ->columnSpanFull(),
-                TextInput::make('settings'),
-                TextInput::make('grid_position'),
+                TextInput::make('settings')
+                    ->label('Impostazioni'),
+                TextInput::make('grid_position')
+                    ->label('Posizione griglia'),
                 TextInput::make('order')
+                    ->label('Ordine')
                     ->required()
                     ->numeric()
                     ->default(0),
                 Toggle::make('is_active')
+                    ->label('Attivo')
                     ->required(),
             ]);
     }

@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
 use NeuronAI\Chat\Messages\UserMessage;
 use Throwable;
 use UnitEnum;
+use Filament\Support\Icons\Heroicon;
 
 /**
  * Chat con l'assistente dati (NeuronAI): traduce domande in query SQL di sola
@@ -28,9 +29,9 @@ use UnitEnum;
  */
 class DataAssistant extends Page
 {
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
-    protected static string|UnitEnum|null $navigationGroup = 'AI';
+    protected static string|UnitEnum|null $navigationGroup = 'Legenda';
 
     protected static ?string $navigationLabel = 'Assistente dati';
 

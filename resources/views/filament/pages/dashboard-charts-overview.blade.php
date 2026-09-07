@@ -25,22 +25,24 @@
                 ])>
                     <div class="flex items-center justify-between gap-2 pb-1">
                         <div class="flex items-center gap-1.5 min-w-0">
-                            <span class="truncate text-sm font-semibold text-gray-800 dark:text-gray-100" title="{{ $chart['title'] }}">
-                                {{ $chart['title'] }}
-                            </span>
                             @if ($chart['isMaster'])
+                                <a href="{{ $chart['viewUrl'] }}"
+                                   class="truncate text-sm font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400 hover:underline"
+                                   title="{{ $chart['title'] }}">
+                                    {{ $chart['title'] }}
+                                </a>
                                 <x-filament::badge color="primary" size="sm">master</x-filament::badge>
-                            @elseif ($chart['hasChildren'])
-                                <x-filament::badge color="gray" size="sm">figli</x-filament::badge>
+                            @else
+                                <a href="{{ $chart['drillUrl'] }}"
+                                   class="truncate text-sm font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400 hover:underline"
+                                   title="{{ $chart['title'] }}">
+                                    {{ $chart['title'] }}
+                                </a>
+                                @if ($chart['hasChildren'])
+                                    <x-filament::badge color="gray" size="sm">figli</x-filament::badge>
+                                @endif
                             @endif
                         </div>
-
-                        @unless ($chart['isMaster'])
-                            <a href="{{ $chart['drillUrl'] }}"
-                               class="shrink-0 whitespace-nowrap text-xs font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">
-                                {{ $chart['hasChildren'] ? 'Apri figli →' : 'Dettaglio →' }}
-                            </a>
-                        @endunless
                     </div>
 
                     @if ($chart['error'])

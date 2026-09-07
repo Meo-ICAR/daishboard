@@ -18,20 +18,25 @@ class ProjectsTable
             ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('user.name')
+                    ->label('Utente')
                     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Nome')
                     ->searchable(),
                 TextColumn::make('database')
                     ->label('Database')
                     ->placeholder('—')
                     ->toggleable(),
                 IconColumn::make('is_current')
+                    ->label('In corso')
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label('Creato il')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Modificato il')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

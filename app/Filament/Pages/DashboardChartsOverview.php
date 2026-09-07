@@ -21,6 +21,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
+
 use Throwable;
 
 /**
@@ -32,7 +33,7 @@ class DashboardChartsOverview extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
-    protected static ?string $navigationLabel = 'Dashboard grafici';
+    protected static ?string $navigationLabel = 'Cruscotto';
 
     protected static ?string $title = 'Dashboard grafici';
 
@@ -149,7 +150,8 @@ class DashboardChartsOverview extends Page
                 'hasChildren' => $hasChildren,
                 'drillUrl' => $hasChildren
                     ? static::getUrl(['master' => $widget->getKey(), 'dashboardId' => $this->dashboardId])
-                    : DashboardWidgetResource::getUrl('chart', ['record' => $widget->getKey()]),
+                    : DashboardWidgetResource::getUrl('view', ['record' => $widget->getKey()]),
+                'viewUrl' => DashboardWidgetResource::getUrl('view', ['record' => $widget->getKey()]),
             ];
         }
     }

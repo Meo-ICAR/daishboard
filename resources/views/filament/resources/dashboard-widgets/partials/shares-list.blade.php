@@ -43,6 +43,12 @@
                     rel="noopener"
                     style="padding:.25rem .75rem;border:1px solid rgb(229 231 235);border-radius:.5rem;color:#374151;font-size:.75rem;font-weight:600;text-decoration:none"
                 >Apri</a>
+                <button
+                    type="button"
+                    wire:click="revokeShare({{ $share->id }})"
+                    wire:confirm="Vuoi revocare questo link? Non sarà più accessibile."
+                    style="padding:.25rem .75rem;border:0;border-radius:.5rem;background:rgb(220 38 38);color:#fff;font-size:.75rem;font-weight:600;cursor:pointer"
+                >Revoca</button>
             </div>
         </div>
     @empty

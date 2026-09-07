@@ -9,6 +9,7 @@ use App\Filament\Resources\Companies\Schemas\CompanyForm;
 use App\Filament\Resources\Companies\Tables\CompaniesTable;
 use App\Models\Company;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,7 +21,14 @@ class CompanyResource extends Resource
 {
     protected static ?string $model = Company::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
+       protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
+
+    protected static ?string $navigationLabel = 'Aziende';
+
+    protected static ?string $modelLabel = 'azienda';
+
+    protected static ?string $pluralModelLabel = 'aziende';
 
     protected static ?string $recordTitleAttribute = 'name';
 

@@ -18,16 +18,11 @@
             </div>
             <div class="flex items-center space-x-4">
                 @auth
-                <a href="{{ route('dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                <a href="{{ route('filament.admin.pages.dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
                     Pannello di controllo
                 </a>
                 @else
-                    <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900">Accedi</a>
-                    @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                            Registrati
-                        </a>
-                    @endif
+                    <a href="{{ route('filament.admin.auth.login') }}" class="text-gray-600 hover:text-gray-900">Accedi</a>
                 @endauth
             </div>
         </div>
@@ -49,7 +44,7 @@
                         </p>
                         <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                             <div class="rounded-md shadow">
-                                <a href="{{ route('register') }}" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
+                                <a href="mailto:info@unicocompilance.it?subject=Richiesta%20di%20registrazione&body=Salve%2C%0A%0Adesidero%20richiedere%20l'accesso%20alla%20piattaforma%20DbAI.%0A%0ANome%3A%20%0ACognome%3A%20%0AAzienda%3A%20%0AEmail%3A%20%0A%0AGrazie." class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
                                     Inizia ora
                                 </a>
                             </div>
@@ -134,7 +129,7 @@
             <p class="mt-4 text-lg leading-6 text-blue-200">
                 Nessuna carta di credito richiesta. Disdici quando vuoi.
             </p>
-            <a href="{{ route('register') }}" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 sm:w-auto">
+            <a href="mailto:info@unicocompilance.it?subject=Richiesta%20di%20registrazione&body=Salve%2C%0A%0Adesidero%20richiedere%20l'accesso%20alla%20piattaforma%20DbAI.%0A%0ANome%3A%20%0ACognome%3A%20%0AAzienda%3A%20%0AEmail%3A%20%0A%0AGrazie." class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 sm:w-auto">
                 Registrati gratis
             </a>
         </div>

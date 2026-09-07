@@ -19,12 +19,23 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class DashboardResource extends Resource
 {
     protected static ?string $model = Dashboard::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
+
+   // protected static bool $shouldRegisterNavigation = false;
+
+    protected static ?string $navigationLabel = 'Dashboard';
+
+    protected static ?string $modelLabel = 'dashboard';
+
+    protected static ?string $pluralModelLabel = 'dashboard';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -33,19 +44,26 @@ class DashboardResource extends Resource
         return $schema
             ->components([
                 Select::make('user_id')
+                    ->label('Utente')
                     ->relationship('user', 'name'),
                 Select::make('menu_category_id')
+                    ->label('Categoria menu')
                     ->relationship('menuCategory', 'name'),
                 TextInput::make('title')
+                    ->label('Titolo')
                     ->required(),
                 Textarea::make('description')
+                    ->label('Descrizione')
                     ->columnSpanFull(),
-                TextInput::make('icon'),
+                TextInput::make('icon')
+                    ->label('Icona'),
                 TextInput::make('order')
+                    ->label('Ordine')
                     ->required()
                     ->numeric()
                     ->default(0),
                 Toggle::make('is_active')
+                    ->label('Attiva')
                     ->required(),
             ]);
     }
@@ -56,23 +74,31 @@ class DashboardResource extends Resource
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('user.name')
+                    ->label('Utente')
                     ->searchable(),
                 TextColumn::make('menuCategory.name')
+                    ->label('Categoria menu')
                     ->searchable(),
                 TextColumn::make('title')
+                    ->label('Titolo')
                     ->searchable(),
                 TextColumn::make('icon')
+                    ->label('Icona')
                     ->searchable(),
                 TextColumn::make('order')
+                    ->label('Ordine')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_active')
+                    ->label('Attiva')
                     ->boolean(),
                 TextColumn::make('created_at')
+                    ->label('Creata il')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Modificata il')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

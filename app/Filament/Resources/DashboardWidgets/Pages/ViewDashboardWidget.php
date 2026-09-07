@@ -225,6 +225,7 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->label('Condividi')
                 ->icon(Heroicon::OutlinedShare)
                 ->color('gray')
+                ->hidden(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
                 ->modalHeading('Crea un link pubblico')
                 ->modalDescription('Genera un link, accessibile senza login, che mostra questa tabella con i filtri correnti memorizzati.')
                 ->modalSubmitActionLabel('Crea link')
@@ -294,9 +295,10 @@ class ViewDashboardWidget extends Page implements HasTable
 
             Action::make('revokeShares')
                 ->label('Revoca link')
+                 ->visible(false)
                 ->icon(Heroicon::OutlinedTrash)
                 ->color('danger')
-                ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
+                //->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
                 ->requiresConfirmation()
                 ->modalDescription('Tutti i link pubblici di questa tabella smetteranno di funzionare.')
                 ->action(function (): void {
@@ -317,6 +319,30 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->icon(Heroicon::OutlinedPencilSquare)
                 ->url(fn (): string => $this->widgetResourceUrl('edit')),
         ];
+    }
+
+    /**
+     * Revoca un singolo link condiviso dal suo ID.
+     * Chiamato dal partial Blade via wire:click.
+     */
+    public function revokeShare(int $shareId): void
+    {
+        $deleted = DashboardWidgetShare::query()
+            ->where('id', $shareId)
+            ->where('dashboard_widget_id', $this->recordId)
+            ->delete();
+
+        if ($deleted) {
+            if ($this->lastShareUrl !== null) {
+                // Azzera il banner se il link revocato era quello appena creato
+                $this->lastShareUrl = null;
+            }
+
+            Notification::make()
+                ->title('Link revocato')
+                ->success()
+                ->send();
+        }
     }
 
     public function getTitle(): string|Htmlable
