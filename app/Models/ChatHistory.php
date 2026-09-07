@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,18 @@ class ChatHistory extends Model
         return [
             'messages' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('owned', function (Builder $builder): void {
+            $userId = auth()->id();
+
+            $builder->where(function (Builder $query) use ($userId): void {
+                $query->whereNull('user_id')
+                      ->orWhere('user_id', $userId);
+            });
+        });
     }
 
     public function user(): BelongsTo

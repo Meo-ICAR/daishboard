@@ -38,6 +38,34 @@ class DashboardWidget extends Model
         ];
     }
 
+        protected static function booted(): void
+    {
+        static::addGlobalScope('owned', function (Builder $builder): void {
+           
+    $isSuperAdmin = auth()->isSuperAdmin();
+
+if (!$isSuperAdmin ) {
+            $isAdmin = auth()->isAdmin();
+
+            if ($isAdmin)  {
+                       $companyId = auth()->company_id();
+                  $builder->where(function (Builder $query) use ($userId): void {
+                $query->whereNull('company_id')
+                      ->orWhere('company_id', $companyId);
+                      
+            });
+            }   else    {
+                 $userId = auth()->id();
+            $builder->where(function (Builder $query) use ($userId): void {
+                $query->whereNull('user_id')
+                      ->orWhere('user_id', $userId);
+                      
+            });
+             }
+              }
+        });
+    }
+
     public function dashboard(): BelongsTo
     {
         return $this->belongsTo(Dashboard::class);

@@ -33,6 +33,17 @@ class ChatMessage extends BaseChatMessage
             if ($message->company_id === null && auth()->check()) {
                 $message->company_id = auth()->user()->company_id;
             }
+
+            
+        });
+
+         static::addGlobalScope('owned', function (Builder $builder): void {
+            $userId = auth()->id();
+
+            $builder->where(function (Builder $query) use ($userId): void {
+                $query->whereNull('user_id')
+                      ->orWhere('user_id', $userId);
+            });
         });
     }
 
