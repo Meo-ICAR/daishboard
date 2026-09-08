@@ -73,7 +73,8 @@ class DashboardWidgetsTable
                 SelectFilter::make('dashboard_id')
                     ->label('Dashboard')
                     ->relationship('dashboard', 'title')
-                    ->default(Dashboard::query()->orderBy('order')->orderBy('id')->value('id'))
+                    ->default(auth()->user()?->dashboard_id
+                        ?? Dashboard::query()->orderBy('order')->orderBy('id')->value('id'))
                     ->preload()
                     ->searchable(),
 
@@ -81,8 +82,8 @@ class DashboardWidgetsTable
                     ->label('Tipo tabella')
                     ->placeholder('Tutti')
                     ->options([
-                        'table' => "type = 'table'",
-                        'not_table' => "type != 'table'",
+                        'Tabelle' => "type = 'table'",
+                        'Grafici' => "type != 'table'",
                     ])
                     ->query(fn ($query, array $data) => match ($data['value'] ?? null) {
                         'table' => $query->whereRaw("COALESCE(LOWER(type), '') = 'table'"),

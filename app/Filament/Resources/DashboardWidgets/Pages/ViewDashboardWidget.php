@@ -7,6 +7,7 @@ use App\Filament\Resources\DashboardWidgets\Concerns\InteractsWithWidgetDataset;
 use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\DashboardWidget;
 use App\Models\DashboardWidgetShare;
+use App\Support\DataNavigatorProfile;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -107,13 +108,19 @@ class ViewDashboardWidget extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->records(function (?string $sortColumn, ?string $sortDirection, int $page, int $recordsPerPage): LengthAwarePaginator {
+            ->records(function (?string $sortColumn, ?string $sortDirection, int $page, int $recordsPerPage, ?string $search): LengthAwarePaginator {
                 // Le colonne sono esposte come `col_<indice>`: risale al nome reale del campo.
                 $sortField = filled($sortColumn)
                     ? ($this->queryColumns[(int) substr($sortColumn, 4)] ?? null)
                     : null;
 
                 $rows = collect($this->queryRows)
+                    ->when(
+                        filled($search),
+                        fn (Collection $data): Collection => $data->filter(
+                            fn (array $row): bool => $this->rowMatchesSearch($row, (string) $search),
+                        ),
+                    )
                     ->when(
                         filled($sortField),
                         fn (Collection $data): Collection => $data->sortBy(
@@ -161,6 +168,11 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->sortable()
                 ->wrap()
                 ->toggleable();
+
+            // Ogni campo non numerico è ricercabile (ricerca gestita in records()).
+            if (! in_array($name, $this->numericColumns, true)) {
+                $column->searchable();
+            }
 
             $drilldown = in_array($name, $this->numericColumns, true)
                 ? $this->drilldownFor($name)
@@ -217,6 +229,33 @@ class ViewDashboardWidget extends Page implements HasTable
     }
 
     /**
+     * Vero se una riga contiene la stringa cercata in almeno una colonna non
+     * numerica (confronto case-insensitive su sottostringa).
+     *
+     * @param  array<string, mixed>  $row
+     */
+    protected function rowMatchesSearch(array $row, string $search): bool
+    {
+        $needle = Str::lower(trim($search));
+
+        if ($needle === '') {
+            return true;
+        }
+
+        foreach ($this->queryColumns as $name) {
+            if (in_array($name, $this->numericColumns, true)) {
+                continue;
+            }
+
+            if (str_contains(Str::lower((string) ($row[$name] ?? '')), $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Primo widget figlio applicabile alla colonna indicata: `master_filter_column`
      * nullo (vale per qualsiasi colonna) oppure esattamente uguale alla colonna.
      *
@@ -240,18 +279,24 @@ class ViewDashboardWidget extends Page implements HasTable
      */
     protected function datasetQuery(): ?string
     {
+        $model = new DashboardWidget;
+        $identifier = DataNavigatorProfile::identifierColumn();
+
         if ($this->drillFilters === []) {
-            return $this->widgetQuery;
+            $sql = (string) $this->widgetQuery;
+
+            return $identifier !== null ? $model->swapSelectIdentifier($sql, $identifier) : $this->widgetQuery;
         }
 
         $predicates = collect($this->drillFilters)
             ->mapWithKeys(fn (array $filter): array => [$filter['expr'] => $filter['value'] ?? null])
             ->all();
 
-        $sql = (new DashboardWidget)->convertSqlStringToDrillDown(
-            (string) $this->widgetQuery,
-            $predicates,
-        );
+        $sql = $model->convertSqlStringToDrillDown((string) $this->widgetQuery, $predicates);
+
+        if ($identifier !== null) {
+            $sql = $model->swapSelectIdentifier($sql, $identifier);
+        }
 
         if (preg_match('/\bLIMIT\s+\d/i', $sql) !== 1) {
             $sql .= ' LIMIT 2000';

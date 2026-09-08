@@ -123,6 +123,9 @@ class Project extends Model
 
         $project->save();
 
+        // Tiene il puntatore "ultimo studio selezionato" sull'utente allineato.
+        User::withoutGlobalScopes()->whereKey($userId)->update(['project_id' => $project->getKey()]);
+
         return $project;
     }
 

@@ -43,6 +43,10 @@ return [
             // Tabelle principali documentate nello schema del prompt (e da legend:sync).
             'tables' => ['patients', 'patient_visits'],
 
+            // Colonna identificativa "parlante" con cui sostituire `id` nelle
+            // viste tabella (es. il codice paziente al posto dell'id tecnico).
+            'identifier_column' => 'pazientecode',
+
             'background' => <<<'TXT'
             Sei un assistente che aiuta ricercatori medici a interrogare un database di coorte
             HIV (dati clinici, immunologici, cardiovascolari raccolti a scopo di ricerca

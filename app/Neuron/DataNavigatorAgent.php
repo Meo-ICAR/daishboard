@@ -90,7 +90,10 @@ class DataNavigatorAgent extends Agent
 
         $forced = config('data_navigator.profile');
 
-        $key = $forced
+        // Un DATA_NAVIGATOR_PROFILE che non corrisponde a una chiave nota (es.
+        // per errore vi è finito il nome del database) viene ignorato: si passa
+        // al match per nome database e infine al profilo di default.
+        $key = (is_string($forced) && isset($profiles[$forced]) ? $forced : null)
             ?: collect($profiles)
                 ->search(fn (array $profile): bool => in_array(
                     $this->databaseName,

@@ -37,20 +37,32 @@ class CompanyScope
     }
 
     /**
-     * Limita ai record di proprietà dell'utente autenticato (per `user_id`) e
-     * della sua company (per `company_id`), includendo i record con quei campi
-     * a NULL. Nessun filtro se non c'è un utente autenticato.
+     * Limita la visibilità in base al ruolo dell'utente autenticato, includendo
+     * sempre i record con `user_id`/`company_id` a NULL (record globali):
+     *  - nessun utente / superadmin → nessun filtro;
+     *  - admin azienda → solo `(company_id IS NULL OR company_id = <sua company>)`;
+     *  - utente normale → in più `(user_id IS NULL OR user_id = <suo id>)`.
+     *
+     * Stessa semantica del global scope `owned` di DashboardWidget.
      */
     public static function byOwner(Builder $query, string $userColumn = 'user_id', string $companyColumn = 'company_id'): Builder
     {
         $user = auth()->user();
 
-        if ($user === null) {
+        if ($user === null || $user->isSuperAdmin()) {
             return $query;
         }
 
-        return $query
-            ->where(fn (Builder $inner) => $inner->whereNull($userColumn)->orWhere($userColumn, $user->getKey()))
-            ->where(fn (Builder $inner) => $inner->whereNull($companyColumn)->orWhere($companyColumn, $user->company_id));
+        $query->where(fn (Builder $inner) => $inner
+            ->whereNull($companyColumn)
+            ->orWhere($companyColumn, $user->company_id));
+
+        if (! $user->isAdmin()) {
+            $query->where(fn (Builder $inner) => $inner
+                ->whereNull($userColumn)
+                ->orWhere($userColumn, $user->getKey()));
+        }
+
+        return $query;
     }
 }

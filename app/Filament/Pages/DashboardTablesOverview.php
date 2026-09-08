@@ -58,6 +58,11 @@ class DashboardTablesOverview extends Page
 
     public function mount(): void
     {
+        // Visita "pulita": riparte dall'ultima dashboard selezionata dall'utente.
+        if ($this->category === null && $this->dashboardId === null && $this->master === null) {
+            $this->dashboardId = auth()->user()?->dashboard_id;
+        }
+
         $this->rebuild();
     }
 
@@ -116,6 +121,10 @@ class DashboardTablesOverview extends Page
         }
 
         $this->trail = $this->buildTrail($dashboard, $master);
+
+        if ($dashboard !== null) {
+            auth()->user()?->rememberSelection(dashboardId: (int) $dashboard->getKey());
+        }
     }
 
     /**

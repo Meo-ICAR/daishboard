@@ -294,6 +294,42 @@ class DashboardWidget extends Model
         return $items;
     }
 
+    /**
+     * Sostituisce, nelle sole voci di primo livello della SELECT, la colonna
+     * tecnica `id` (anche qualificata, `t.id`, con o senza backtick, ed
+     * eventuale `AS id`) con la colonna indicata (es. `pazientecode`),
+     * mantenendo il prefisso di alias. Non tocca `id` dentro funzioni,
+     * sottoquery o espressioni composte.
+     */
+    public function swapSelectIdentifier(string $sql, string $identifier): string
+    {
+        if ($identifier === ''
+            || ! preg_match('/^\s*SELECT\s+(?:DISTINCT\s+)?(.*?)\s+FROM\s+/is', $sql, $match)) {
+            return $sql;
+        }
+
+        $items = array_map(function (string $item) use ($identifier): string {
+            $item = trim(preg_replace('/\s+AS\s+`?id`?$/i', '', trim($item)));
+
+            if (preg_match('/^`?([A-Za-z_]\w*)`?\.`?id`?$/i', $item, $qualified)) {
+                return $qualified[1].'.'.$identifier;
+            }
+
+            if (preg_match('/^`?id`?$/i', $item)) {
+                return $identifier;
+            }
+
+            return $item;
+        }, $this->splitTopLevel($match[1]));
+
+        return preg_replace(
+            '/^\s*SELECT\s+(?:DISTINCT\s+)?.*?\s+FROM\s+/is',
+            'SELECT '.implode(', ', $items).' FROM ',
+            $sql,
+            1,
+        );
+    }
+
     /*
 
     // Stringa SQL di partenza

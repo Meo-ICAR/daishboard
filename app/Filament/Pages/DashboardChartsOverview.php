@@ -71,7 +71,12 @@ class DashboardChartsOverview extends Page
 
     public function mount(): void
     {
-        $this->projectFilters = Project::currentFor(auth()->id())?->cohortFilters() ?? [];
+        // Riprende l'ultima selezione dell'utente quando non arriva dalla URL.
+        $this->dashboardId ??= auth()->user()?->dashboard_id;
+
+        $this->projectFilters = (auth()->user()?->project ?? Project::currentFor(auth()->id()))
+            ?->cohortFilters() ?? [];
+
         $this->resolveDashboardScope();
         $this->rebuild();
     }
@@ -103,6 +108,7 @@ class DashboardChartsOverview extends Page
     {
         $this->master = null;
         $this->resolveDashboardScope();
+        auth()->user()?->rememberSelection(dashboardId: $this->dashboardId);
         $this->rebuild();
     }
 
@@ -252,6 +258,7 @@ class DashboardChartsOverview extends Page
                     $this->dashboardId = (int) $data['dashboardId'];
                     $this->master = null;
                     $this->resolveDashboardScope();
+                    auth()->user()?->rememberSelection(dashboardId: $this->dashboardId);
                     $this->rebuild();
                 }),
 
