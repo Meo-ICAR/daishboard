@@ -4,6 +4,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/** | .ai/rules/app.md |
 | app/Filament/Resources/DashboardWidgets/Pages/ViewDashboardWidget.php | .ai/rules/dashboard-widgets-pages.md |
 | app/Filament/Resources/DashboardWidgets/** | .ai/rules/dashboard-widgets.md |
 | app/Filament/** | .ai/rules/filament.md |

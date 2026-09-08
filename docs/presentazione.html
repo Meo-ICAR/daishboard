@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daishboard &mdash; Presentazione</title>
+<meta name="description" content="Deck di presentazione di Daishboard per il convegno dei ricercatori: potenzialit&agrave;, condivisione dei dati, costruzione delle coorti, selezione per date, assistente AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ink: #17222a;
+    --muted: #5c6a70;
+    --faint: #93a09e;
+    --paper: #f5f8f6;
+    --raised: #ffffff;
+    --rule: #dde3e0;
+    --rule-strong: #c6cec9;
+    --accent: #0d7d78;
+    --accent-ink: #0a5a56;
+    --accent-soft: #e2efeb;
+    /* pannello sezione: costante nei due temi, per scelta */
+    --band-bg: #0c2b29;
+    --band-fg: #eaf4f1;
+    --band-accent: #64d2c6;
+    --focus: #0d7d78;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e8eeeb;
+      --muted: #9aa6a2;
+      --faint: #6b7975;
+      --paper: #0d1316;
+      --raised: #141b1e;
+      --rule: #25302d;
+      --rule-strong: #37433f;
+      --accent: #3dbcb1;
+      --accent-ink: #74d6cb;
+      --accent-soft: #13302d;
+      --focus: #3dbcb1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8eeeb;
+    --muted: #9aa6a2;
+    --faint: #6b7975;
+    --paper: #0d1316;
+    --raised: #141b1e;
+    --rule: #25302d;
+    --rule-strong: #37433f;
+    --accent: #3dbcb1;
+    --accent-ink: #74d6cb;
+    --accent-soft: #13302d;
+    --focus: #3dbcb1;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2 {
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: clamp(0.72rem, 0.62rem + 0.4vw, 0.9rem);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin: 0 0 1.4rem;
+  }
+
+  /* ---- Slide shell ---- */
+  .slide {
+    min-height: 100vh;
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(2.5rem, 7vh, 5rem) clamp(1.5rem, 8vw, 7rem);
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  .in { width: 100%; max-width: 60rem; margin: 0 auto; }
+
+  .slide h2 { font-size: clamp(1.9rem, 1.2rem + 3.4vw, 3.3rem); }
+  .slide p {
+    font-size: clamp(1.05rem, 0.95rem + 0.7vw, 1.4rem);
+    color: var(--ink);
+    max-width: 46ch;
+    margin: 1.5rem 0 0;
+  }
+  .slide p.wide { max-width: 54ch; }
+  .slide p .em { color: var(--accent-ink); font-style: normal; }
+  .foot {
+    margin-top: 2.2rem;
+    font-size: clamp(0.9rem, 0.82rem + 0.4vw, 1.05rem);
+    color: var(--muted);
+  }
+  .foot::before { content: "\2014\00a0"; color: var(--accent); }
+
+  ul.big {
+    list-style: none;
+    margin: 1.8rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+  ul.big li {
+    font-size: clamp(1.02rem, 0.92rem + 0.7vw, 1.32rem);
+    padding-left: 1.6rem;
+    position: relative;
+    max-width: 52ch;
+  }
+  ul.big li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 2px solid var(--accent);
+    border-radius: 2px;
+  }
+  ul.big li b { font-weight: 600; }
+  ul.big li span { color: var(--muted); }
+
+  ul.grid2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem 2.5rem;
+  }
+  @media (min-width: 46rem) {
+    ul.grid2 { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ---- Title slide ---- */
+  .title h1 { font-size: clamp(2.5rem, 1.5rem + 5.2vw, 4.7rem); font-weight: 600; }
+  .title .brand {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.1rem, 0.9rem + 1vw, 1.5rem);
+    letter-spacing: -0.02em;
+    margin-bottom: 2.4rem;
+  }
+  .title .brand span { color: var(--accent); }
+  .title .meta {
+    margin-top: 2.6rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(0.82rem, 0.75rem + 0.4vw, 1rem);
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.6rem;
+  }
+
+  /* ---- Section band ---- */
+  .band {
+    background: var(--band-bg);
+    color: var(--band-fg);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  .band .eyebrow { color: var(--band-accent); }
+  .band .num {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(3.5rem, 2rem + 8vw, 7rem);
+    line-height: 0.9;
+    color: var(--band-accent);
+  }
+  .band h2 {
+    font-size: clamp(2rem, 1.2rem + 4vw, 3.6rem);
+    margin-top: 0.8rem;
+    color: var(--band-fg);
+  }
+
+  /* ---- Figure ---- */
+  figure.demo {
+    margin: 2rem 0 0;
+    border: 1px solid var(--rule-strong);
+    background: var(--raised);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 46rem;
+  }
+  .demo-grid { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 40rem) {
+    .demo-grid { grid-template-columns: 1fr auto 1fr; align-items: stretch; }
+  }
+  .demo-panel { padding: 1.2rem 1.3rem 1.4rem; }
+  .demo-panel + .demo-panel { border-top: 1px solid var(--rule); }
+  @media (min-width: 40rem) {
+    .demo-panel + .demo-panel { border-top: 0; border-left: 1px solid var(--rule); }
+  }
+  .demo-tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.8rem;
+  }
+  table.mini {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(0.78rem, 0.72rem + 0.3vw, 0.92rem);
+    font-variant-numeric: tabular-nums;
+  }
+  table.mini th, table.mini td {
+    text-align: left;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  table.mini th { color: var(--muted); font-weight: 500; }
+  table.mini td.num { text-align: right; padding-right: 0; }
+  table.mini tr:last-child td { border-bottom: 0; }
+  td.hit { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; border-radius: 3px; }
+  .demo-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0.6rem; color: var(--accent);
+  }
+  figcaption {
+    padding: 0.85rem 1.3rem 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .contact {
+    margin-top: 2.4rem;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    padding: 0.9rem 1.2rem;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 8px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: clamp(0.82rem, 0.76rem + 0.3vw, 1rem);
+    color: var(--muted);
+  }
+  .contact b { color: var(--ink); font-weight: 500; }
+
+  /* ---- Chrome ---- */
+  #bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--accent);
+    width: 0;
+    z-index: 20;
+    transition: width 160ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) { #bar { transition: none; } }
+  .fixbrand, #cnt {
+    position: fixed;
+    bottom: 1rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--faint);
+    z-index: 20;
+    letter-spacing: 0.04em;
+  }
+  .fixbrand { left: clamp(1rem, 3vw, 2.5rem); }
+  #cnt { right: clamp(1rem, 3vw, 2.5rem); }
+  .band ~ .fixbrand, .band ~ #cnt { color: var(--faint); }
+
+  a { color: var(--accent-ink); }
+  a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+  /* ---- Print / handout ---- */
+  @media print {
+    html { scroll-snap-type: none; }
+    :root { --paper: #fff; --raised: #fff; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #bar, #cnt, .fixbrand { display: none; }
+    .slide {
+      min-height: auto;
+      break-after: page;
+      border-bottom: 0;
+      padding: 1.6cm 1.8cm;
+      justify-content: flex-start;
+    }
+    .slide h2 { font-size: 24pt; }
+    .slide p, ul.big li { font-size: 12pt; }
+    @page { size: A4 landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bar" aria-hidden="true"></div>
+<div class="fixbrand">Daishboard</div>
+<div id="cnt" aria-hidden="true">1 / 19</div>
+
+<!-- 1 -->
+<section class="slide title">
+  <div class="in">
+    <div class="brand">Daish<span>board</span></div>
+    <p class="eyebrow">Convegno dei ricercatori &middot; [data &middot; sede]</p>
+    <h1>Il dato che avete raccolto, pronto a rispondere.</h1>
+    <div class="meta">
+      <span>Panoramica in 30 minuti</span>
+      <span>[Relatore]</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Perch&eacute;</p>
+    <h2>Il vostro lavoro di raccolta, restituito come analisi.</h2>
+    <p class="wide">
+      Migliaia di pazienti, visite e trattamenti inseriti negli anni. Daishboard nasce per
+      rimettere quel dato nelle vostre mani &mdash; come tabelle, grafici e coorti &mdash;
+      senza passare da un analista o da un foglio costruito a mano.
+    </p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">In una frase</p>
+    <h2>Osservare la coorte.<br>Verificare il singolo caso.<br>Condividere il risultato.</h2>
+    <p class="foot">Con lo stesso strumento. Senza competenze informatiche.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Panoramica</p>
+    <h2>Cosa potete fare</h2>
+    <ul class="big grid2">
+      <li>Pannelli, tabelle e grafici che si <b>rifanno identici</b></li>
+      <li>Da un totale <b>al singolo paziente</b>, con un clic</li>
+      <li>Coorti <b>definite una volta</b>, valide su ogni analisi</li>
+      <li>Selezione <b>temporale</b> con periodi gi&agrave; pronti</li>
+      <li>Condivisione con un <b>link</b> &middot; export in foglio di calcolo</li>
+      <li>L&rsquo;<b>assistente</b>: chiedete a parole, ottenete l&rsquo;analisi</li>
+    </ul>
+    <p class="foot">I dati clinici non vengono mai modificati.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Esempio</p>
+    <h2>Ogni numero &egrave; una porta.</h2>
+    <figure class="demo">
+      <div class="demo-grid">
+        <div class="demo-panel">
+          <p class="demo-tag">Sintesi</p>
+          <table class="mini">
+            <thead><tr><th>presidio</th><th>fascia d&rsquo;et&agrave;</th><th class="num">pazienti</th></tr></thead>
+            <tbody>
+              <tr><td>Presidio Nord</td><td>40&ndash;49</td><td class="num">24</td></tr>
+              <tr><td>Presidio Centro</td><td>50&ndash;59</td><td class="num hit">53</td></tr>
+              <tr><td>Presidio Sud</td><td>40&ndash;49</td><td class="num">35</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="demo-arrow" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h17M15 6l7 7-7 7"></path></svg>
+        </div>
+        <div class="demo-panel">
+          <p class="demo-tag">Dettaglio &middot; clic sul 53</p>
+          <table class="mini">
+            <thead><tr><th>codice paziente</th><th>fascia d&rsquo;et&agrave;</th></tr></thead>
+            <tbody>
+              <tr><td>caso 148</td><td>50&ndash;59</td></tr>
+              <tr><td>caso 207</td><td>50&ndash;59</td></tr>
+              <tr><td>caso 219</td><td>50&ndash;59</td></tr>
+              <tr><td>&hellip;</td><td>&nbsp;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <figcaption>Il raggruppamento si scioglie e la riga scelta diventa il filtro. Dati d&rsquo;esempio.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Band 01 -->
+<section class="slide band">
+  <div class="in">
+    <p class="eyebrow">Parte prima</p>
+    <div class="num">01</div>
+    <h2>Condivisione dei dati</h2>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Condividere</p>
+    <h2>Un link, non un file.</h2>
+    <p class="wide">
+      Oggi condividere un&rsquo;analisi vuol dire allegare un file e spiegare come &egrave;
+      stato ottenuto. Qui inviate un <span class="em">collegamento</span>: chi lo apre vede la
+      tabella con gli stessi filtri, anche senza account. Con scadenza a 7, 30 o 90 giorni. I
+      dettagli restano raggiungibili dallo stesso link.
+    </p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Per la statistica</p>
+    <h2>Quando servono i test, la tabella &egrave; gi&agrave; pronta.</h2>
+    <p class="wide">
+      La tabella filtrata si scarica come foglio di calcolo, pronta per R, Stata o SPSS.
+      Nessuna ripulitura, nessuna riga da sistemare.
+    </p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Governance</p>
+    <h2>Ognuno vede ci&ograve; che gli compete.</h2>
+    <p class="wide">
+      Visibilit&agrave; per struttura e per singolo utente. I dati che identificano la persona
+      non entrano nei conteggi e nei grafici. Lo strumento <span class="em">legge</span> il
+      database: non aggiunge, non cambia, non cancella.
+    </p>
+  </div>
+</section>
+
+<!-- Band 02 -->
+<section class="slide band">
+  <div class="in">
+    <p class="eyebrow">Parte seconda</p>
+    <div class="num">02</div>
+    <h2>Costruire le coorti</h2>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Lo studio</p>
+    <h2>I criteri di inclusione, salvati una volta.</h2>
+    <p class="wide">
+      Uno &laquo;studio&raquo; raccoglie i vostri criteri. Non li reimpostate a ogni domanda:
+      restano attivi e valgono per ogni tabella e ogni grafico che aprite.
+    </p>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">I mattoni</p>
+    <h2>Con cosa si costruisce una coorte</h2>
+    <ul class="big">
+      <li><b>Indicatori s&igrave; / no</b> <span>&mdash; es. in terapia, evento avvenuto</span></li>
+      <li><b>Caratteristiche a scelta multipla</b> <span>&mdash; es. presidio, categoria di rischio, prese dalle tabelle di riferimento del vostro database</span></li>
+      <li><b>Periodi di tempo</b> <span>&mdash; la sezione successiva</span></li>
+    </ul>
+    <p class="foot">Combinati fra loro con &laquo;e&raquo;.</p>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Il punto chiave</p>
+    <h2>I criteri agiscono prima del conteggio.</h2>
+    <p class="wide">
+      La coorte viene selezionata <span class="em">prima</span> di ogni raggruppamento. Il
+      denominatore &egrave; sempre la popolazione che avete definito &mdash; non &laquo;tutti
+      i pazienti, filtrati dopo&raquo;. Cos&igrave; percentuali e tassi restano coerenti in
+      ogni tabella.
+    </p>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Esempio</p>
+    <h2>Una riga di criteri, tutte le analisi allineate.</h2>
+    <p class="wide">
+      <span class="em">arruolati dopo il 2015 &middot; in terapia &middot; soppressione
+      virologica all&rsquo;ultima visita</span>
+    </p>
+    <p class="foot">Da qui in poi, ogni pannello &egrave; su questa coorte.</p>
+  </div>
+</section>
+
+<!-- Band 03 -->
+<section class="slide band">
+  <div class="in">
+    <p class="eyebrow">Parte terza</p>
+    <div class="num">03</div>
+    <h2>Selezione per date</h2>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Le date</p>
+    <h2>In una coorte, le date non sono tutte uguali.</h2>
+    <p class="wide">
+      Nascita, arruolamento, prima diagnosi, inizio terapia, visita, esame, evento. Daishboard
+      le riconosce <span class="em">per significato</span>, non solo per nome, e propone le
+      scelte giuste per ciascuna.
+    </p>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Periodi</p>
+    <h2>Finestre temporali gi&agrave; pronte.</h2>
+    <ul class="big">
+      <li>&laquo;ultimi 5 anni&raquo;, &laquo;coorte storica: oltre 10 anni fa&raquo;, intervallo personalizzato</li>
+      <li><b>Pi&ugrave; finestre insieme</b> <span>&mdash; es. arruolamento in un periodo e prima visita in un altro</span></li>
+    </ul>
+    <p class="foot">Tutte in &laquo;e&raquo; con i criteri della coorte.</p>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Perch&eacute; conta</p>
+    <h2>Cambiate la finestra, si aggiorna tutto.</h2>
+    <p class="wide">
+      Spostare l&rsquo;intervallo temporale rivede all&rsquo;istante ogni tabella e ogni
+      grafico della coorte. Utile per le analisi di sensibilit&agrave; e per definire il
+      taglio di un lavoro, senza rifare nulla.
+    </p>
+  </div>
+</section>
+
+<!-- Band 04 -->
+<section class="slide band">
+  <div class="in">
+    <p class="eyebrow">Per concludere</p>
+    <div class="num">04</div>
+    <h2>L&rsquo;assistente AI</h2>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Chiedere a parole</p>
+    <h2>Non ogni domanda vale un pannello.</h2>
+    <p class="wide">
+      Per quelle occasionali, scrivete la domanda in italiano:
+    </p>
+    <p class="wide"><span class="em">&laquo;quanti pazienti hanno raggiunto la soppressione
+      virologica, per anno di arruolamento?&raquo;</span></p>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Cosa sa</p>
+    <h2>Conosce il vostro database e le vostre regole.</h2>
+    <p class="wide">
+      Sa come si chiamano le variabili, cosa contengono, quali risposte ammettono, quali sono
+      le date reali. E applica le <span class="em">stesse regole di dominio</span> che usate
+      voi. Non inventa nomi di campo: se una cosa non c&rsquo;&egrave;, lo dice.
+    </p>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">I limiti (voluti)</p>
+    <h2>Pu&ograve; leggere e contare. Nient&rsquo;altro.</h2>
+    <ul class="big">
+      <li>Non modifica nulla, non accede ai dati identificativi</li>
+      <li>Mostra sempre <b>come</b> &egrave; arrivato al risultato &mdash; potete controllarlo</li>
+      <li>Se la risposta &egrave; utile, un clic la salva come tabella o grafico permanente</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <div class="in">
+    <p class="eyebrow">Prossimo passo</p>
+    <h2>Il dato che avete raccolto, pronto a rispondere.</h2>
+    <p class="wide">
+      Una dimostrazione sui vostri dati: colleghiamo Daishboard al database e costruiamo
+      insieme le prime tre analisi.
+    </p>
+    <div class="contact">
+      <span><b>Referente</b> [nome]</span>
+      <span><b>Email</b> [indirizzo]</span>
+      <span><b>Telefono</b> [numero]</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var bar = document.getElementById('bar');
+    var cnt = document.getElementById('cnt');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var raf = 0;
+
+    function current() {
+      var i = 0, best = Infinity;
+      for (var k = 0; k < slides.length; k++) {
+        var d = Math.abs(slides[k].getBoundingClientRect().top);
+        if (d < best) { best = d; i = k; }
+      }
+      return i;
+    }
+    function update() {
+      var i = current();
+      bar.style.width = (i / (slides.length - 1) * 100) + '%';
+      cnt.textContent = (i + 1) + ' / ' + slides.length;
+    }
+    function go(n) {
+      var i = Math.max(0, Math.min(slides.length - 1, n));
+      slides[i].scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    window.addEventListener('scroll', function () {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    }, { passive: true });
+
+    window.addEventListener('keydown', function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      var k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Spacebar') {
+        e.preventDefault(); go(current() + 1);
+      } else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') {
+        e.preventDefault(); go(current() - 1);
+      } else if (k === 'Home') {
+        e.preventDefault(); go(0);
+      } else if (k === 'End') {
+        e.preventDefault(); go(slides.length - 1);
+      }
+    });
+
+    update();
+  })();
+</script>
+</body>
+</html>

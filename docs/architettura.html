@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daishboard &mdash; Architettura</title>
+<meta name="description" content="Riferimento tecnico dell'architettura di Daishboard e guida agli ampliamenti.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ink: #1b2126;
+    --muted: #5b6770;
+    --faint: #8b959b;
+    --paper: #f8faf9;
+    --raised: #ffffff;
+    --rule: #e2e6e4;
+    --rule-strong: #cfd5d2;
+    --code-bg: #eef2f0;
+    --code-ink: #1f3a37;
+    --accent: #0d7d78;
+    --accent-ink: #0a5a56;
+    --accent-soft: #e3efeb;
+    --warn: #9a5b16;
+    --focus: #0d7d78;
+    color-scheme: light dark;
+    --measure: 72ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e6ebe8;
+      --muted: #98a3a0;
+      --faint: #6c7a76;
+      --paper: #0e1417;
+      --raised: #151c1f;
+      --rule: #26302e;
+      --rule-strong: #384340;
+      --code-bg: #10201d;
+      --code-ink: #b7ded7;
+      --accent: #3dbcb1;
+      --accent-ink: #6ad2c7;
+      --accent-soft: #14302d;
+      --warn: #d9974f;
+      --focus: #3dbcb1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e6ebe8;
+    --muted: #98a3a0;
+    --faint: #6c7a76;
+    --paper: #0e1417;
+    --raised: #151c1f;
+    --rule: #26302e;
+    --rule-strong: #384340;
+    --code-bg: #10201d;
+    --code-ink: #b7ded7;
+    --accent: #3dbcb1;
+    --accent-ink: #6ad2c7;
+    --accent-soft: #14302d;
+    --warn: #d9974f;
+    --focus: #3dbcb1;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.975rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  a { color: var(--accent-ink); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+
+  code, kbd, pre, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  :not(pre) > code {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    font-size: 0.86em;
+    padding: 0.08em 0.36em;
+    border-radius: 3px;
+    word-break: break-word;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 1.4rem 0;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  /* ---- Masthead ---- */
+  .masthead { border-bottom: 1px solid var(--rule); background: var(--raised); }
+  .masthead .in {
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: 1.15rem clamp(1.25rem, 4vw, 3rem);
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .brand {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+  }
+  .brand span { color: var(--accent); }
+  .masthead .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---- Layout ---- */
+  .layout {
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 3rem);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  @media (min-width: 60rem) {
+    .layout { grid-template-columns: 15rem minmax(0, 1fr); gap: 3.5rem; align-items: start; }
+  }
+
+  nav.toc {
+    padding: 2rem 0 1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  @media (min-width: 60rem) {
+    nav.toc {
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow: auto;
+      padding: 2.5rem 0;
+      border-bottom: 0;
+    }
+  }
+  nav.toc p {
+    margin: 0 0 0.8rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
+  nav.toc a {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.4rem;
+    padding: 0.28rem 0.4rem;
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  nav.toc a:hover { background: var(--code-bg); color: var(--ink); }
+  nav.toc a .k { color: var(--accent); font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; text-align: right; }
+
+  main { padding: 2.5rem 0 5rem; min-width: 0; }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.7rem);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 0.6rem;
+  }
+  .subtitle { margin: 0 0 2.5rem; color: var(--muted); max-width: var(--measure); font-size: 1.02rem; }
+
+  h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 500;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 3.2rem 0 1rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--rule);
+    scroll-margin-top: 1rem;
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  h2 .k {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin-right: 0.55rem;
+  }
+  h3 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    margin: 2rem 0 0.6rem;
+    letter-spacing: -0.005em;
+  }
+
+  main p { max-width: var(--measure); margin: 0.9rem 0; }
+  main ul { max-width: var(--measure); padding-left: 1.2rem; }
+  main li { margin: 0.35rem 0; }
+  strong { font-weight: 600; }
+
+  .lead {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 0 0 2rem;
+    max-width: var(--measure);
+    font-size: 0.94rem;
+  }
+  .lead strong { color: var(--accent-ink); }
+
+  .note {
+    border: 1px solid var(--rule-strong);
+    border-left: 3px solid var(--warn);
+    background: var(--raised);
+    padding: 0.85rem 1.1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1.4rem 0;
+    max-width: var(--measure);
+    font-size: 0.92rem;
+  }
+
+  .table-wrap { overflow-x: auto; margin: 1.4rem 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.88rem;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.55rem 0.85rem 0.55rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  td:first-child, th:first-child { padding-left: 0; }
+  table code { white-space: nowrap; }
+
+  footer.foot {
+    border-top: 1px solid var(--rule);
+    max-width: 78rem;
+    margin: 0 auto;
+    padding: 1.6rem clamp(1.25rem, 4vw, 3rem) 3rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  @media print {
+    :root { --paper: #fff; --raised: #fff; --code-bg: #f2f2f2; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10pt; }
+    nav.toc { display: none; }
+    .layout { display: block; }
+    h2 { break-after: avoid; }
+    pre, table, .note, .lead { break-inside: avoid; }
+    @page { margin: 16mm; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="in">
+    <div class="brand">Daish<span>board</span> &mdash; Architettura</div>
+    <span class="tag">Riferimento tecnico &middot; guida agli ampliamenti</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="Indice">
+    <p>Sezioni</p>
+    <ol>
+      <li><a href="#s0"><span class="k">0</span><span>Cos&rsquo;&egrave;</span></a></li>
+      <li><a href="#s1"><span class="k">1</span><span>Stack</span></a></li>
+      <li><a href="#s2"><span class="k">2</span><span>Multi-dominio</span></a></li>
+      <li><a href="#s3"><span class="k">3</span><span>Governance</span></a></li>
+      <li><a href="#s4"><span class="k">4</span><span>WidgetDatasetRunner</span></a></li>
+      <li><a href="#s5"><span class="k">5</span><span>Legenda &amp; lookup</span></a></li>
+      <li><a href="#s6"><span class="k">6</span><span>DashboardWidget (SQL)</span></a></li>
+      <li><a href="#s7"><span class="k">7</span><span>Viste tabella/grafico</span></a></li>
+      <li><a href="#s8"><span class="k">8</span><span>Panoramiche</span></a></li>
+      <li><a href="#s9"><span class="k">9</span><span>Assistente dati</span></a></li>
+      <li><a href="#s10"><span class="k">10</span><span>Autenticazione</span></a></li>
+      <li><a href="#s11"><span class="k">11</span><span>Trappole note</span></a></li>
+      <li><a href="#s12"><span class="k">12</span><span>Mappa dei file</span></a></li>
+      <li><a href="#s13"><span class="k">13</span><span>Ricette di ampliamento</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <h1>Architettura e guida agli ampliamenti</h1>
+    <p class="subtitle">
+      Riferimento tecnico per estendere la piattaforma, anche in <em>vibe coding</em>:
+      descrivi la feature all&rsquo;assistente, lui parte da qui. La fonte di verit&agrave;
+      resta <code>docs/architettura.md</code>; questa pagina ne &egrave; una resa leggibile.
+    </p>
+
+    <div class="lead">
+      <strong>Regola d&rsquo;oro.</strong> Prima di editare un file, apri
+      <code>.ai/rules/index.md</code>, individua le righe i cui glob coprono il percorso in
+      gioco e leggi quei file di regole. Dopo ogni modifica PHP:
+      <code>vendor/bin/pint --dirty --format agent</code>, poi
+      <code>php artisan test --compact</code>.
+    </div>
+
+    <h2 id="s0"><span class="k">0.</span>Cos&rsquo;&egrave;</h2>
+    <p>
+      Strumento <strong>generico</strong> di analisi per <strong>coorti cliniche</strong>. Si
+      collega in <strong>sola lettura</strong> a un archivio clinico esterno che abbia
+      (almeno) tabelle di <strong>pazienti, visite, trattamenti</strong> e tabelle di
+      lookup/dizionario. Produce dashboard, tabelle ricercabili e grafici
+      <em>riproducibili</em>, con:
+    </p>
+    <ul>
+      <li><strong>studi</strong> = insiemi di filtri di coorte applicati prima di ogni aggregazione;</li>
+      <li><strong>drill-down</strong>: da un totale aggregato all&rsquo;elenco dei singoli pazienti che lo compongono;</li>
+      <li><strong>assistente dati</strong>: domanda in linguaggio naturale &rarr; query SQL di sola lettura;</li>
+      <li><strong>legenda dello schema</strong> + <strong>catalogo lookup</strong> generati per introspezione;</li>
+      <li><strong>condivisione</strong> via link pubblici ed <strong>export</strong> Excel.</li>
+    </ul>
+    <p>
+      Istanza corrente: connessione <code>dbai</code> &rarr; database <code>hassisdadmin</code>
+      (coorte HIV: <code>patients</code>, <code>patient_visits</code>, ~30+ lookup). Lo stesso
+      codice serve altri domini cambiando profilo e puntando <code>dbai</code> altrove.
+    </p>
+
+    <h2 id="s1"><span class="k">1.</span>Stack</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><td>Framework</td><td>Laravel 13, PHP 8.4</td></tr>
+          <tr><td>Admin UI</td><td>Filament 5.7, pannello <code>admin</code> su <code>/admin</code></td></tr>
+          <tr><td>DB app</td><td>connessione default (MySQL in prod, <strong>SQLite <code>:memory:</code> nei test</strong>)</td></tr>
+          <tr><td>DB clinico</td><td>connessione <strong><code>dbai</code></strong>, sola lettura, esterna</td></tr>
+          <tr><td>AI</td><td>NeuronAI (<code>neuron-core/neuron-ai</code>, <code>neuron-core/neuron-laravel</code>) + provider Anthropic</td></tr>
+          <tr><td>Auth</td><td>Filament login / registrazione / reset + Socialite (Google, Microsoft)</td></tr>
+          <tr><td>Excel</td><td><code>pxlrbt/filament-excel</code> + <code>maatwebsite/excel</code></td></tr>
+          <tr><td>Test</td><td>PHPUnit (<code>php artisan test</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Ambiente di sviluppo: repo su WSL Ubuntu-24.04, shell dell&rsquo;assistente su Git Bash
+      Windows &rarr; usare <code>wsl -d ubuntu-24.04 bash -lc '&hellip;'</code>. Gli heredoc con
+      virgolette annidate si corrompono: scrivere file di script.
+    </p>
+
+    <h2 id="s2"><span class="k">2.</span>Multi-dominio &mdash; <code>config/data_navigator.php</code></h2>
+    <p>Un <strong>profilo</strong> descrive un dominio clinico servito da <code>dbai</code>.</p>
+    <pre><code>'profiles' =&gt; [
+  'hiv' =&gt; [
+    'databases' =&gt; ['hassisdadmin'],       // nomi DB serviti da questo profilo
+    'tables'    =&gt; ['patients', 'patient_visits'],
+    'identifier_column' =&gt; 'pazientecode', // sostituisce `id` nelle viste tabella
+    'background' =&gt; '&hellip;', 'steps' =&gt; [...], 'output' =&gt; [...], // testo system prompt AI
+  ],
+  'mediatore' =&gt; [ 'databases' =&gt; ['proforma'], 'tables' =&gt; ['pratiches','provvigioni'], &hellip; ],
+],</code></pre>
+    <p>
+      Risoluzione del profilo attivo (<code>DataNavigatorAgent::resolveProfile()</code> e
+      <code>App\Support\DataNavigatorProfile</code>):
+    </p>
+    <ol>
+      <li><code>DATA_NAVIGATOR_PROFILE</code> env <strong>solo se &egrave; una chiave valida</strong> (altrimenti ignorato &mdash; es. vi &egrave; finito per errore un nome di database);</li>
+      <li>profilo il cui <code>databases</code> contiene <code>DB::connection('dbai')-&gt;getDatabaseName()</code>;</li>
+      <li><code>data_navigator.default</code>.</li>
+    </ol>
+    <p>
+      <code>App\Support\DataNavigatorProfile</code>: <code>databaseName()</code>,
+      <code>forCurrentDatabase()</code>, <code>identifierColumn()</code>.
+    </p>
+    <h3>Aggiungere un cliente / dominio</h3>
+    <ol>
+      <li>nuovo profilo in <code>config/data_navigator.php</code> (<code>databases</code>, <code>tables</code>, <code>identifier_column</code>, testo AI);</li>
+      <li><code>.env</code> di quel deployment: <code>dbai</code> &rarr; il loro database;</li>
+      <li><code>php artisan legend:sync</code> &rarr; documenta le <code>tables</code> del profilo e cataloga i lookup;</li>
+      <li>(opz.) <code>DATA_NAVIGATOR_PROFILE=&lt;chiave&gt;</code> per forzare.</li>
+    </ol>
+
+    <h2 id="s3"><span class="k">3.</span>Propriet&agrave; e visibilit&agrave; dei record (governance)</h2>
+    <h3>Ruoli &mdash; <code>App\Models\User</code></h3>
+    <ul>
+      <li><code>isSuperAdmin()</code> = <code>is_admin &amp;&amp; company_id === null</code></li>
+      <li><code>isAdmin()</code> = <code>is_admin</code></li>
+      <li><code>is_admin</code>: cast <code>boolean</code>, default DB <code>true</code>; i metodi fanno <code>(bool)</code> per tollerare l&rsquo;istanza non ricaricata.</li>
+    </ul>
+    <h3>Colonne</h3>
+    <p>
+      <code>dashboard_widgets</code>, <code>dashboards</code>, <code>projects</code>,
+      <code>chat_messages</code>: <code>company_id</code> + <code>user_id</code> (nullable).
+      <code>users</code>: <code>company_id</code>, <code>is_admin</code>,
+      <strong><code>project_id</code></strong>, <strong><code>dashboard_id</code></strong>.
+      <code>menu_categories</code> / <code>projects</code> / <code>schema_legends</code>:
+      <code>database</code> (varchar).
+    </p>
+    <h3>Lato creazione &mdash; <code>App\Models\Concerns\StampsOwnership</code></h3>
+    <p>Trait su <code>DashboardWidget</code>, <code>Dashboard</code>, <code>Project</code>. Hook <code>creating</code>, per ruolo di chi crea:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ruolo</th><th><code>company_id</code></th><th><code>user_id</code></th></tr></thead>
+        <tbody>
+          <tr><td>superadmin</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>admin azienda</td><td>company dell&rsquo;utente</td><td>&mdash;</td></tr>
+          <tr><td>utente normale</td><td>company dell&rsquo;utente</td><td>id utente</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Valori <strong>non-null</strong> passati esplicitamente a <code>create()</code> sono
+      preservati (<code>null</code> = &laquo;non impostato&raquo;). <code>bootStampsOwnership</code>
+      convive con il <code>booted()</code> del modello.
+    </p>
+    <h3>Lato lettura</h3>
+    <ul>
+      <li><strong>Global scope <code>owned</code></strong> su <code>DashboardWidget</code> (in <code>booted()</code>): nessun utente &rarr; <code>0 = 1</code>; superadmin &rarr; nessun filtro; admin &rarr; <code>(company_id IS NULL OR = X)</code>; normale &rarr; quello <strong>AND</strong> <code>(user_id IS NULL OR = id)</code>. I record globali (colonne NULL) restano visibili a tutti.</li>
+      <li><strong><code>App\Support\CompanyScope::byOwner($query)</code></strong> &mdash; stessa logica di ruolo, applicata esplicitamente dove il global scope non basta: <code>DashboardChartsOverview::topLevelMasters()</code>, <code>DashboardWidgetsTable</code>, <code>DataAssistant</code>.</li>
+      <li><strong><code>CompanyScope::byDatabase($query, $col = 'database')</code></strong> &mdash; <code>(database IS NULL OR = company-&gt;database)</code>; nessun filtro se l&rsquo;utente non ha company con database. Usato su <code>menu_categories</code>, <code>projects</code>, <code>schema_legends</code>.</li>
+      <li><code>Dashboard</code> ha un global scope <code>owned</code> attivo; quello di <code>Project</code> &egrave; disattivato (metodo <code>bootedx</code>).</li>
+    </ul>
+    <h3>Ultima selezione &mdash; <code>User::rememberSelection()</code></h3>
+    <p><code>users.project_id</code> / <code>dashboard_id</code> memorizzano l&rsquo;ultima scelta, riproposta al login.</p>
+    <ul>
+      <li><code>rememberSelection(int|false|null $projectId = null, int|false|null $dashboardId = null)</code> &rarr; <code>saveQuietly</code> (<code>null</code> = lascia, <code>false</code> = azzera);</li>
+      <li><code>DashboardChartsOverview</code> / <code>DashboardTablesOverview</code>: al <code>mount()</code> &laquo;pulito&raquo; prendono <code>dashboardId</code> da <code>auth()-&gt;user()-&gt;dashboard_id</code>; lo salvano a ogni cambio dashboard esplicito;</li>
+      <li><code>Project::storeCurrentFilters()</code> tiene <code>users.project_id</code> puntato allo studio corrente (<code>User::withoutGlobalScopes()-&gt;update</code>);</li>
+      <li><code>DashboardChartsOverview::mount()</code> preferisce <code>auth()-&gt;user()-&gt;project</code> a <code>Project::currentFor()</code>.</li>
+    </ul>
+
+    <h2 id="s4"><span class="k">4.</span>Esecuzione dei dataset &mdash; <code>App\Services\WidgetDatasetRunner</code></h2>
+    <p>
+      <code>run(?string $sql, array $columnFilters = [])</code> &rarr;
+      <code>{columns, rows, numericColumns, error}</code>. Esegue su <code>dbai</code>. Solo
+      <code>SELECT</code> (guardia con regex). Unico punto di verit&agrave; condiviso da UI
+      Filament e vista pubblica.
+    </p>
+    <p><code>$columnFilters</code> = <strong>elenco unito</strong> di filtri di coorte:</p>
+    <ul>
+      <li>voce <strong>data</strong>: <code>{column: 'patients.arruolato', from, to}</code> &rarr; <code>`alias`.`col` &gt;= ? / &lt;= ?</code></li>
+      <li>voce <strong>valore</strong>: <code>{column: 'patient_visits.fumo_id', values: ['si','ex']}</code> &rarr; <code>`alias`.`col` IN (?, &hellip;)</code></li>
+      <li>iniettati <strong>prima del <code>GROUP BY</code></strong> e <strong>solo</strong> se la tabella di coorte (<code>COHORT_TABLES = ['patients','patient_visits']</code>) compare nel SQL. La stringa vuota <code>''</code> &egrave; un valore lookup legittimo.</li>
+    </ul>
+    <p>
+      Metodi: <code>dateFilterMetadata($sql)</code>, <code>describeFilters($sql, $filters)</code>,
+      <code>applyFilters</code>, <code>injectCohortPredicate</code> (mascheramento a
+      profondit&agrave; di parentesi per trovare il confine della clausola top-level),
+      <code>resolveCohortTableAliases</code>.
+    </p>
+    <p>
+      Semantica date di coorte: <code>App\Enums\DateFieldCategory</code>,
+      <code>App\Services\DateFieldSemanticsMap</code>,
+      <code>App\Services\ResearchDateRangeResolver</code> (preset per categoria),
+      <code>App\Services\DateRangeResolver</code> (preset generici).
+    </p>
+    <p>
+      <code>App\Support\CohortFilterCatalog</code> &mdash; costruisce le opzioni dei form
+      (colonne data, preset, colonne valore = lookup o <code>tinyint</code>/flag, valori
+      ammessi) da <code>schema_legends</code>. Cache statica; <code>::flush()</code> nei test
+      dopo <code>legend:sync</code>. Consumato da <code>ProjectForm</code>.
+    </p>
+    <p>
+      <code>Project::cohortFilters()</code> =
+      <code>array_merge(date_filters, value_filters)</code> filtrato a voci con <code>column</code>.
+    </p>
+
+    <h2 id="s5"><span class="k">5.</span>Legenda schema &amp; catalogo lookup</h2>
+    <h3><code>php artisan legend:sync</code> &mdash; <code>App\Console\Commands\SyncSchemaLegend</code></h3>
+    <ul>
+      <li>documenta le tabelle del <strong>profilo attivo</strong> (fallback <code>config('legend.tables')</code>) in <code>schema_legends</code> + <code>schema_legend_columns</code>: <code>name, data_type, nullable, position, comment, date_category, date_ranges, foreign_key_name, lookup_table, lookup_key, lookup_label, lookup_values</code>, con <code>database</code> = nome DB collegato;</li>
+      <li>cataloga <strong>tutte le altre</strong> tabelle <code>dbai</code> in <code>lookup_tables</code> (via <code>information_schema.TABLES</code>, esclude i pattern <code>config('legend.lookup_exclude')</code> + le tabelle entit&agrave;), agganciando i valori se la tabella &egrave; piccola;</li>
+      <li>collega automaticamente lookup &harr; colonne via pivot <code>lookup_table_column</code> (<code>syncWithoutDetaching</code>).</li>
+    </ul>
+    <h3><code>App\Services\TableSchemaInspector</code></h3>
+    <p>
+      Introspezione DB con cache, connection-aware: <code>getDateFilterableColumns</code>,
+      <code>getAllColumnsWithComments</code>, <code>getTableComment</code>,
+      <code>getForeignKeys</code>, <code>getLookupValues</code>.
+    </p>
+    <h3>Modelli e UI</h3>
+    <ul>
+      <li><code>SchemaLegend</code> hasMany <code>SchemaLegendColumn</code>; <code>SchemaLegendColumn</code> belongsToMany <code>LookupTable</code> (<code>lookup_table_column</code>); <code>LookupTable</code> belongsToMany <code>columns</code>, <code>liveValues()</code>.</li>
+      <li><code>SchemaLegendResource</code> &mdash; vista legenda; cliccando un campo con lookup si apre <code>lookup-tables/{id}</code>.</li>
+      <li><code>LookupTableResource</code> &mdash; nav group <strong>Lookup</strong>; vede i valori; <code>ColumnsRelationManager</code> lega/slega la lookup ai campi di pazienti/visite (<code>isReadOnly()</code> &rarr; <code>false</code>).</li>
+    </ul>
+
+    <h2 id="s6"><span class="k">6.</span><code>App\Models\DashboardWidget</code> &mdash; trasformazioni SQL</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Metodo</th><th>Cosa fa</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>convertSqlStringToDrillDown($sql, $filters=[])</code></td>
+            <td>rimuove <code>GROUP BY</code>/<code>HAVING</code>/<code>ORDER BY</code> top-level; spacchetta le voci aggregate della SELECT nel campo interno; se l&rsquo;unica aggregata era <code>COUNT(*)</code>/<code>COUNT(1)</code> &rarr; <code>SELECT *</code>; aggiunge <code>col = 'v'</code> / <code>col IS NULL</code> da <code>$filters</code> (chiave = espressione SQL)</td>
+          </tr>
+          <tr>
+            <td><code>selectDimensionExpressions($sql)</code></td>
+            <td><code>alias(minuscolo) =&gt; espressione SQL</code> per le voci <strong>non</strong> aggregate di una SELECT singola e raggruppata (solo <code>espr AS alias</code> e identificatori semplici; espressioni complesse senza <code>AS</code> ignorate)</td>
+          </tr>
+          <tr>
+            <td><code>swapSelectIdentifier($sql, $identifier)</code></td>
+            <td>riscrive <strong>solo</strong> le voci di primo livello che sono <code>id</code> / <code>t.id</code> (con eventuale <code>AS id</code>) &rarr; <code>t.&lt;identifier&gt;</code></td>
+          </tr>
+          <tr><td><code>splitTopLevel($list)</code></td><td>split su virgola rispettando le parentesi</td></tr>
+          <tr><td><code>convertToDrillDown(Builder, $filters)</code></td><td>variante query-builder (poco usata)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Relazioni: <code>dashboard</code>, <code>company</code>, <code>user</code>,
+      <code>project</code>, <code>chatHistory</code>, <code>masterWidget</code>,
+      <code>detailWidgets</code> (self hasMany su <code>master_widget_id</code>),
+      <code>shares</code>.
+    </p>
+    <p>
+      Colonne rilevanti: <code>master_widget_id</code>, <code>master_filter_column</code>,
+      <code>type</code>, <code>query</code>, <code>settings</code> (array),
+      <code>grid_position</code> (array), <code>order</code>, <code>is_active</code>,
+      <code>project_id</code>.
+    </p>
+
+    <h2 id="s7"><span class="k">7.</span>Viste tabella e grafico</h2>
+    <h3>Trait <code>&hellip;\DashboardWidgets\Concerns\InteractsWithWidgetDataset</code></h3>
+    <p>Condiviso da <code>ViewDashboardWidget</code> e <code>ChartDashboardWidget</code>.</p>
+    <ul>
+      <li><code>bootWidgetDataset($record)</code> &mdash; carica il widget (con <code>project</code>), imposta le prop <code>#[Locked]</code> (<code>recordId</code>, <code>widgetTitle</code>, <code>widgetType</code>, <code>widgetQuery</code>, <code>widgetProjectId</code>, <code>projectCohortFilters</code>), costruisce i metadati dei filtri data.</li>
+      <li><code>runQuery()</code> &rarr; <code>WidgetDatasetRunner::run($this-&gt;datasetQuery(), $this-&gt;cohortFilters())</code>.</li>
+      <li><code>datasetQuery()</code> &mdash; hook <strong>sovrascrivibile</strong> (default = <code>widgetQuery</code>).</li>
+      <li><code>cohortFilters()</code> = <code>[...$projectCohortFilters, ...$activeDateFilters()]</code> (tutto in AND).</li>
+      <li><code>dateFilterHeaderActions()</code> &mdash; modale &laquo;Filtro coorte&raquo; (repeater: <code>column</code>, <code>preset</code>, <code>from</code>, <code>to</code>).</li>
+    </ul>
+    <h3><code>ViewDashboardWidget</code></h3>
+    <ul>
+      <li>Tabella <strong>custom-data</strong> via <code>-&gt;records(closure)</code> (non Eloquent). Parametri iniettati: <code>?string $sortColumn, ?string $sortDirection, int $page, int $recordsPerPage, ?string $search</code>. Ordinamento / ricerca / paginazione <strong>gestiti nella closure</strong>.</li>
+      <li><strong>Ricerca</strong>: ogni colonna <strong>non numerica</strong> ha <code>-&gt;searchable()</code>; il filtro effettivo &egrave; in <code>rowMatchesSearch($row, $search)</code> (sottostringa case-insensitive su tutte le colonne non numeriche).</li>
+      <li><strong>Azioni</strong>: tutte nell&rsquo;<strong>header della tabella</strong> (<code>-&gt;headerActions($this-&gt;tableHeaderActions())</code>), <strong>non</strong> in <code>getHeaderActions()</code> &rarr; l&rsquo;header di pagina (titolo + sottotitolo) resta a piena larghezza. Nessun <code>-&gt;heading()</code> sulla tabella.</li>
+      <li><strong><code>id</code> &rarr; identificatore parlante</strong>: <code>datasetQuery()</code> passa il SQL (widget e drill-down) in <code>swapSelectIdentifier</code> quando <code>DataNavigatorProfile::identifierColumn()</code> &egrave; valorizzato.</li>
+      <li><strong>Drill-down master/dettaglio</strong> (preesistente): la cella numerica apre la vista del widget figlio con query param <code>masterFilterColumn</code> / <code>masterFilterValue</code> / <code>MasterFilterField</code>.</li>
+      <li><strong>Drill-down generato</strong>: su widget aggregato (SELECT singola + <code>GROUP BY</code>) <strong>senza figli</strong>, la cella numerica ricarica la stessa pagina con <code>?drill=&lt;base64url(JSON)&gt;</code> = <strong>lista</strong> di <code>{label, expr, value}</code> per le dimensioni non numeriche della riga. <code>decodeDrill()</code> accetta anche la vecchia mappa <code>{expr: value}</code>. In drill: <code>datasetQuery()</code> = <code>convertSqlStringToDrillDown(widgetQuery, {expr:value})</code> + <code>swapSelectIdentifier</code> + <code>LIMIT 2000</code>. Sottotitolo = <code>label = value</code> (valore troncato a 60). Azione &laquo;Torna all&rsquo;aggregato&raquo;.</li>
+      <li><strong>Export Excel</strong>: <code>App\Exports\WidgetDatasetExport</code> (<code>FromArray, WithHeadings, ShouldAutoSize, WithTitle</code>) via <code>Excel::download(...)</code>.</li>
+      <li><strong>Link pubblico</strong>: azione <code>share</code> &rarr; <code>DashboardWidgetShare::create([... 'project_id' =&gt; $widgetProjectId, 'parameters' =&gt; ['dateFilters' =&gt; activeDateFilters()], 'include_children', 'expires_at' ])</code>. Rotte <code>shared.widget</code> / <code>shared.widget.child</code> (no auth, throttle) &rarr; <code>App\Http\Controllers\SharedWidgetController</code>, che applica <code>$share-&gt;project?-&gt;cohortFilters()</code> + <code>dateFilters</code> memorizzati.</li>
+    </ul>
+    <h3><code>DashboardWidgetChart</code> + <code>ChartDashboardWidget</code></h3>
+    <p>
+      <code>ChartWidget</code> (Chart.js). Tipo di default da <code>dashboard_widget-&gt;type</code>
+      via <code>App\Support\ChartType</code> (<code>label()</code>, <code>icon()</code>,
+      <code>resolveType()</code>), modificabile. Colori variati per serie Y <strong>e</strong>
+      per categoria X.
+    </p>
+    <div class="note">
+      Il <code>normalizeDatasets</code> compilato di Filament deriva <code>borderColor</code>
+      solo dal <code>backgroundColor</code> del dataset &rarr; impostare l&rsquo;array di colori
+      a livello di dataset, non nelle <code>options</code>.
+    </div>
+
+    <h2 id="s8"><span class="k">8.</span>Pagine di panoramica (<code>app/Filament/Pages/</code>, auto-discovered)</h2>
+    <h3><code>DashboardChartsOverview</code> &mdash; grafici</h3>
+    <ul>
+      <li><code>#[Url] ?int $master, ?int $dashboardId</code>.</li>
+      <li><code>topLevelMasters()</code> = <code>CompanyScope::byOwner(DashboardWidget::query()) -&gt;whereNull('master_widget_id') -&gt;where('is_active', true) -&gt;whereRaw("COALESCE(LOWER(type),'') &lt;&gt; 'table'") -&gt;where('dashboard_id', &hellip;)</code>.</li>
+      <li>Griglia di grafici master (3 per riga &rarr; <code>&lt;style&gt;</code> inline: le classi responsive arbitrarie di Tailwind <strong>non</strong> sono nella CSS precompilata di Filament). Click su un master &rarr; i suoi figli (<code>?master={id}</code>).</li>
+      <li>Filtri di coorte dallo studio corrente; modale &laquo;Filtri studio&raquo; &rarr; <code>Project::storeCurrentFilters</code>.</li>
+    </ul>
+    <h3><code>DashboardTablesOverview</code> &mdash; nav &laquo;Tabelle&raquo;</h3>
+    <ul>
+      <li><strong>Elenco</strong> a drill-down (non esegue SQL). <code>#[Url] ?int $category</code> (0 = senza categoria), <code>?int $dashboardId</code>, <code>?int $master</code>. <code>level</code> &isin; <code>categories | dashboards | masters | children</code>.</li>
+      <li>Solo widget <code>COALESCE(LOWER(type),'') = 'table'</code>; categorie/dashboard filtrate con <code>whereHas</code> a quelle che contengono almeno una tabella.</li>
+      <li><code>rebuild()</code> risale la catena dal parametro pi&ugrave; profondo; memorizza <code>users.dashboard_id</code>.</li>
+      <li>Blade: <code>&lt;ul&gt;</code>; le righe widget linkano a <code>ViewDashboardWidget</code>; i master con figli hanno un link &laquo;N figli&raquo;.</li>
+    </ul>
+    <h3><code>DashboardWidgetsTable</code> (risorsa lista)</h3>
+    <ul>
+      <li><code>-&gt;modifyQueryUsing(fn ($q) =&gt; CompanyScope::byOwner($q))</code>.</li>
+      <li>Colonna <code>type</code>: link a <code>view</code> se <code>strtolower(type) === 'table'</code>, altrimenti a <code>chart</code>.</li>
+      <li>Filtri: <code>dashboard_id</code> (default = <code>auth()-&gt;user()?-&gt;dashboard_id</code> ?? prima dashboard); <code>is_table</code> (<code>SelectFilter</code>, placeholder &laquo;Tutti&raquo;, opzioni <code>table</code> / <code>not_table</code> &rarr; <code>whereRaw("COALESCE(LOWER(type),'') = / &lt;&gt; 'table'")</code>).</li>
+    </ul>
+
+    <h2 id="s9"><span class="k">9.</span>Assistente dati</h2>
+    <h3><code>App\Neuron\DataNavigatorAgent</code></h3>
+    <ul>
+      <li>estende <code>NeuronAI\Agent\Agent</code>. <strong>Sola lettura</strong>: <code>tools()</code> = <strong>solo</strong> <code>MySQLSchemaTool::make($pdodbai)</code> + <code>MySQLSelectTool::make($pdodbai)</code>. <strong>MAI</strong> <code>MySQLToolkit</code> (include il write tool).</li>
+      <li><code>provider()</code> = <code>new Anthropic(key: env('ANTHROPIC_API_KEY'), model: env('ANTHROPIC_MODEL','claude-sonnet-4-6'), max_tokens: 8192)</code> (eccezione se chiave vuota).</li>
+      <li><code>instructions()</code> = dal profilo attivo: <code>prompt</code> grezzo (segnaposti <code>{schema}</code>, <code>{database}</code>, <code>{connection}</code>) <strong>oppure</strong> <code>SystemPrompt(background:[profilo.background, schemaSection()], steps:[&hellip;], output:[&hellip;])</code>.</li>
+      <li><code>schemaSection()</code> &mdash; da <code>SchemaLegend::whereIn('table_name', profilo.tables) -&gt;where('database', $db)-&gt;orWhereNull('database')</code>: nomi reali, commenti, <code>[DATE reale]</code>, valori lookup. Testo di fallback se la legenda non &egrave; sincronizzata.</li>
+      <li><code>chatHistory()</code> = <code>EloquentChatHistory(threadId, modelClass: App\Models\ChatMessage, contextWindow: 150000)</code>.</li>
+    </ul>
+    <h3><code>App\Models\ChatMessage extends NeuronAI\Laravel\Models\ChatMessage</code></h3>
+    <p>
+      <code>$table = 'chat_messages'</code>; <code>content</code>/<code>meta</code> cast
+      <code>array</code>; <code>company_id</code>/<code>user_id</code> auto in <code>creating</code>
+      da auth.
+    </p>
+    <div class="note">
+      NeuronAI salva i blocchi di testo con chiave <code>content</code> (non <code>text</code>)
+      &rarr; <code>DataAssistant::renderContent()</code> legge <code>$block['content']</code>.
+    </div>
+    <h3><code>App\Filament\Pages\DataAssistant</code></h3>
+    <ul>
+      <li>Thread per utente: prefisso <code>u{userId}-{ulid}</code>; <code>#[Url]</code> + sessione.</li>
+      <li>Sidebar <code>recentThreads()</code>: <code>thread_id</code> distinti con <code>user_id = auth id</code>, <code>MAX(created_at)</code>, conteggio, etichetta dal primo messaggio utente. Bottoni con <code>wire:key</code> + <code>wire:click="openThread('&hellip;')"</code>.</li>
+      <li><code>openThread($thread)</code> valida la propriet&agrave; poi <code>loadMessages()</code>.</li>
+      <li>&laquo;Crea widget&raquo; sotto un messaggio assistente &rarr; inserisce l&rsquo;SQL mostrato in <code>dashboard_widgets-&gt;query</code>, <code>title</code> = la domanda. <code>extractSql()</code> legge i blocchi <code>```sql</code> e il fallback <code>(WITH|SELECT) &hellip; ;</code>.</li>
+    </ul>
+
+    <h2 id="s10"><span class="k">10.</span>Autenticazione</h2>
+    <ul>
+      <li>Filament: <code>-&gt;login()-&gt;registration()-&gt;passwordReset()</code>.</li>
+      <li>Socialite: <code>dutchcodingcompany/filament-socialite</code> (plugin nel pannello) + provider <code>socialiteproviders/google</code>, <code>socialiteproviders/microsoft</code> (e <code>openidconnect</code>). I provider SocialiteProviders <strong>non</strong> sono driver nativi: i listener per <code>SocialiteProviders\Manager\SocialiteWasCalled</code> sono registrati in <code>AppServiceProvider::boot()</code> (<code>MicrosoftExtendSocialite</code>, <code>GoogleExtendSocialite</code>).</li>
+      <li><code>config/services.php</code> &rarr; blocchi <code>microsoft</code> (con <code>tenant</code> = <code>MICROSOFT_TENANT_ID</code>) e <code>google</code>.</li>
+      <li>Callback: <code>admin/oauth/callback/{provider}</code>.</li>
+    </ul>
+
+    <h2 id="s11"><span class="k">11.</span>Trappole note</h2>
+    <ul>
+      <li><strong>Global scope su <code>User</code></strong>: mai un global scope che chiama <code>auth()-&gt;user()</code> &mdash; l&rsquo;user provider ricarica <code>User</code> durante l&rsquo;autenticazione &rarr; ricorsione / loop di login. La visibilit&agrave; utenti va in <code>UserResource::getEloquentQuery()</code>, non in un global scope.</li>
+      <li><strong>Modelli in Livewire</strong>: non serializzare un modello Eloquent in una pagina Livewire (TypeError in re-hydration). Usare <code>#[Locked] public int|string $recordId</code> + prop scalari.</li>
+      <li><strong>Filament custom-data table</strong> (<code>-&gt;records()</code>): ricerca / ordinamento / paginazione a carico della closure, non di Filament.</li>
+      <li><strong>Tailwind + Filament</strong>: classi arbitrarie/responsive non presenti nella CSS precompilata del pannello &rarr; <code>&lt;style&gt;</code> inline.</li>
+      <li><strong>Livewire <code>#[Url]</code> int</strong>: <code>0</code> resta in URL; <code>null</code> sparisce con <code>keep: false</code>.</li>
+      <li><strong>Test</strong>: connessione default SQLite <code>:memory:</code> + <code>RefreshDatabase</code>; i test di <code>WidgetDatasetRunner</code> / legenda colpiscono il <strong>vero</strong> MySQL <code>dbai</code> (<code>hassisdadmin</code>).</li>
+      <li><strong><code>is_admin</code> null</strong>: <code>DashboardWidget::creating</code> chiama <code>auth()-&gt;user()?-&gt;isAdmin()</code> &mdash; <code>is_admin</code> non deve essere <code>null</code> sull&rsquo;istanza in memoria (cast boolean + default DB + <code>(bool)</code> nei metodi lo gestiscono).</li>
+      <li><strong>NeuronAI content</strong>: chiave <code>content</code>, non <code>text</code> (vedi <a href="#s9">&sect;9</a>).</li>
+      <li><strong><code>DATA_NAVIGATOR_PROFILE</code></strong>: se non &egrave; una chiave di profilo valida viene ignorato (non lancia).</li>
+    </ul>
+
+    <h2 id="s12"><span class="k">12.</span>Mappa dei file</h2>
+    <pre><code>config/
+  data_navigator.php        profili di dominio (tabelle, identifier_column, prompt AI)
+  legend.php                connessione, tabelle fallback, esclusioni lookup
+
+app/Support/
+  DataNavigatorProfile.php  profilo per il DB collegato; identifierColumn()
+  CompanyScope.php          byOwner() (ruolo-aware), byDatabase()
+  CohortFilterCatalog.php   opzioni form filtri di coorte da schema_legends
+  ChartType.php             label/icona/tipo grafico
+
+app/Services/
+  WidgetDatasetRunner.php   esegue il SQL su dbai + inietta i filtri di coorte
+  TableSchemaInspector.php  introspezione DB (cache)
+  DateFieldSemanticsMap.php / ResearchDateRangeResolver.php / DateRangeResolver.php
+
+app/Models/
+  DashboardWidget.php       trasformazioni SQL (drill-down, swapSelectIdentifier)
+  Dashboard.php / Project.php / User.php / ChatMessage.php
+  SchemaLegend.php / SchemaLegendColumn.php / LookupTable.php
+  DashboardWidgetShare.php
+  Concerns/StampsOwnership.php
+
+app/Console/Commands/
+  SyncSchemaLegend.php      legend:sync
+
+app/Neuron/
+  DataNavigatorAgent.php    agente NeuronAI di sola lettura
+
+app/Filament/
+  Pages/DataAssistant.php
+  Pages/DashboardChartsOverview.php
+  Pages/DashboardTablesOverview.php
+  Resources/DashboardWidgets/
+    Pages/ViewDashboardWidget.php      tabella + drill-down + ricerca + share + export
+    Pages/ChartDashboardWidget.php
+    Concerns/InteractsWithWidgetDataset.php
+    Schemas/DashboardWidgetForm.php    (select project_id filtrata per database dashboard)
+    Tables/DashboardWidgetsTable.php
+  Resources/SchemaLegends/ , Resources/LookupTables/ , Resources/Projects/
+  Widgets/DashboardWidgetChart.php
+
+app/Http/Controllers/SharedWidgetController.php   vista pubblica (no auth)
+app/Exports/WidgetDatasetExport.php
+
+.ai/rules/                  regole per-percorso (leggere index.md prima di editare)</code></pre>
+
+    <h2 id="s13"><span class="k">13.</span>Ricette di ampliamento (partenze per il vibe coding)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Obiettivo</th><th>Dove intervenire</th></tr></thead>
+        <tbody>
+          <tr><td>Nuovo dominio/cliente clinico</td><td>profilo in <code>config/data_navigator.php</code> + <code>legend:sync</code></td></tr>
+          <tr><td>Nuovo tipo di grafico</td><td><code>App\Support\ChartType</code> + <code>DashboardWidgetChart::resolveType</code></td></tr>
+          <tr><td>Nuovo tipo di filtro di coorte</td><td><code>WidgetDatasetRunner::applyFilters</code> + <code>CohortFilterCatalog</code> + <code>ProjectForm</code></td></tr>
+          <tr><td>Nuova pagina/voce di menu</td><td>classe in <code>app/Filament/Pages/</code> (auto-discovered)</td></tr>
+          <tr><td>Cambiare la sostituzione <code>id &rarr; identificatore</code></td><td><code>DataNavigatorProfile</code> + <code>DashboardWidget::swapSelectIdentifier</code></td></tr>
+          <tr><td>Nuova regola di dominio per l&rsquo;assistente</td><td><code>background</code>/<code>steps</code>/<code>output</code> del profilo in <code>config/data_navigator.php</code></td></tr>
+          <tr><td>Nuovo scoping di visibilit&agrave;</td><td><code>CompanyScope</code> + eventuale global scope <code>owned</code> del modello</td></tr>
+          <tr><td>Nuova azione sulla vista tabella</td><td><code>ViewDashboardWidget::tableHeaderActions()</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Dopo ogni modifica: <code>vendor/bin/pint --dirty --format agent</code> &rarr;
+      <code>php artisan test --compact</code>. Registrare le decisioni durature con
+      <code>record-rule</code> (Boost), non nella memoria personale.
+    </p>
+  </main>
+</div>
+
+<footer class="foot">
+  Daishboard &mdash; riferimento tecnico. Fonte: <code>docs/architettura.md</code>.
+</footer>
+
+</body>
+</html>
