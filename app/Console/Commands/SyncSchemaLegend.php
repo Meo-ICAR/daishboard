@@ -21,10 +21,10 @@ use Illuminate\Support\Str;
  */
 class SyncSchemaLegend extends Command
 {
-    protected $signature = 'legend:sync {tables?* : Tabelle legenda da sincronizzare (default: config legend.tables)}
+    protected $signature = 'legend:sync {tables?* : Tabelle legenda da sincronizzare (default: tabelle del profilo DataNavigator attivo)}
         {--no-lookups : Non aggiornare il catalogo delle tabelle lookup}';
 
-    protected $description = 'Sincronizza la legenda (patients, patient_visits, ...) e il catalogo delle tabelle lookup';
+    protected $description = 'Sincronizza la legenda delle tabelle principali e il catalogo delle tabelle lookup';
 
     public function handle(
         TableSchemaInspector $inspector,
@@ -35,8 +35,13 @@ class SyncSchemaLegend extends Command
         $database = DB::connection($connection)->getDatabaseName();
         $limit = (int) config('legend.lookup_value_limit', 500);
         $enumMax = (int) config('legend.lookup_enum_max', 150);
-        $entityTables = (array) config('legend.tables', []);
-        $tables = $this->argument('tables') ?: config('legend.tables', ['patients', 'patient_visits']);
+
+        // Tabelle principali: dal profilo DataNavigator del database collegato,
+        // con fallback su config/legend.tables.
+        $entityTables = $this->profileTables($database);
+        $tables = $this->argument('tables') ?: $entityTables;
+
+        $this->info("Legenda per il database '{$database}': ".implode(', ', $tables).'.');
 
         foreach ($tables as $order => $table) {
             if (! Schema::connection($connection)->hasTable($table)) {
@@ -98,6 +103,28 @@ class SyncSchemaLegend extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Tabelle principali del profilo DataNavigator che serve il database
+     * indicato; fallback su config/legend.tables.
+     *
+     * @return list<string>
+     */
+    protected function profileTables(string $database): array
+    {
+        foreach ((array) config('data_navigator.profiles', []) as $profile) {
+            if (in_array($database, (array) ($profile['databases'] ?? []), true)) {
+                return array_values(array_filter((array) ($profile['tables'] ?? []), 'is_string'));
+            }
+        }
+
+        $default = config('data_navigator.profiles.'.config('data_navigator.default').'.tables');
+
+        return array_values(array_filter(
+            (array) ($default ?: config('legend.tables', ['patients', 'patient_visits'])),
+            'is_string',
+        ));
     }
 
     /**

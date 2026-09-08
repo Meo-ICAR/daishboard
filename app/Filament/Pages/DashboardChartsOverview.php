@@ -21,7 +21,6 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
-
 use Throwable;
 
 /**
@@ -183,8 +182,9 @@ class DashboardChartsOverview extends Page
      */
     protected function topLevelMasters()
     {
-        return CompanyScope::byOwner(DashboardWidget::query())
+        return CompanyScope::byOwner(DashboardWidget::query()->where('type', '!=', 'table'))
             ->whereNull('master_widget_id')
+
             ->where('is_active', true)
             ->when($this->dashboardId !== null, fn ($query) => $query->where('dashboard_id', $this->dashboardId))
             ->orderBy('order')

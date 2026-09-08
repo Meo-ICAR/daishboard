@@ -6,6 +6,7 @@ namespace App\Neuron;
 
 use App\Models\ChatMessage;
 use App\Models\SchemaLegend;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use NeuronAI\Agent\Agent;
@@ -21,9 +22,14 @@ use PDO;
 use RuntimeException;
 
 /**
- * Assistente che traduce domande in linguaggio naturale dei ricercatori in
- * query SQL di sola lettura sul database di coorte HIV (connessione `dbai`).
- * Sola lettura: esposti solo gli strumenti di schema e SELECT.
+ * Assistente che traduce domande in linguaggio naturale in query SQL di sola
+ * lettura sul database collegato dalla connessione read-only (`dbai`).
+ *
+ * Il DOMINIO (tabelle principali + regole di sicurezza/di dominio del system
+ * prompt) è scelto tramite un "profilo" di `config/data_navigator.php`,
+ * risolto dal nome del database realmente collegato: così lo stesso agente
+ * serve più clienti (coorte HIV, mediatore creditizio, ...) puntando `dbai`
+ * al database giusto. Sola lettura: esposti solo gli strumenti di schema e SELECT.
  */
 class DataNavigatorAgent extends Agent
 {
@@ -33,12 +39,30 @@ class DataNavigatorAgent extends Agent
 
     protected PDO $pdodbai;
 
+    protected string $connectionName;
+
+    protected string $databaseName;
+
+    /**
+     * Profilo di dominio attivo.
+     *
+     * @var array{label?: string, databases?: list<string>, tables?: list<string>, prompt?: string, background?: string, steps?: list<string>, output?: list<string>}
+     */
+    protected array $profile;
+
+    protected string $profileKey;
+
     public function __construct()
     {
         parent::__construct();
 
+        $this->connectionName = (string) config('data_navigator.connection', 'dbai');
+
         $this->pdo = DB::connection()->getPdo();
-        $this->pdodbai = DB::connection('dbai')->getPdo();
+        $this->pdodbai = DB::connection($this->connectionName)->getPdo();
+        $this->databaseName = DB::connection($this->connectionName)->getDatabaseName();
+
+        [$this->profileKey, $this->profile] = $this->resolveProfile();
     }
 
     public function setThreadId(string $threadId): self
@@ -46,6 +70,43 @@ class DataNavigatorAgent extends Agent
         $this->threadId = $threadId;
 
         return $this;
+    }
+
+    /**
+     * Profilo di dominio: forzato da `data_navigator.profile`, altrimenti quello
+     * il cui elenco `databases` contiene il database collegato, altrimenti il
+     * profilo di default.
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected function resolveProfile(): array
+    {
+        /** @var array<string, array<string, mixed>> $profiles */
+        $profiles = (array) config('data_navigator.profiles', []);
+
+        if ($profiles === []) {
+            throw new RuntimeException('Nessun profilo definito in config/data_navigator.php.');
+        }
+
+        $forced = config('data_navigator.profile');
+
+        $key = $forced
+            ?: collect($profiles)
+                ->search(fn (array $profile): bool => in_array(
+                    $this->databaseName,
+                    (array) ($profile['databases'] ?? []),
+                    true,
+                ))
+            ?: config('data_navigator.default');
+
+        if (! is_string($key) || ! isset($profiles[$key])) {
+            throw new RuntimeException(
+                "Nessun profilo DataNavigator per il database '{$this->databaseName}'. "
+                .'Aggiungine uno in config/data_navigator.php o imposta DATA_NAVIGATOR_PROFILE.'
+            );
+        }
+
+        return [$key, $profiles[$key]];
     }
 
     protected function provider(): AIProviderInterface
@@ -65,58 +126,72 @@ class DataNavigatorAgent extends Agent
 
     protected function instructions(): string
     {
+        // Escape hatch: un profilo può fornire un prompt grezzo con i segnaposto
+        // {schema}, {database} e {connection}.
+        if (! empty($this->profile['prompt'])) {
+            return str_replace(
+                ['{schema}', '{database}', '{connection}'],
+                [$this->schemaSection(), $this->databaseName, $this->connectionName],
+                (string) $this->profile['prompt'],
+            );
+        }
+
         return (string) new SystemPrompt(
             background: [
-                <<<'TXT'
-Sei un assistente che aiuta ricercatori medici a interrogare un database di coorte
-HIV (dati clinici, immunologici, cardiovascolari raccolti a scopo di ricerca
-epidemiologica/osservazionale). Non è un contesto di supporto a decisioni cliniche
-su singoli pazienti: le query servono per analisi statistiche, aggregate e di
-popolazione. Rispondi sempre nella stessa lingua della domanda (di norma italiano).
-TXT,
+                trim((string) ($this->profile['background'] ?? '')),
                 $this->schemaSection(),
             ],
-            steps: [
-                'Individua tabelle e colonne pertinenti usando SOLO lo schema fornito o gli strumenti di ispezione.',
-                'Se un termine (farmaco, parametro, esito) non corrisponde a nessuna colonna nota, chiedi chiarimento invece di indovinare.',
-                'Costruisci una query SELECT; per i campi con valori di lookup usa esattamente i valori elencati.',
-                'Esegui la query con lo strumento di SELECT e riassumi il risultato in modo chiaro (tabella o elenco).',
-            ],
-            output: [
-                'Genera ESCLUSIVAMENTE istruzioni SELECT. Mai INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT o istruzioni multiple separate da `;`.',
-                'Usa solo tabelle e colonne realmente esistenti; non inventare mai nomi di colonna.',
-                'Applica `LIMIT 1000` alle query che ritornano record singoli se l\'utente non specifica un limite. Nessun limite sulle query aggregate.',
-                'Non includere colonne potenzialmente identificative (`iniziali`, `created_by`, `modified_by`) se non richieste esplicitamente per nome; per identificare i pazienti usa `pazientecode`, non l\'`id`.',
-                'Filtra sempre `WHERE active = 1` a meno che la domanda richieda anche i record eliminati logicamente.',
-                'I campi `*_TSA` sono storicizzati in `patient_visits` e come snapshot in `patients`: per analisi longitudinali usa SEMPRE `patient_visits`.',
-                '`patients.datahiv` ha default `\'2000-01-01\'` per dato non noto: se filtri o calcoli su questo campo aggiungi `AND datahiv != \'2000-01-01\'` e segnalalo.',
-                'Molte colonne data sono `varchar` (`D_HIV`, `INIZIO_ARV`, `D_AIDS`, `D_DIABETE`, `D_DECESSO`, `D_CARDIO1`, `D_CARDIO2`, `data_TSA`): segnala che il formato va verificato prima di usarle in un\'analisi. Le vere colonne DATE sono contrassegnate nello schema.',
-                '`patient_visits.HIVRNA` è `tinyint`: trattalo come codifica/categoria, non come valore quantitativo di viral load; per la soppressione virologica preferisci `HIVRNAnorilevabile`.',
-                'Mostra sempre la query SQL usata prima del risultato.',
-                'Se il risultato ha limiti che possono inficiarne la validità statistica (dati mancanti, default, campione ridotto), evidenziali.',
-            ],
+            steps: array_values((array) ($this->profile['steps'] ?? [])),
+            output: array_values((array) ($this->profile['output'] ?? [])),
         );
     }
 
     /**
-     * Sezione di schema costruita dalla legenda (SchemaLegend) per patients e
-     * patient_visits: nomi reali dei campi, commento, categoria data e valori
-     * di lookup ammessi.
+     * Tabelle principali del profilo attivo.
+     *
+     * @return list<string>
+     */
+    protected function profileTables(): array
+    {
+        return array_values(array_filter(
+            (array) ($this->profile['tables'] ?? []),
+            'is_string',
+        ));
+    }
+
+    /**
+     * Sezione di schema costruita dalla legenda (SchemaLegend) per le tabelle
+     * principali del profilo attivo: nomi reali dei campi, commento, categoria
+     * data e valori di lookup ammessi. Le legende sono filtrate per il database
+     * collegato (o senza database assegnato, per retrocompatibilità).
      */
     protected function schemaSection(): string
     {
-        $legends = SchemaLegend::query()
+        $tables = $this->profileTables();
+
+        // Legende del database collegato; se non ancora sincronizzate per quel
+        // database si ripiega su quelle senza database assegnato (retrocompat).
+        $baseQuery = fn (): Builder => SchemaLegend::query()
             ->with('columns')
-            ->whereIn('table_name', ['patients', 'patient_visits'])
-            ->orderBy('order')
-            ->get();
+            ->whereIn('table_name', $tables)
+            ->orderBy('order');
+
+        $legends = $baseQuery()->where('database', $this->databaseName)->get();
 
         if ($legends->isEmpty()) {
-            return 'SCHEMA: legenda non ancora sincronizzata. Usa gli strumenti di ispezione del '
-                .'database (schema, tabelle, colonne) prima di scrivere qualsiasi query.';
+            $legends = $baseQuery()->whereNull('database')->get();
         }
 
-        $out = ['# SCHEMA (connessione dbai)'];
+        $legends = $legends->unique('table_name')->values();
+
+        if ($legends->isEmpty()) {
+            return 'SCHEMA: legenda non ancora sincronizzata per il database '
+                ."`{$this->databaseName}` (tabelle attese: ".implode(', ', $tables).'). '
+                .'Usa gli strumenti di ispezione del database (schema, tabelle, colonne) '
+                .'prima di scrivere qualsiasi query.';
+        }
+
+        $out = ["# SCHEMA (connessione {$this->connectionName} — database {$this->databaseName})"];
 
         foreach ($legends as $legend) {
             $out[] = '';

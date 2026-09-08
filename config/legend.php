@@ -7,7 +7,9 @@ return [
     'connection' => 'dbai',
 
     /*
-     * Tabelle da documentare, in ordine. Si parte da patients e patient_visits.
+     * Fallback delle tabelle da documentare quando il database collegato non ha
+     * un profilo in config/data_navigator.php. Di norma le tabelle principali
+     * sono definite per-database in quel file ed è `legend:sync` a leggerle.
      */
     'tables' => [
         'patients',

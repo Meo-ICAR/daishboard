@@ -21,34 +21,39 @@ class ChartType
     {
         return [
             'bar' => [
-                'label'       => 'Barre',
-                'icon'        => Heroicon::OutlinedChartBar,
+                'label' => 'Barre',
+                'icon' => Heroicon::OutlinedChartBar,
                 'description' => 'Confronta valori tra categorie con barre verticali.',
             ],
             'line' => [
-                'label'       => 'Linee',
-                'icon'        => Heroicon::OutlinedChartBarSquare,
+                'label' => 'Linee',
+                'icon' => Heroicon::OutlinedChartBarSquare,
                 'description' => 'Mostra l\'andamento di una o più serie nel tempo.',
             ],
             'pie' => [
-                'label'       => 'Torta',
-                'icon'        => Heroicon::OutlinedChartPie,
+                'label' => 'Torta',
+                'icon' => Heroicon::OutlinedChartPie,
                 'description' => 'Mostra le proporzioni di un insieme come fette.',
             ],
             'doughnut' => [
-                'label'       => 'Ciambella',
-                'icon'        => Heroicon::OutlinedChartPie,
+                'label' => 'Ciambella',
+                'icon' => Heroicon::OutlinedChartPie,
                 'description' => 'Come la torta, ma con centro vuoto per evidenziare il totale.',
             ],
             'polarArea' => [
-                'label'       => 'Area polare',
-                'icon'        => Heroicon::OutlinedStar,
+                'label' => 'Area polare',
+                'icon' => Heroicon::OutlinedStar,
                 'description' => 'Simile alla torta, ma i raggi variano con il valore.',
             ],
             'radar' => [
-                'label'       => 'Radar',
-                'icon'        => Heroicon::OutlinedSignalSlash,
+                'label' => 'Radar',
+                'icon' => Heroicon::OutlinedSignalSlash,
                 'description' => 'Confronta più variabili su assi radiali sovrapposti.',
+            ],
+            'table' => [
+                'label' => 'Tabella',
+                'icon' => Heroicon::OutlinedSignalSlash,
+                'description' => 'Solo tabella dati',
             ],
         ];
     }
