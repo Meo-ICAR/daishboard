@@ -44,6 +44,25 @@ class ViewDashboardWidget extends Page implements HasTable
     public ?string $masterFilterField = null;
 
     /**
+     * Drill-down generato: mappa base64url(JSON) `espressione SQL => valore`
+     * delle dimensioni della riga aggregata cliccata. Quando valorizzato, la
+     * pagina esegue l'SQL di dettaglio invece della query aggregata del widget.
+     */
+    #[Url(as: 'drill', keep: false)]
+    public ?string $drill = null;
+
+    /**
+     * Filtri di drill-down decodificati.
+     *
+     * @var list<array{label: string, expr: string, value: mixed}>
+     */
+    #[Locked]
+    public array $drillFilters = [];
+
+    /** @var array<string, string>|null Cache della mappa alias => espressione. */
+    private ?array $dimensionExpressionCache = null;
+
+    /**
      * Widget figli che puntano a questo widget come master.
      *
      * @var array<int, array{id: int, title: ?string, column: ?string}>
@@ -62,6 +81,8 @@ class ViewDashboardWidget extends Page implements HasTable
         if ($this->masterFilterField === '') {
             $this->masterFilterField = null;
         }
+
+        $this->drillFilters = $this->decodeDrill($this->drill);
 
         $this->drilldowns = DashboardWidget::query()
             ->where('master_widget_id', $widget->getKey())
@@ -110,8 +131,10 @@ class ViewDashboardWidget extends Page implements HasTable
                     currentPage: $page,
                 );
             })
-            ->heading($this->widgetTitle ?? ('Widget #'.$this->recordId))
+            // Il titolo è già nell'header di pagina e nel breadcrumb: non lo si
+            // ripete nell'intestazione della tabella.
             ->description($this->activeDateFilterDescription())
+            ->headerActions($this->tableHeaderActions())
             ->columns($this->buildColumns())
             ->paginated([25, 50, 100, 'all'])
             ->defaultPaginationPageOption(25)
@@ -162,6 +185,29 @@ class ViewDashboardWidget extends Page implements HasTable
                                 'MasterFilterField' => $firstColumn !== null ? ($record[$firstColumn] ?? null) : null,
                             ]);
                     });
+            } elseif ($this->drillFilters === []
+                && in_array($name, $this->numericColumns, true)
+                && $this->dimensionExpressions() !== []) {
+                // Nessun widget figlio: drill-down generato sull'SQL del widget,
+                // che apre in questa stessa tabella i record di dettaglio della riga.
+                $column
+                    ->color('primary')
+                    ->icon(Heroicon::OutlinedMagnifyingGlassPlus)
+                    ->iconPosition(IconPosition::After)
+                    ->url(function (array $record) use ($name): ?string {
+                        if (! array_key_exists($name, $record) || $record[$name] === null) {
+                            return null;
+                        }
+
+                        $filters = $this->drillFiltersForRow($record);
+
+                        if ($filters === []) {
+                            return null;
+                        }
+
+                        return DashboardWidgetResource::getUrl('view', ['record' => $this->recordId])
+                            .'?'.http_build_query(['drill' => $this->encodeDrill($filters)]);
+                    });
             }
 
             $columns[] = $column;
@@ -187,9 +233,134 @@ class ViewDashboardWidget extends Page implements HasTable
         return null;
     }
 
-    protected function getHeaderActions(): array
+    /**
+     * Query eseguita: quella del widget, oppure — in modalità drill-down — la
+     * query di dettaglio derivata rimuovendo il raggruppamento e filtrando i
+     * record di base sulle dimensioni della riga cliccata.
+     */
+    protected function datasetQuery(): ?string
+    {
+        if ($this->drillFilters === []) {
+            return $this->widgetQuery;
+        }
+
+        $predicates = collect($this->drillFilters)
+            ->mapWithKeys(fn (array $filter): array => [$filter['expr'] => $filter['value'] ?? null])
+            ->all();
+
+        $sql = (new DashboardWidget)->convertSqlStringToDrillDown(
+            (string) $this->widgetQuery,
+            $predicates,
+        );
+
+        if (preg_match('/\bLIMIT\s+\d/i', $sql) !== 1) {
+            $sql .= ' LIMIT 2000';
+        }
+
+        return $sql;
+    }
+
+    /**
+     * Mappa `alias => espressione SQL` delle dimensioni del GROUP BY della query
+     * del widget (memoizzata per richiesta).
+     *
+     * @return array<string, string>
+     */
+    protected function dimensionExpressions(): array
+    {
+        return $this->dimensionExpressionCache ??= (new DashboardWidget)
+            ->selectDimensionExpressions((string) $this->widgetQuery);
+    }
+
+    /**
+     * Filtri di drill-down per una riga risultato: una voce per ogni dimensione
+     * (colonna non numerica) mappabile a un'espressione SQL. Ogni voce tiene sia
+     * l'etichetta leggibile (nome colonna) sia l'espressione SQL da filtrare.
+     *
+     * @param  array<string, mixed>  $record
+     * @return list<array{label: string, expr: string, value: mixed}>
+     */
+    protected function drillFiltersForRow(array $record): array
+    {
+        $expressions = $this->dimensionExpressions();
+        $filters = [];
+
+        foreach ($record as $alias => $value) {
+            if (in_array($alias, $this->numericColumns, true)) {
+                continue;
+            }
+
+            $expression = $expressions[strtolower((string) $alias)] ?? null;
+
+            if ($expression !== null) {
+                $filters[] = ['label' => (string) $alias, 'expr' => $expression, 'value' => $value];
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @param  list<array{label: string, expr: string, value: mixed}>  $filters
+     */
+    protected function encodeDrill(array $filters): string
+    {
+        return rtrim(strtr(base64_encode(
+            (string) json_encode($filters, JSON_UNESCAPED_UNICODE),
+        ), '+/', '-_'), '=');
+    }
+
+    /**
+     * Accetta sia la forma corrente (lista di {label, expr, value}) sia quella
+     * precedente (mappa espressione => valore), da vecchi link salvati.
+     *
+     * @return list<array{label: string, expr: string, value: mixed}>
+     */
+    protected function decodeDrill(?string $encoded): array
+    {
+        if (! is_string($encoded) || $encoded === '') {
+            return [];
+        }
+
+        $json = base64_decode(strtr($encoded, '-_', '+/'), true);
+        $data = $json === false ? null : json_decode($json, true);
+
+        if (! is_array($data) || $data === []) {
+            return [];
+        }
+
+        if (array_is_list($data)) {
+            return array_values(array_filter(
+                $data,
+                fn ($filter): bool => is_array($filter) && isset($filter['expr']),
+            ));
+        }
+
+        $filters = [];
+
+        foreach ($data as $expr => $value) {
+            $filters[] = ['label' => (string) $expr, 'expr' => (string) $expr, 'value' => $value];
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Azioni mostrate nell'intestazione della tabella (non nell'header di
+     * pagina, così titolo e sottotitolo restano a piena larghezza).
+     *
+     * @return array<int, Action>
+     */
+    protected function tableHeaderActions(): array
     {
         return [
+            Action::make('backToAggregate')
+                ->label('Torna all\'aggregato')
+                ->icon(Heroicon::OutlinedArrowUturnLeft)
+                ->color('gray')
+                ->visible(fn (): bool => $this->drillFilters !== [])
+                ->url(fn (): string => DashboardWidgetResource::getUrl('view', ['record' => $this->recordId])),
+
             ...$this->dateFilterHeaderActions(),
 
             Action::make('runQuery')
@@ -295,10 +466,10 @@ class ViewDashboardWidget extends Page implements HasTable
 
             Action::make('revokeShares')
                 ->label('Revoca link')
-                 ->visible(false)
+                ->visible(false)
                 ->icon(Heroicon::OutlinedTrash)
                 ->color('danger')
-                //->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
+                // ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
                 ->requiresConfirmation()
                 ->modalDescription('Tutti i link pubblici di questa tabella smetteranno di funzionare.')
                 ->action(function (): void {
@@ -352,6 +523,13 @@ class ViewDashboardWidget extends Page implements HasTable
 
     public function getSubheading(): string|Htmlable|null
     {
+        if ($this->drillFilters !== []) {
+            return 'Dettaglio dei record · '.collect($this->drillFilters)
+                ->map(fn (array $filter): string => ($filter['label'] ?? $filter['expr'] ?? '?')
+                    .' = '.Str::limit((string) ($filter['value'] ?? 'NULL'), 60))
+                ->implode('   ·   ');
+        }
+
         return filled($this->masterFilterField) ? $this->masterFilterField : null;
     }
 

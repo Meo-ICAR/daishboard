@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\StampsOwnership;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardWidget extends Model
 {
     use HasFactory;
+    use StampsOwnership;
 
     protected $fillable = [
         'dashboard_id',
@@ -45,49 +47,36 @@ class DashboardWidget extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (self $widget): void {
-            if ($widget->user_id === null && auth()->check() && ! auth()->user()?->isAdmin()) {
-                $widget->user_id = auth()->id();
-            }
-
-            if ($widget->company_id === null && auth()->check() && ! auth()->user()?->isSuperAdmin()) {
-                $widget->company_id = auth()->user()->company_id;
-            }
-        });
-
         static::addGlobalScope('owned', function (Builder $builder): void {
             /** @var User|null $user */
             $user = auth()->user();
 
-            // Nessun utente autenticato: nessun risultato
+            // Nessun utente autenticato: nessun risultato.
             if ($user === null) {
                 $builder->whereRaw('0 = 1');
 
                 return;
             }
 
-            // Super-admin (is_admin = true e company_id nullo): vede tutto
+            // Superadmin: vede tutti i record, nessun filtro.
             if ($user->isSuperAdmin()) {
                 return;
             }
 
-            // Admin di azienda: vede i widget della stessa azienda
-            if (true || $user->isAdmin()) {
-                $companyId = $user->company_id;
-                $builder->where(function (Builder $query) use ($companyId): void {
-                    $query->whereNull('company_id')
-                        ->orWhere('company_id', $companyId);
-                });
-
-                return;
-            }
-
-            // Utente normale: vede solo i propri widget
-            $userId = $user->id;
-            $builder->where(function (Builder $query) use ($userId): void {
-                $query->whereNull('user_id')
-                    ->orWhere('user_id', $userId);
+            // Admin azienda e utente normale: solo i record della propria
+            // company (o senza company).
+            $builder->where(function (Builder $query) use ($user): void {
+                $query->whereNull('company_id')
+                    ->orWhere('company_id', $user->company_id);
             });
+
+            // Utente normale: in più, solo i propri record (o senza proprietario).
+            if (! $user->isAdmin()) {
+                $builder->where(function (Builder $query) use ($user): void {
+                    $query->whereNull('user_id')
+                        ->orWhere('user_id', $user->getKey());
+                });
+            }
         });
     }
 
@@ -99,28 +88,70 @@ class DashboardWidget extends Model
      */
     public function convertSqlStringToDrillDown(string $sql, array $filters = []): string
     {
-        // 1. Rimuove le clausole GROUP BY e ORDER BY
+        $sql = rtrim(trim($sql), ';');
+
+        // 1. Rimuove le clausole GROUP BY, HAVING e ORDER BY (senza GROUP BY,
+        //    una HAVING residua sarebbe SQL non valida).
         $sql = preg_replace('/\s+GROUP\s+BY\s+[\s\S]+?(?=\s+HAVING|\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
+        $sql = preg_replace('/\s+HAVING\s+[\s\S]+?(?=\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
         $sql = preg_replace('/\s+ORDER\s+BY\s+[\s\S]+?(?=\s+LIMIT|$)/i', '', $sql);
 
-        // 2. Unpack delle funzioni aggregate nella SELECT (COUNT, SUM, MAX, MIN, AVG)
-        if (preg_match('/^\s*SELECT\s+(.*?)\s+FROM\s+/is', $sql, $matches)) {
-            $selectClause = $matches[1];
+        // 2. SELECT di dettaglio: le voci aggregate vengono "spacchettate" nel
+        //    campo interno; COUNT(*)/COUNT(1) non hanno un campo di dettaglio,
+        //    quindi si ripiega su `*` per mostrare i record completi.
+        if (preg_match('/^\s*SELECT\s+(?:DISTINCT\s+)?(.*?)\s+FROM\s+/is', $sql, $matches)) {
+            $aggregatePattern = '/\b(COUNT|SUM|MAX|MIN|AVG|GROUP_CONCAT|STDDEV|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP|VARIANCE)\s*\(/i';
+            $items = [];
+            $hadAggregate = false;
+            $expandedAggregate = false;
 
-            $unpackedSelect = preg_replace_callback(
-                '/\b(COUNT|SUM|MAX|MIN|AVG)\s*\(\s*(?:DISTINCT\s+)?(.*?)\s*\)(\s+AS\s+[\w`"]+)?/i',
-                fn ($m) => $m[2],
-                $selectClause
-            );
+            foreach ($this->splitTopLevel($matches[1]) as $item) {
+                $item = trim($item);
 
-            $sql = preg_replace('/^\s*SELECT\s+.*?\s+FROM\s+/is', "SELECT {$unpackedSelect} FROM ", $sql);
+                if ($item === '') {
+                    continue;
+                }
+
+                if (preg_match($aggregatePattern, $item)) {
+                    $hadAggregate = true;
+
+                    $inner = trim((string) preg_replace_callback(
+                        '/\b(?:COUNT|SUM|MAX|MIN|AVG|GROUP_CONCAT|STDDEV|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP|VARIANCE)\s*\(\s*(?:DISTINCT\s+)?(.*?)\s*\)(?:\s+AS\s+[\w`"\']+)?/is',
+                        fn (array $m): string => trim($m[1]),
+                        $item,
+                    ));
+
+                    if ($inner === '' || $inner === '*' || is_numeric($inner)) {
+                        continue;
+                    }
+
+                    $expandedAggregate = true;
+                    $items[] = $inner;
+
+                    continue;
+                }
+
+                $items[] = $item;
+            }
+
+            $projection = ($hadAggregate && ! $expandedAggregate) || $items === []
+                ? '*'
+                : implode(', ', $items);
+
+            $sql = preg_replace('/^\s*SELECT\s+(?:DISTINCT\s+)?.*?\s+FROM\s+/is', "SELECT {$projection} FROM ", $sql);
         }
 
         // 3. Aggiunta dei filtri WHERE per il drill-down
         if (! empty($filters)) {
             $whereConditions = [];
             foreach ($filters as $column => $value) {
-                $escapedValue = is_numeric($value) ? $value : "'".addslashes($value)."'";
+                if ($value === null) {
+                    $whereConditions[] = "{$column} IS NULL";
+
+                    continue;
+                }
+
+                $escapedValue = is_numeric($value) ? $value : "'".addslashes((string) $value)."'";
                 $whereConditions[] = "{$column} = {$escapedValue}";
             }
 
@@ -176,6 +207,91 @@ class DashboardWidget extends Model
         }
 
         return $detailQuery->where($filters);
+    }
+
+    /**
+     * Mappa `alias (minuscolo) => espressione SQL sorgente` per le voci NON
+     * aggregate della SELECT di una query raggruppata: sono le dimensioni del
+     * GROUP BY, usate come predicati nel drill-down di una riga.
+     *
+     * Sono riconosciute solo `<espr> AS <alias>` e gli identificatori semplici
+     * (`col`, `t.col`, con o senza backtick); le espressioni complesse senza
+     * `AS` esplicito vengono ignorate (drill-down più ampio ma SQL valida).
+     * Ritorna vuoto se la query non è una SELECT singola e raggruppata.
+     *
+     * @return array<string, string>
+     */
+    public function selectDimensionExpressions(string $sql): array
+    {
+        $sql = trim($sql);
+
+        if ($sql === ''
+            || ! preg_match('/^\s*SELECT\b/i', $sql)
+            || ! preg_match('/\bGROUP\s+BY\b/i', $sql)
+            || preg_match_all('/\bSELECT\b/i', $sql) !== 1
+            || ! preg_match('/^\s*SELECT\s+(?:DISTINCT\s+)?(.*?)\s+FROM\s+/is', $sql, $selectMatch)) {
+            return [];
+        }
+
+        $expressions = [];
+
+        foreach ($this->splitTopLevel($selectMatch[1]) as $item) {
+            $item = trim($item);
+
+            if ($item === '' || $item === '*'
+                || preg_match('/\b(COUNT|SUM|MAX|MIN|AVG|GROUP_CONCAT|STDDEV|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP|VARIANCE)\s*\(/i', $item)) {
+                continue;
+            }
+
+            if (preg_match('/^(.+?)\s+AS\s+[`"\']?([A-Za-z0-9_]+)[`"\']?$/is', $item, $aliasMatch)) {
+                $expressions[strtolower($aliasMatch[2])] = trim($aliasMatch[1]);
+
+                continue;
+            }
+
+            if (preg_match('/^`?([A-Za-z_][A-Za-z0-9_]*)`?(?:\.`?([A-Za-z_][A-Za-z0-9_]*)`?)?$/', $item, $identMatch)) {
+                $alias = $identMatch[2] ?? $identMatch[1];
+                $expressions[strtolower($alias)] = $item;
+            }
+        }
+
+        return $expressions;
+    }
+
+    /**
+     * Divide un elenco separato da virgole rispettando le parentesi annidate
+     * (es. la SELECT list o la GROUP BY list).
+     *
+     * @return list<string>
+     */
+    protected function splitTopLevel(string $list): array
+    {
+        $items = [];
+        $buffer = '';
+        $depth = 0;
+
+        foreach (str_split($list) as $char) {
+            if ($char === '(') {
+                $depth++;
+            } elseif ($char === ')') {
+                $depth = max(0, $depth - 1);
+            }
+
+            if ($char === ',' && $depth === 0) {
+                $items[] = $buffer;
+                $buffer = '';
+
+                continue;
+            }
+
+            $buffer .= $char;
+        }
+
+        if (trim($buffer) !== '') {
+            $items[] = $buffer;
+        }
+
+        return $items;
     }
 
     /*

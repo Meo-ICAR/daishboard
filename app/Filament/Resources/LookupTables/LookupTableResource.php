@@ -23,9 +23,9 @@ class LookupTableResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
-   protected static string|UnitEnum|null $navigationGroup = 'Legenda';
+    protected static string|UnitEnum|null $navigationGroup = 'Legenda';
 
-    protected static ?string $navigationLabel = 'Tabelle lookup';
+    protected static ?string $navigationLabel = 'Lookup';
 
     protected static ?string $modelLabel = 'tabella lookup';
 

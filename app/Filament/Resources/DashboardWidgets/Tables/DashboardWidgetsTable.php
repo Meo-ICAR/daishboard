@@ -37,12 +37,15 @@ class DashboardWidgetsTable
                     ->searchable()
                     ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl('view', ['record' => $record])),
 
-                // Tipo → icona + label; cliccabile → chart
+                // Tipo → icona + label; cliccabile → tabella se type = 'table', altrimenti grafico
                 TextColumn::make('type')
                     ->label('Tipo')
                     ->formatStateUsing(fn (?string $state): string => ChartType::label((string) $state))
                     ->icon(fn (?string $state): Heroicon => ChartType::icon((string) $state))
-                    ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl('chart', ['record' => $record])),
+                    ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl(
+                        strtolower((string) $record->type) === 'table' ? 'view' : 'chart',
+                        ['record' => $record],
+                    )),
 
                 // Ordine → cliccabile → edit
                 TextColumn::make('order')
@@ -73,6 +76,19 @@ class DashboardWidgetsTable
                     ->default(Dashboard::query()->orderBy('order')->orderBy('id')->value('id'))
                     ->preload()
                     ->searchable(),
+
+                SelectFilter::make('is_table')
+                    ->label('Tipo tabella')
+                    ->placeholder('Tutti')
+                    ->options([
+                        'table' => "type = 'table'",
+                        'not_table' => "type != 'table'",
+                    ])
+                    ->query(fn ($query, array $data) => match ($data['value'] ?? null) {
+                        'table' => $query->whereRaw("COALESCE(LOWER(type), '') = 'table'"),
+                        'not_table' => $query->whereRaw("COALESCE(LOWER(type), '') <> 'table'"),
+                        default => $query,
+                    }),
             ])
             ->recordActions([
 

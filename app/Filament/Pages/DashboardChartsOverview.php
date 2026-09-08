@@ -169,7 +169,11 @@ class DashboardChartsOverview extends Page
                 return $this->topLevelMasters();
             }
 
-            $children = $master->detailWidgets()->orderBy('order')->orderBy('id')->get();
+            $children = $master->detailWidgets()
+                ->whereRaw("COALESCE(LOWER(type), '') <> 'table'")
+                ->orderBy('order')
+                ->orderBy('id')
+                ->get();
 
             return collect([$master])->concat($children);
         }
@@ -182,10 +186,10 @@ class DashboardChartsOverview extends Page
      */
     protected function topLevelMasters()
     {
-        return CompanyScope::byOwner(DashboardWidget::query()->where('type', '!=', 'table'))
+        return CompanyScope::byOwner(DashboardWidget::query())
             ->whereNull('master_widget_id')
-
             ->where('is_active', true)
+            ->whereRaw("COALESCE(LOWER(type), '') <> 'table'")
             ->when($this->dashboardId !== null, fn ($query) => $query->where('dashboard_id', $this->dashboardId))
             ->orderBy('order')
             ->orderBy('id')

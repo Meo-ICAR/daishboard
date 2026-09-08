@@ -117,7 +117,7 @@ trait InteractsWithWidgetDataset
     public function runQuery(): void
     {
         $result = app(WidgetDatasetRunner::class)->run(
-            $this->widgetQuery,
+            $this->datasetQuery(),
             $this->cohortFilters(),
         );
 
@@ -127,6 +127,15 @@ trait InteractsWithWidgetDataset
         $this->errorMessage = $result['error'];
 
         $this->afterQueryRefreshed();
+    }
+
+    /**
+     * Query effettivamente eseguita da runQuery(). Le pagine possono
+     * sovrascriverla (es. ViewDashboardWidget per il drill-down generato).
+     */
+    protected function datasetQuery(): ?string
+    {
+        return $this->widgetQuery;
     }
 
     /** Hook invocato al termine di runQuery(). */

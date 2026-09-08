@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\StampsOwnership;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class Dashboard extends Model
 {
     use HasFactory;
+    use StampsOwnership;
 
     protected $fillable = [
         'user_id',
@@ -35,12 +37,13 @@ class Dashboard extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('owned', function (Builder $builder): void {
-            /** @var \App\Models\User|null $user */
+            /** @var User|null $user */
             $user = auth()->user();
 
             // Nessun utente autenticato: nessun risultato
             if ($user === null) {
                 $builder->whereRaw('0 = 1');
+
                 return;
             }
 
@@ -54,8 +57,9 @@ class Dashboard extends Model
                 $companyId = $user->company_id;
                 $builder->where(function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')
-                          ->orWhere('company_id', $companyId);
+                        ->orWhere('company_id', $companyId);
                 });
+
                 return;
             }
 
@@ -63,12 +67,10 @@ class Dashboard extends Model
             $userId = $user->id;
             $builder->where(function (Builder $query) use ($userId): void {
                 $query->whereNull('user_id')
-                      ->orWhere('user_id', $userId);
+                    ->orWhere('user_id', $userId);
             });
         });
     }
-
- 
 
     public function user(): BelongsTo
     {
