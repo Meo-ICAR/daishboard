@@ -16,11 +16,13 @@ class DashboardTablesOverviewTest extends TestCase
 {
     use RefreshDatabase;
 
-    private MenuCategory $catWithTable;
+    private MenuCategory $catA;
 
-    private MenuCategory $catChartOnly;
+    private MenuCategory $catB;
 
-    private Dashboard $dashboard;
+    private Dashboard $dashA;
+
+    private Dashboard $dashA2;
 
     /** @var array<string, int> */
     private array $widgets = [];
@@ -29,37 +31,35 @@ class DashboardTablesOverviewTest extends TestCase
     {
         parent::setUp();
 
-        $this->actingAs(User::factory()->create()); // superadmin
+        $this->actingAs(User::factory()->create(['is_admin' => true, 'company_id' => null])); // superadmin
 
-        $this->catWithTable = MenuCategory::create(['name' => 'Con tabella', 'order' => 0, 'is_active' => true]);
-        $this->catChartOnly = MenuCategory::create(['name' => 'Solo grafici', 'order' => 1, 'is_active' => true]);
+        $this->catA = MenuCategory::create(['name' => 'Categoria A', 'order' => 0, 'is_active' => true]);
+        $this->catB = MenuCategory::create(['name' => 'Categoria B', 'order' => 1, 'is_active' => true]);
+        $catChartOnly = MenuCategory::create(['name' => 'Solo grafici', 'order' => 2, 'is_active' => true]);
 
-        $this->dashboard = Dashboard::create([
-            'title' => 'Dash A', 'menu_category_id' => $this->catWithTable->id, 'order' => 0, 'is_active' => true,
-        ]);
-        $chartDashboard = Dashboard::create([
-            'title' => 'Dash grafici', 'menu_category_id' => $this->catChartOnly->id, 'order' => 0, 'is_active' => true,
-        ]);
+        $this->dashA = Dashboard::create(['title' => 'Analisi Pazienti', 'menu_category_id' => $this->catA->id, 'order' => 0, 'is_active' => true]);
+        $this->dashA2 = Dashboard::create(['title' => 'Analisi Trattamenti', 'menu_category_id' => $this->catA->id, 'order' => 1, 'is_active' => true]);
+        $dashB = Dashboard::create(['title' => 'Dashboard B', 'menu_category_id' => $this->catB->id, 'order' => 0, 'is_active' => true]);
+        $dashChart = Dashboard::create(['title' => 'Solo grafico', 'menu_category_id' => $catChartOnly->id, 'order' => 0, 'is_active' => true]);
 
-        $make = fn (array $attrs): DashboardWidget => DashboardWidget::create([
-            'dashboard_id' => $this->dashboard->id,
+        $make = fn (Dashboard $dashboard, array $attrs): DashboardWidget => DashboardWidget::create([
+            'dashboard_id' => $dashboard->id,
             'title' => 'W', 'query' => 'SELECT 1 AS x', 'order' => 0, 'is_active' => true,
             ...$attrs,
         ]);
 
-        $masterTable = $make(['type' => 'Table']);
+        $masterTable = $make($this->dashA, ['type' => 'Table', 'title' => 'lista pazienti']);
 
         $this->widgets = [
             'masterTable' => $masterTable->id,
-            'masterChart' => $make(['type' => 'bar'])->id,
-            'childTable' => $make(['type' => 'table', 'master_widget_id' => $masterTable->id])->id,
-            'childChart' => $make(['type' => 'line', 'master_widget_id' => $masterTable->id])->id,
+            'masterChart' => $make($this->dashA, ['type' => 'bar', 'title' => 'grafico'])->id,
+            'childTable' => $make($this->dashA, ['type' => 'table', 'title' => 'dettaglio', 'master_widget_id' => $masterTable->id])->id,
+            'childChart' => $make($this->dashA, ['type' => 'line', 'title' => 'trend', 'master_widget_id' => $masterTable->id])->id,
+            'a2Table' => $make($this->dashA2, ['type' => 'table', 'title' => 'per trattamento'])->id,
+            'bTable' => $make($dashB, ['type' => 'table', 'title' => 'tabella B'])->id,
         ];
 
-        DashboardWidget::create([
-            'dashboard_id' => $chartDashboard->id,
-            'title' => 'Solo grafico', 'type' => 'bar', 'query' => 'SELECT 1 AS x', 'order' => 0, 'is_active' => true,
-        ]);
+        $make($dashChart, ['type' => 'bar', 'title' => 'solo grafico']);
     }
 
     private function page(array $params = []): Testable
@@ -73,61 +73,72 @@ class DashboardTablesOverviewTest extends TestCase
 
         $this->assertSame('categories', $page->get('level'));
 
-        $titles = array_column($page->get('items'), 'title');
-        $this->assertContains('Con tabella', $titles);
-        $this->assertNotContains('Solo grafici', $titles);
+        $names = array_column($page->get('categories'), 'name');
+        $this->assertEqualsCanonicalizing(['Categoria A', 'Categoria B'], $names);
     }
 
-    public function test_drilling_a_category_lists_its_dashboards_with_tables(): void
+    public function test_choosing_a_category_shows_its_dashboards_as_sections(): void
     {
-        $page = $this->page(['category' => $this->catWithTable->id]);
+        $page = $this->page(['category' => $this->catA->id]);
 
-        $this->assertSame('dashboards', $page->get('level'));
-        $this->assertSame(['Dash A'], array_column($page->get('items'), 'title'));
+        $this->assertSame('sections', $page->get('level'));
+        $this->assertSame(
+            ['Analisi Pazienti', 'Analisi Trattamenti'],
+            array_column($page->get('sections'), 'title'),
+        );
     }
 
-    public function test_drilling_a_dashboard_lists_only_table_master_widgets(): void
+    public function test_a_section_lists_only_table_master_widgets(): void
     {
-        $page = $this->page(['dashboardId' => $this->dashboard->id]);
+        $sections = collect($this->page(['category' => $this->catA->id])->get('sections'))->keyBy('title');
 
-        $this->assertSame('masters', $page->get('level'));
-        $this->assertSame([$this->widgets['masterTable']], array_column($page->get('items'), 'id'));
+        $topIds = array_column($sections['Analisi Pazienti']['tables'], 'id');
+        $this->assertSame([$this->widgets['masterTable']], $topIds);
     }
 
-    public function test_drilling_a_master_lists_the_master_and_its_table_children(): void
+    public function test_detail_tables_are_nested_under_their_master(): void
     {
-        $page = $this->page(['master' => $this->widgets['masterTable']]);
+        $sections = collect($this->page(['category' => $this->catA->id])->get('sections'))->keyBy('title');
+        $master = collect($sections['Analisi Pazienti']['tables'])->firstWhere('id', $this->widgets['masterTable']);
 
-        $this->assertSame('children', $page->get('level'));
-
-        $ids = array_column($page->get('items'), 'id');
-        $this->assertContains($this->widgets['masterTable'], $ids);
-        $this->assertContains($this->widgets['childTable'], $ids);
-        $this->assertNotContains($this->widgets['childChart'], $ids);
+        $childIds = array_column($master['children'], 'id');
+        $this->assertContains($this->widgets['childTable'], $childIds);
+        $this->assertNotContains($this->widgets['childChart'], $childIds);
     }
 
-    public function test_master_param_resolves_the_dashboard_and_category_trail(): void
+    public function test_the_remembered_dashboard_section_is_expanded(): void
     {
-        $page = $this->page(['master' => $this->widgets['masterTable']]);
+        $page = $this->page(['dashboardId' => $this->dashA2->id]);
 
-        $this->assertSame($this->dashboard->id, $page->get('dashboardId'));
-        $this->assertSame($this->catWithTable->id, $page->get('category'));
+        $this->assertSame('sections', $page->get('level'));
+        $this->assertSame($this->catA->id, $page->get('category'));
 
-        $labels = array_column($page->get('trail'), 'label');
-        $this->assertSame(['Tabelle', 'Con tabella', 'Dash A', 'W'], $labels);
+        $expanded = collect($page->get('sections'))->mapWithKeys(fn (array $s): array => [$s['title'] => $s['expanded']]);
+        $this->assertTrue($expanded['Analisi Trattamenti']);
+        $this->assertFalse($expanded['Analisi Pazienti']);
+    }
+
+    public function test_a_single_category_skips_the_chooser(): void
+    {
+        // Lascia una sola categoria con tabelle.
+        MenuCategory::whereKey($this->catB->id)->update(['is_active' => false]);
+        DashboardWidget::whereKey($this->widgets['bTable'])->delete();
+
+        $page = $this->page();
+
+        $this->assertSame('sections', $page->get('level'));
+        $this->assertSame($this->catA->id, $page->get('category'));
     }
 
     public function test_breadcrumbs_and_subheading_reflect_the_level(): void
     {
         $categories = $this->page()->instance();
-        $this->assertSame([], $categories->getBreadcrumbs()); // trail di 1 voce → niente breadcrumb
+        $this->assertSame([], $categories->getBreadcrumbs());
         $this->assertStringContainsString('categoria', (string) $categories->getSubheading());
 
-        $children = $this->page(['master' => $this->widgets['masterTable']])->instance();
-        $breadcrumbs = $children->getBreadcrumbs();
-
-        $this->assertSame('W', end($breadcrumbs));            // pagina corrente, non cliccabile
-        $this->assertContains('Con tabella', $breadcrumbs);   // livelli superiori come link
-        $this->assertStringContainsString('dettaglio', (string) $children->getSubheading());
+        $sections = $this->page(['category' => $this->catA->id])->instance();
+        $breadcrumbs = $sections->getBreadcrumbs();
+        $this->assertSame('Categoria A', end($breadcrumbs));
+        $this->assertStringContainsString('dashboard', (string) $sections->getSubheading());
     }
 }

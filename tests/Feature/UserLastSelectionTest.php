@@ -78,20 +78,21 @@ class UserLastSelectionTest extends TestCase
         $this->assertSame($project->id, $this->user->fresh()->project_id);
     }
 
-    public function test_tables_overview_remembers_and_restores_the_dashboard(): void
+    public function test_tables_overview_expands_the_remembered_dashboard_section(): void
     {
-        DashboardWidget::create([
-            'dashboard_id' => $this->dashB->id,
-            'title' => 'T', 'type' => 'table', 'query' => 'SELECT 1 AS x', 'order' => 1, 'is_active' => true,
-        ]);
+        foreach ([$this->dashA, $this->dashB] as $dashboard) {
+            DashboardWidget::create([
+                'dashboard_id' => $dashboard->id,
+                'title' => 'T', 'type' => 'table', 'query' => 'SELECT 1 AS x', 'order' => 1, 'is_active' => true,
+            ]);
+        }
 
-        // Drilling into dash B records it on the user.
-        Livewire::test(DashboardTablesOverview::class, ['dashboardId' => $this->dashB->id]);
-        $this->assertSame($this->dashB->id, $this->user->fresh()->dashboard_id);
+        $this->user->forceFill(['dashboard_id' => $this->dashB->id])->save();
 
-        // A clean visit restores that dashboard (masters level).
-        Livewire::test(DashboardTablesOverview::class)
-            ->assertSet('dashboardId', $this->dashB->id)
-            ->assertSet('level', 'masters');
+        $page = Livewire::test(DashboardTablesOverview::class)->assertSet('level', 'sections');
+
+        $expanded = collect($page->get('sections'))->mapWithKeys(fn (array $s): array => [$s['title'] => $s['expanded']]);
+        $this->assertTrue($expanded['Dash B']);
+        $this->assertFalse($expanded['Dash A']);
     }
 }

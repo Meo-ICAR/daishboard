@@ -15,10 +15,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
 
 /**
- * Elenco delle tabelle con drill-down:
- * categorie di menu → dashboard → widget master (type = table) → widget figli.
- * Ogni voce è un link; sulle tabelle si apre la vista con le righe (dove, se la
- * query ha un GROUP BY, cliccando una colonna numerica si vede il dettaglio).
+ * Elenco delle tabelle: scelta la categoria di menu, ogni dashboard è una
+ * sezione richiudibile che elenca le sue tabelle (widget master `type = table`,
+ * con le eventuali tabelle di dettaglio annidate). Cliccando una tabella si apre
+ * la vista con le righe.
  */
 class DashboardTablesOverview extends Page
 {
@@ -30,27 +30,35 @@ class DashboardTablesOverview extends Page
 
     protected string $view = 'filament.pages.dashboard-tables-overview';
 
-    /** Categoria selezionata; 0 = dashboard senza categoria. */
+    /** Categoria selezionata; 0 = dashboard senza categoria; null = scegli. */
     #[Url]
     public ?int $category = null;
 
+    /** Solo per riprendere l'ultima dashboard: ne deriva la categoria e la sezione da aprire. */
     #[Url]
     public ?int $dashboardId = null;
 
-    /** Widget master selezionato: se valorizzato mostra i suoi figli. */
-    #[Url]
-    public ?int $master = null;
-
-    /** categories | dashboards | masters | children */
+    /** categories | sections */
     public string $level = 'categories';
 
     public ?string $heading = null;
 
-    /** @var array<int, array<string, mixed>> */
-    public array $items = [];
+    /**
+     * Categorie fra cui scegliere (livello `categories`).
+     *
+     * @var array<int, array{id: int, name: string, count: int}>
+     */
+    public array $categories = [];
 
     /**
-     * Percorso di navigazione (breadcrumb del drill-down).
+     * Sezioni dashboard con le loro tabelle (livello `sections`).
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $sections = [];
+
+    /**
+     * Percorso di navigazione (breadcrumb).
      *
      * @var array<int, array{label: string, url: ?string}>
      */
@@ -59,7 +67,7 @@ class DashboardTablesOverview extends Page
     public function mount(): void
     {
         // Visita "pulita": riparte dall'ultima dashboard selezionata dall'utente.
-        if ($this->category === null && $this->dashboardId === null && $this->master === null) {
+        if ($this->category === null && $this->dashboardId === null) {
             $this->dashboardId = auth()->user()?->dashboard_id;
         }
 
@@ -69,67 +77,36 @@ class DashboardTablesOverview extends Page
     public function updatedCategory(): void
     {
         $this->dashboardId = null;
-        $this->master = null;
-        $this->rebuild();
-    }
-
-    public function updatedDashboardId(): void
-    {
-        $this->master = null;
-        $this->rebuild();
-    }
-
-    public function updatedMaster(): void
-    {
         $this->rebuild();
     }
 
     protected function rebuild(): void
     {
-        $master = $this->master !== null
-            ? DashboardWidget::query()->whereKey($this->master)->first()
-            : null;
+        // Da un dashboardId ricordato/passato si risale alla sua categoria.
+        $expandDashboardId = $this->dashboardId;
 
-        if ($master !== null) {
-            $this->dashboardId = (int) $master->dashboard_id;
+        if ($this->category === null && $this->dashboardId !== null) {
+            $menuCategoryId = Dashboard::query()->whereKey($this->dashboardId)->value('menu_category_id');
+            $this->category = $menuCategoryId !== null ? (int) $menuCategoryId : 0;
         }
 
-        $dashboard = $this->dashboardId !== null
-            ? Dashboard::query()->whereKey($this->dashboardId)->first()
-            : null;
+        $this->categories = $this->categoriesWithTables();
 
-        if ($dashboard !== null) {
-            $this->category = (int) ($dashboard->menu_category_id ?? 0);
-        }
-
-        if ($master !== null && $dashboard !== null) {
-            $this->level = 'children';
-            $this->heading = $master->title ?? ('Widget #'.$master->getKey());
-            $this->items = $this->childItems($master);
-        } elseif ($dashboard !== null) {
-            $this->level = 'masters';
-            $this->heading = $dashboard->title ?? ('Dashboard #'.$dashboard->getKey());
-            $this->items = $this->masterItems($dashboard);
-        } elseif ($this->category !== null) {
-            $this->level = 'dashboards';
-            $this->heading = 'Dashboard';
-            $this->items = $this->dashboardItems($this->category);
-        } else {
+        if ($this->category === null && count($this->categories) > 1) {
             $this->level = 'categories';
             $this->heading = null;
-            $this->items = $this->categoryItems();
+            $this->sections = [];
+        } else {
+            $this->category ??= $this->categories[0]['id'] ?? 0;
+            $this->level = 'sections';
+            $this->heading = $this->categoryLabel($this->category);
+            $this->sections = $this->dashboardSections($this->category, $expandDashboardId);
         }
 
-        $this->trail = $this->buildTrail($dashboard, $master);
-
-        if ($dashboard !== null) {
-            auth()->user()?->rememberSelection(dashboardId: (int) $dashboard->getKey());
-        }
+        $this->trail = $this->buildTrail();
     }
 
     /**
-     * Solo i widget di tipo tabella (type = 'table', case-insensitive).
-     *
      * @param  Builder<DashboardWidget>  $query
      * @return Builder<DashboardWidget>
      */
@@ -139,40 +116,33 @@ class DashboardTablesOverview extends Page
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * Categorie che contengono almeno una tabella, più il gruppo "Senza
+     * categoria" quando esistono dashboard senza categoria con tabelle.
+     *
+     * @return array<int, array{id: int, name: string, count: int}>
      */
-    protected function categoryItems(): array
+    protected function categoriesWithTables(): array
     {
-        $items = CompanyScope::byDatabase(MenuCategory::query())
+        $categories = CompanyScope::byDatabase(MenuCategory::query())
             ->where('is_active', true)
             ->whereHas('dashboards.widgets', fn (Builder $q) => $this->onlyTables($q))
             ->orderBy('order')
             ->orderBy('name')
             ->get()
             ->map(fn (MenuCategory $category): array => [
-                'type' => 'drill',
-                'title' => $category->name,
-                'subtitle' => $category->description,
-                'icon' => $category->icon ?: 'heroicon-o-folder',
-                'meta' => $this->tableCountForCategory($category->getKey()).' tabelle',
-                'url' => static::getUrl(['category' => $category->getKey()]),
+                'id' => (int) $category->getKey(),
+                'name' => $category->name,
+                'count' => $this->tableCountForCategory((int) $category->getKey()),
             ])
             ->all();
 
         $uncategorized = $this->tableCountForCategory(0);
 
         if ($uncategorized > 0) {
-            $items[] = [
-                'type' => 'drill',
-                'title' => 'Senza categoria',
-                'subtitle' => null,
-                'icon' => 'heroicon-o-folder',
-                'meta' => $uncategorized.' tabelle',
-                'url' => static::getUrl(['category' => 0]),
-            ];
+            $categories[] = ['id' => 0, 'name' => 'Senza categoria', 'count' => $uncategorized];
         }
 
-        return $items;
+        return $categories;
     }
 
     protected function tableCountForCategory(int $category): int
@@ -186,12 +156,22 @@ class DashboardTablesOverview extends Page
         )->count();
     }
 
+    protected function categoryLabel(int $category): string
+    {
+        return $category === 0
+            ? 'Senza categoria'
+            : (MenuCategory::whereKey($category)->value('name') ?? 'Categoria');
+    }
+
     /**
+     * Dashboard della categoria (con almeno una tabella) come sezioni; la
+     * sezione della dashboard indicata da $expandId (o la prima) è espansa.
+     *
      * @return array<int, array<string, mixed>>
      */
-    protected function dashboardItems(int $category): array
+    protected function dashboardSections(int $category, ?int $expandId): array
     {
-        return Dashboard::query()
+        $sections = Dashboard::query()
             ->when(
                 $category === 0,
                 fn (Builder $q) => $q->whereNull('menu_category_id'),
@@ -202,24 +182,29 @@ class DashboardTablesOverview extends Page
             ->orderBy('id')
             ->get()
             ->map(fn (Dashboard $dashboard): array => [
-                'type' => 'drill',
-                'title' => $dashboard->title,
-                'subtitle' => $dashboard->description,
-                'icon' => $dashboard->icon ?: 'heroicon-o-rectangle-stack',
-                'meta' => $this->onlyTables(
-                    DashboardWidget::query()
-                        ->where('dashboard_id', $dashboard->getKey())
-                        ->whereNull('master_widget_id'),
-                )->count().' tabelle',
-                'url' => static::getUrl(['category' => $this->category, 'dashboardId' => $dashboard->getKey()]),
+                'id' => (int) $dashboard->getKey(),
+                'title' => $dashboard->title ?? ('Dashboard #'.$dashboard->getKey()),
+                'tables' => $this->tableTree($dashboard),
+                'expanded' => $expandId !== null && (int) $dashboard->getKey() === $expandId,
             ])
+            ->values()
             ->all();
+
+        // Se nessuna sezione risulta espansa, apri la prima.
+        if ($sections !== [] && ! collect($sections)->contains('expanded', true)) {
+            $sections[0]['expanded'] = true;
+        }
+
+        return $sections;
     }
 
     /**
+     * Widget master di tipo tabella della dashboard, con le tabelle di dettaglio
+     * (figli) annidate.
+     *
      * @return array<int, array<string, mixed>>
      */
-    protected function masterItems(Dashboard $dashboard): array
+    protected function tableTree(Dashboard $dashboard): array
     {
         return $this->onlyTables(
             DashboardWidget::query()
@@ -230,89 +215,41 @@ class DashboardTablesOverview extends Page
             ->orderBy('order')
             ->orderBy('id')
             ->get()
-            ->map(fn (DashboardWidget $widget): array => $this->widgetItem($widget))
+            ->map(fn (DashboardWidget $master): array => [
+                'id' => (int) $master->getKey(),
+                'title' => $master->title ?? ('Widget #'.$master->getKey()),
+                'url' => DashboardWidgetResource::getUrl('view', ['record' => $master->getKey()]),
+                'children' => $this->onlyTables($master->detailWidgets()->getQuery())
+                    ->orderBy('order')
+                    ->orderBy('id')
+                    ->get()
+                    ->map(fn (DashboardWidget $child): array => [
+                        'id' => (int) $child->getKey(),
+                        'title' => $child->title ?? ('Widget #'.$child->getKey()),
+                        'url' => DashboardWidgetResource::getUrl('view', ['record' => $child->getKey()]),
+                    ])
+                    ->all(),
+            ])
             ->all();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    protected function childItems(DashboardWidget $master): array
-    {
-        $items = [$this->widgetItem($master, isCurrentMaster: true)];
-
-        $children = $this->onlyTables($master->detailWidgets()->getQuery())
-            ->orderBy('order')
-            ->orderBy('id')
-            ->get();
-
-        foreach ($children as $child) {
-            $items[] = $this->widgetItem($child);
-        }
-
-        return $items;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function widgetItem(DashboardWidget $widget, bool $isCurrentMaster = false): array
-    {
-        $childCount = DashboardWidget::query()->where('master_widget_id', $widget->getKey())->count();
-
-        return [
-            'type' => 'widget',
-            'id' => $widget->getKey(),
-            'title' => $widget->title ?? ('Widget #'.$widget->getKey()),
-            'isCurrentMaster' => $isCurrentMaster,
-            'childCount' => $childCount,
-            'url' => DashboardWidgetResource::getUrl('view', ['record' => $widget->getKey()]),
-            'drillUrl' => ($childCount > 0 && ! $isCurrentMaster)
-                ? static::getUrl([
-                    'category' => $this->category,
-                    'dashboardId' => $this->dashboardId,
-                    'master' => $widget->getKey(),
-                ])
-                : null,
-        ];
     }
 
     /**
      * @return array<int, array{label: string, url: ?string}>
      */
-    protected function buildTrail(?Dashboard $dashboard, ?DashboardWidget $master): array
+    protected function buildTrail(): array
     {
         $trail = [['label' => 'Tabelle', 'url' => static::getUrl()]];
 
-        if ($this->category !== null) {
-            $trail[] = [
-                'label' => $this->category === 0
-                    ? 'Senza categoria'
-                    : (MenuCategory::whereKey($this->category)->value('name') ?? 'Categoria'),
-                'url' => static::getUrl(['category' => $this->category]),
-            ];
-        }
-
-        if ($dashboard !== null) {
-            $trail[] = [
-                'label' => $dashboard->title ?? ('Dashboard #'.$dashboard->getKey()),
-                'url' => static::getUrl(['category' => $this->category, 'dashboardId' => $dashboard->getKey()]),
-            ];
-        }
-
-        if ($master !== null) {
-            $trail[] = [
-                'label' => $master->title ?? ('Widget #'.$master->getKey()),
-                'url' => null,
-            ];
+        if ($this->level === 'sections' && $this->category !== null) {
+            $trail[] = ['label' => $this->categoryLabel($this->category), 'url' => null];
         }
 
         return $trail;
     }
 
     /**
-     * Breadcrumb nativo di Filament (sopra il titolo): l'ultima voce è la
-     * pagina corrente e non è cliccabile.
+     * Breadcrumb nativo di Filament (sopra il titolo): l'ultima voce è la pagina
+     * corrente e non è cliccabile.
      *
      * @return array<string, string>|array<int, string>
      */
@@ -340,37 +277,22 @@ class DashboardTablesOverview extends Page
 
     public function getSubheading(): ?string
     {
-        $count = count($this->items);
-        $tables = $count === 1 ? 'tabella' : 'tabelle';
+        if ($this->level === 'categories') {
+            return 'Scegli una categoria per vederne le dashboard e le tabelle.';
+        }
 
-        return match ($this->level) {
-            'categories' => 'Scegli una categoria per vederne le tabelle.',
-            'dashboards' => 'Scegli una dashboard.',
-            'masters' => "{$count} {$tables} · apri una tabella per vederne le righe.",
-            'children' => 'La tabella master e le tabelle di dettaglio collegate.',
-            default => null,
-        };
+        return count($this->sections).' dashboard · espandi una sezione per aprire le sue tabelle.';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('resetTables')
+            Action::make('resetCategories')
                 ->label('Tutte le categorie')
                 ->icon(Heroicon::OutlinedSquares2x2)
                 ->color('gray')
-                ->visible(fn (): bool => $this->level !== 'categories')
+                ->visible(fn (): bool => $this->level === 'sections' && count($this->categories) > 1)
                 ->url(fn (): string => static::getUrl()),
-
-            Action::make('allTables')
-                ->label('Tutte le tabelle')
-                ->icon(Heroicon::OutlinedArrowUturnLeft)
-                ->color('gray')
-                ->visible(fn (): bool => $this->level === 'children')
-                ->url(fn (): string => static::getUrl([
-                    'category' => $this->category,
-                    'dashboardId' => $this->dashboardId,
-                ])),
         ];
     }
 }
