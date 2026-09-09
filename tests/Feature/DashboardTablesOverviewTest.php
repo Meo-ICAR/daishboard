@@ -116,4 +116,18 @@ class DashboardTablesOverviewTest extends TestCase
         $labels = array_column($page->get('trail'), 'label');
         $this->assertSame(['Tabelle', 'Con tabella', 'Dash A', 'W'], $labels);
     }
+
+    public function test_breadcrumbs_and_subheading_reflect_the_level(): void
+    {
+        $categories = $this->page()->instance();
+        $this->assertSame([], $categories->getBreadcrumbs()); // trail di 1 voce → niente breadcrumb
+        $this->assertStringContainsString('categoria', (string) $categories->getSubheading());
+
+        $children = $this->page(['master' => $this->widgets['masterTable']])->instance();
+        $breadcrumbs = $children->getBreadcrumbs();
+
+        $this->assertSame('W', end($breadcrumbs));            // pagina corrente, non cliccabile
+        $this->assertContains('Con tabella', $breadcrumbs);   // livelli superiori come link
+        $this->assertStringContainsString('dettaglio', (string) $children->getSubheading());
+    }
 }

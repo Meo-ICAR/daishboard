@@ -8,6 +8,7 @@ use App\Models\DashboardWidget;
 use App\Models\User;
 use Filament\Tables\Columns\Column;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -57,5 +58,31 @@ class ViewDashboardWidgetSearchTest extends TestCase
             ->assertDontSee('africano')
             ->searchTable('zzz-nessun-match')
             ->assertCountTableRecords(0);
+    }
+
+    public function test_numeric_columns_show_their_sum_in_the_table_footer(): void
+    {
+        $expected = (int) DB::connection('dbai')
+            ->scalar('SELECT COUNT(*) FROM patients WHERE active = 1');
+
+        Livewire::test(ViewDashboardWidget::class, ['record' => $this->widget->id])
+            ->assertSee('Somma')
+            ->assertSee(number_format($expected, 0, ',', '.'));
+    }
+
+    public function test_chart_action_is_hidden_for_table_widgets_and_visible_otherwise(): void
+    {
+        Livewire::test(ViewDashboardWidget::class, ['record' => $this->widget->id])
+            ->assertTableActionHidden('chart');
+
+        $chartWidget = DashboardWidget::create([
+            'dashboard_id' => $this->widget->dashboard_id,
+            'title' => 'Grafico', 'type' => 'bar',
+            'query' => 'SELECT etnia_id, COUNT(*) AS n FROM patients GROUP BY etnia_id',
+            'order' => 1, 'is_active' => true,
+        ]);
+
+        Livewire::test(ViewDashboardWidget::class, ['record' => $chartWidget->id])
+            ->assertTableActionVisible('chart');
     }
 }

@@ -16,6 +16,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -174,6 +175,15 @@ class ViewDashboardWidget extends Page implements HasTable
                 $column->searchable();
             }
 
+            // Ogni campo numerico mostra la somma nel footer della tabella.
+            if (in_array($name, $this->numericColumns, true)) {
+                $column->summarize(
+                    Summarizer::make()
+                        ->label('Somma')
+                        ->using(fn (): string => $this->columnSum($name)),
+                );
+            }
+
             $drilldown = in_array($name, $this->numericColumns, true)
                 ? $this->drilldownFor($name)
                 : null;
@@ -253,6 +263,27 @@ class ViewDashboardWidget extends Page implements HasTable
         }
 
         return false;
+    }
+
+    /**
+     * Somma formattata (locale IT) di una colonna numerica sulle righe correnti.
+     * Mostrata nel footer della tabella.
+     */
+    protected function columnSum(string $name): string
+    {
+        $sum = 0.0;
+
+        foreach ($this->queryRows as $row) {
+            $value = $row[$name] ?? null;
+
+            if (is_numeric($value)) {
+                $sum += (float) $value;
+            }
+        }
+
+        return $sum === (float) (int) $sum
+            ? number_format($sum, 0, ',', '.')
+            : rtrim(rtrim(number_format($sum, 2, ',', '.'), '0'), ',');
     }
 
     /**
@@ -435,6 +466,7 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->label('Grafico')
                 ->icon(Heroicon::OutlinedChartBar)
                 ->color('gray')
+                ->visible(fn (): bool => strtolower((string) $this->widgetType) !== 'table')
                 ->url(fn (): string => $this->widgetResourceUrl('chart')),
 
             Action::make('share')

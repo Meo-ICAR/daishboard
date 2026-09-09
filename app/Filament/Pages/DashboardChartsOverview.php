@@ -26,7 +26,7 @@ use Throwable;
 /**
  * Dashboard dei grafici: raggruppa tutti i grafici master. Cliccando un master
  * si ricostruisce la dashboard con i suoi grafici figli (?master={id}).
- * I filtri di coorte provengono dallo studio in corso dell'utente (Project).
+ * I filtri di coorte provengono dallo restrizione in corso dell'utente (Project).
  */
 class DashboardChartsOverview extends Page
 {
@@ -153,6 +153,8 @@ class DashboardChartsOverview extends Page
                 'error' => $result['error'],
                 'isMaster' => $this->master !== null && (int) $widget->getKey() === $this->master,
                 'hasChildren' => $hasChildren,
+                'hasProject' => $widget->project_id !== null,
+                'projectName' => $widget->project?->name,
                 'drillUrl' => $hasChildren
                     ? static::getUrl(['master' => $widget->getKey(), 'dashboardId' => $this->dashboardId])
                     : DashboardWidgetResource::getUrl('view', ['record' => $widget->getKey()]),
@@ -167,7 +169,7 @@ class DashboardChartsOverview extends Page
     protected function widgetsToShow()
     {
         if ($this->master !== null) {
-            $master = DashboardWidget::query()->find($this->master);
+            $master = DashboardWidget::query()->with('project')->find($this->master);
 
             if ($master === null) {
                 $this->master = null;
@@ -176,6 +178,7 @@ class DashboardChartsOverview extends Page
             }
 
             $children = $master->detailWidgets()
+                ->with('project')
                 ->whereRaw("COALESCE(LOWER(type), '') <> 'table'")
                 ->orderBy('order')
                 ->orderBy('id')
@@ -193,6 +196,7 @@ class DashboardChartsOverview extends Page
     protected function topLevelMasters()
     {
         return CompanyScope::byOwner(DashboardWidget::query())
+            ->with('project')
             ->whereNull('master_widget_id')
             ->where('is_active', true)
             ->whereRaw("COALESCE(LOWER(type), '') <> 'table'")
@@ -220,7 +224,7 @@ class DashboardChartsOverview extends Page
             return "{$label} {$range}";
         }, $this->activeProjectFilters());
 
-        return 'Studio in corso · '.implode('   ·   ', $parts);
+        return 'Restrizione in corso · '.implode('   ·   ', $parts);
     }
 
     /**
@@ -263,12 +267,12 @@ class DashboardChartsOverview extends Page
                 }),
 
             Action::make('studyFilters')
-                ->label('Filtri studio')
+                ->label('Restrizione in corso')
                 ->icon(Heroicon::OutlinedFunnel)
                 ->badge(fn (): ?string => ($n = count($this->activeProjectFilters())) > 0 ? (string) $n : null)
                 ->badgeColor('warning')
                 ->visible(fn (): bool => filled($this->dateFilterCatalog))
-                ->modalHeading('Filtri di coorte dello studio in corso')
+                ->modalHeading('Restrizione in corso')
                 ->modalDescription('Applicati a tutti i grafici della dashboard e memorizzati nel tuo studio.')
                 ->fillForm(fn (): array => [
                     'filters' => $this->projectFilters === []

@@ -9,11 +9,11 @@ use App\Filament\Resources\Projects\Schemas\ProjectForm;
 use App\Filament\Resources\Projects\Tables\ProjectsTable;
 use App\Models\Project;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ProjectResource extends Resource
 {
@@ -21,13 +21,13 @@ class ProjectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBeaker;
 
-    protected static string|UnitEnum|null $navigationGroup =  null;
+    protected static string|UnitEnum|null $navigationGroup = null;
 
-    protected static ?string $navigationLabel = 'Studi';
+    protected static ?string $navigationLabel = 'Restrizioni';
 
-    protected static ?string $modelLabel = 'studio';
+    protected static ?string $modelLabel = 'restrizione';
 
-    protected static ?string $pluralModelLabel = 'studi';
+    protected static ?string $pluralModelLabel = 'restrizioni';
 
     protected static ?string $recordTitleAttribute = 'name';
 

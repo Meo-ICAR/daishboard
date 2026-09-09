@@ -25,6 +25,11 @@
                 ])>
                     <div class="flex items-center justify-between gap-2 pb-1">
                         <div class="flex items-center gap-1.5 min-w-0">
+                            @php
+                                $studyTitle = $chart['projectName']
+                                    ? 'Studio: '.$chart['projectName']
+                                    : 'Filtri di studio applicati';
+                            @endphp
                             @if ($chart['isMaster'])
                                 <a href="{{ $chart['viewUrl'] }}"
                                    class="truncate text-sm font-semibold text-primary-600 hover:text-primary-500 dark:text-primary-400 hover:underline"
@@ -41,6 +46,12 @@
                                 @if ($chart['hasChildren'])
                                     <x-filament::badge color="gray" size="sm">figli</x-filament::badge>
                                 @endif
+                            @endif
+
+                            @if ($chart['hasProject'])
+                                <span class="shrink-0" title="{{ $studyTitle }}" aria-label="{{ $studyTitle }}">
+                                    <x-filament::icon icon="heroicon-o-beaker" class="h-4 w-4 text-primary-500" />
+                                </span>
                             @endif
                         </div>
                     </div>

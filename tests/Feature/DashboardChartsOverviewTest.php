@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Pages\DashboardChartsOverview;
 use App\Models\Dashboard;
 use App\Models\DashboardWidget;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -75,5 +76,23 @@ class DashboardChartsOverviewTest extends TestCase
         $this->assertContains($master->id, $ids);
         $this->assertContains($lineChild->id, $ids);
         $this->assertNotContains($tableChild->id, $ids);
+    }
+
+    public function test_beaker_icon_marks_charts_that_have_a_project(): void
+    {
+        $project = Project::create([
+            'user_id' => auth()->id(), 'name' => 'Coorte 2015', 'date_filters' => [], 'is_current' => false,
+        ]);
+        $withProject = $this->widget(['type' => 'bar', 'project_id' => $project->id]);
+        $withoutProject = $this->widget(['type' => 'bar']);
+
+        $page = Livewire::test(DashboardChartsOverview::class);
+
+        $charts = collect($page->get('charts'))->keyBy('id');
+        $this->assertTrue($charts[$withProject->id]['hasProject']);
+        $this->assertSame('Coorte 2015', $charts[$withProject->id]['projectName']);
+        $this->assertFalse($charts[$withoutProject->id]['hasProject']);
+
+        $page->assertSee('Studio: Coorte 2015');
     }
 }

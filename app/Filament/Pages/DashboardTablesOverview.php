@@ -104,11 +104,11 @@ class DashboardTablesOverview extends Page
 
         if ($master !== null && $dashboard !== null) {
             $this->level = 'children';
-            $this->heading = 'Tabelle collegate a: '.($master->title ?? ('Widget #'.$master->getKey()));
+            $this->heading = $master->title ?? ('Widget #'.$master->getKey());
             $this->items = $this->childItems($master);
         } elseif ($dashboard !== null) {
             $this->level = 'masters';
-            $this->heading = 'Tabelle di: '.($dashboard->title ?? ('Dashboard #'.$dashboard->getKey()));
+            $this->heading = $dashboard->title ?? ('Dashboard #'.$dashboard->getKey());
             $this->items = $this->masterItems($dashboard);
         } elseif ($this->category !== null) {
             $this->level = 'dashboards';
@@ -116,7 +116,7 @@ class DashboardTablesOverview extends Page
             $this->items = $this->dashboardItems($this->category);
         } else {
             $this->level = 'categories';
-            $this->heading = 'Categorie';
+            $this->heading = null;
             $this->items = $this->categoryItems();
         }
 
@@ -308,6 +308,48 @@ class DashboardTablesOverview extends Page
         }
 
         return $trail;
+    }
+
+    /**
+     * Breadcrumb nativo di Filament (sopra il titolo): l'ultima voce è la
+     * pagina corrente e non è cliccabile.
+     *
+     * @return array<string, string>|array<int, string>
+     */
+    public function getBreadcrumbs(): array
+    {
+        if (count($this->trail) <= 1) {
+            return [];
+        }
+
+        $crumbs = [];
+        $lastIndex = count($this->trail) - 1;
+
+        foreach ($this->trail as $index => $crumb) {
+            if ($index === $lastIndex) {
+                $crumbs[] = $crumb['label'];
+
+                continue;
+            }
+
+            $crumbs[$crumb['url'] ?? '#'] = $crumb['label'];
+        }
+
+        return $crumbs;
+    }
+
+    public function getSubheading(): ?string
+    {
+        $count = count($this->items);
+        $tables = $count === 1 ? 'tabella' : 'tabelle';
+
+        return match ($this->level) {
+            'categories' => 'Scegli una categoria per vederne le tabelle.',
+            'dashboards' => 'Scegli una dashboard.',
+            'masters' => "{$count} {$tables} · apri una tabella per vederne le righe.",
+            'children' => 'La tabella master e le tabelle di dettaglio collegate.',
+            default => null,
+        };
     }
 
     protected function getHeaderActions(): array

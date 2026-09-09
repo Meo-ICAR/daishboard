@@ -10,7 +10,6 @@ use App\Filament\Resources\DashboardWidgets\Pages\ViewDashboardWidget;
 use App\Filament\Resources\DashboardWidgets\Schemas\DashboardWidgetForm;
 use App\Filament\Resources\DashboardWidgets\Tables\DashboardWidgetsTable;
 use App\Models\DashboardWidget;
-
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -22,16 +21,15 @@ class DashboardWidgetResource extends Resource
 {
     protected static ?string $model = DashboardWidget::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;
 
-    
-    protected static string|UnitEnum|null $navigationGroup =  null;
+    protected static string|UnitEnum|null $navigationGroup = null;
 
-    protected static ?string $navigationLabel = 'Grafici';
+    protected static ?string $navigationLabel = 'Estrazioni dati';
 
-    protected static ?string $modelLabel = 'widget';
+    protected static ?string $modelLabel = 'estrazione';
 
-    protected static ?string $pluralModelLabel = 'widget grafici';
+    protected static ?string $pluralModelLabel = 'estrazioni';
 
     protected static ?string $recordTitleAttribute = 'title';
 

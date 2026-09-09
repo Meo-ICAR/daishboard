@@ -21,15 +21,15 @@ class LookupTableResource extends Resource
 {
     protected static ?string $model = LookupTable::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
 
     protected static string|UnitEnum|null $navigationGroup = 'Legenda';
 
-    protected static ?string $navigationLabel = 'Lookup';
+    protected static ?string $navigationLabel = 'Codifiche';
 
-    protected static ?string $modelLabel = 'tabella lookup';
+    protected static ?string $modelLabel = 'tabella';
 
-    protected static ?string $pluralModelLabel = 'tabelle lookup';
+    protected static ?string $pluralModelLabel = 'tabelle';
 
     protected static ?string $recordTitleAttribute = 'table_name';
 

@@ -25,7 +25,7 @@ class SchemaLegendResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Legenda';
 
-    protected static ?string $navigationLabel = 'Tabelle principali';
+    protected static ?string $navigationLabel = 'Dati';
 
     protected static ?string $modelLabel = 'tabella';
 

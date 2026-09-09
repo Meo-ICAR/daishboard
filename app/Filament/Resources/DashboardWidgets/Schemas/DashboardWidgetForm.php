@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\DashboardWidgets\Schemas;
 
-use App\Support\ChartType;
 use App\Models\Dashboard;
 use App\Models\DashboardWidget;
 use App\Models\Project;
+use App\Support\ChartType;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -29,8 +29,8 @@ class DashboardWidgetForm
                     ->live()
                     ->required(),
                 Select::make('project_id')
-                    ->label('Studio (filtri di coorte)')
-                    ->helperText('Applica i filtri di coorte dello studio (date, flag, lookup) alla query del widget. Sono elencati solo gli studi dello stesso database della dashboard.')
+                    ->label('Restrizione')
+                    ->helperText('Applica  restrizione (date, flag, lookup) alla selezione del widget. Sono elencati solo le restrizioni dello stesso database della dashboard.')
                     ->relationship(
                         name: 'project',
                         titleAttribute: 'name',

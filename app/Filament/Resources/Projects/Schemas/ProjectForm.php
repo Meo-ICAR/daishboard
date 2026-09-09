@@ -26,7 +26,8 @@ class ProjectForm
         return $schema
             ->components([
                 Section::make('Studio')
-                    ->columns(2)
+                    ->columnSpanFull()
+                    ->description('Definisce i filtri applicati in modo trasversale alle dashboard ')
                     ->schema([
                         Select::make('user_id')
                             ->label('Utente')
@@ -44,14 +45,14 @@ class ProjectForm
                             ->label('Database')
                             ->maxLength(255),
                         Toggle::make('is_current')
-                            ->label('Studio in corso')
-                            ->helperText('Solo lo studio in corso viene applicato alle dashboard grafiche.')
+                            ->label('Restrizione in corso')
+                            ->helperText('Solo la restrizione in corso viene applicata alle dashboard grafiche.')
                             ->default(true)
                             ->inline(false),
                     ]),
 
                 Section::make('Filtri per data')
-                    ->description('Restringono la coorte (patients / patient_visits) in AND, prima del raggruppamento. Scegli un preset oppure un intervallo personalizzato.')
+                    ->description('Restringono la coorte prima del raggruppamento. Scegli un preset oppure un intervallo personalizzato.')
                     ->schema([
                         Repeater::make('date_filters')
                             ->hiddenLabel()
