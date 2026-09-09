@@ -54,7 +54,8 @@ class SchemaLegendsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
             ]);
     }
 }

@@ -72,17 +72,17 @@ class AdminPanelProvider extends PanelProvider
                             ->icon('fab-microsoft')
                             ->color(Color::hex('#f3f3f3'))
                             ->outlined(false)
-                            ->stateless(false)
-                            ->scopes(['...'])
-                            ->with(['...']),
+                            ->stateless(false),
+                        //     ->scopes(['...'])
+                        //    ->with(['...']),
                         Provider::make('google')
                             ->label('Google')
                             ->icon('fab-google')
                             ->color(Color::hex('#4285F4'))
                             ->outlined(false)
-                            ->stateless(false)
-                            ->scopes(['...'])
-                            ->with(['...']),
+                            ->stateless(false),
+                        //   ->scopes(['...'])
+                        //   ->with(['...']),
                     ])
                     // (optional) Override the panel slug to be used in the oauth routes. Defaults to the panel's configured path.
                //     ->slug('admin')

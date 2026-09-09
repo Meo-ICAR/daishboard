@@ -47,8 +47,14 @@ class LookupTableInfolist
                             ->hiddenLabel()
                             ->columns(2)
                             ->schema([
-                                TextEntry::make('value')->label('Valore')->placeholder('∅'),
-                                TextEntry::make('label')->label('Etichetta')->placeholder('∅'),
+                                TextEntry::make('value')
+                                    ->hiddenLabel()
+                                    ->weight('semibold')
+                                    ->placeholder('∅'),
+                                TextEntry::make('label')
+                                    ->hiddenLabel()
+                                    ->color('gray')
+                                    ->placeholder('∅'),
                             ]),
                     ]),
             ]);

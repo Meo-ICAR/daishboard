@@ -19,6 +19,7 @@ class ListLookupTables extends ListRecords
             Action::make('sync')
                 ->label('Sincronizza lookup')
                 ->icon(Heroicon::OutlinedArrowPath)
+                ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                 ->requiresConfirmation()
                 ->modalDescription('Rilegge tutte le tabelle del database e aggiorna il catalogo lookup e i collegamenti automatici.')
                 ->action(function (): void {

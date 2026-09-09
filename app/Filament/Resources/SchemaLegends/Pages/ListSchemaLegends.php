@@ -19,6 +19,7 @@ class ListSchemaLegends extends ListRecords
             Action::make('sync')
                 ->label('Sincronizza schema')
                 ->icon(Heroicon::OutlinedArrowPath)
+                ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                 ->requiresConfirmation()
                 ->modalDescription('Rilegge lo schema del database e aggiorna la legenda delle tabelle configurate.')
                 ->action(function (): void {

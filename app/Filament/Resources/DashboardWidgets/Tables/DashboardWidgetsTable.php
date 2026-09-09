@@ -14,9 +14,9 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -75,11 +75,6 @@ class DashboardWidgetsTable
                     ->placeholder('—')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-
-                IconColumn::make('is_active')
-                    ->label('Attivo')
-                    ->boolean()
-                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('dashboard_id')
@@ -121,6 +116,28 @@ class DashboardWidgetsTable
                         'not_table' => $query->whereRaw("COALESCE(LOWER(type), '') <> 'table'"),
                         default => $query,
                     }),
+                TernaryFilter::make('master_widget')
+                    ->label('Master')
+                    ->placeholder('Tutti')
+                    ->trueLabel('Con figli')
+                    ->falseLabel('Senza figli')
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'true' => $query->whereNotNull('master_widget'),
+                        'false' => $query->whereNull('master_widget'),
+                        default => $query,
+                    }),
+
+                TernaryFilter::make('is_active')
+                    ->label('Stato')
+                    ->queries(
+                        true: fn ($query) => $query->where('is_active', true),
+                        false: fn ($query) => $query->where('is_active', false),
+                    )
+                    ->placeholder('Tutti')
+                    ->trueLabel('Solo Attivi')
+                    ->falseLabel('Solo Dimessi')
+                    ->default(true),
+
             ])
             ->recordActions([
                 Action::make('duplicate')

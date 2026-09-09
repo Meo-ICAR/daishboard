@@ -24,7 +24,7 @@ class DashboardTablesOverview extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
-    protected static ?string $navigationLabel = 'Tabelle';
+    protected static ?string $navigationLabel = 'Prospetti';
 
     protected static ?string $title = 'Tabelle';
 

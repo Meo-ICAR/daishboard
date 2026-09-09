@@ -37,7 +37,8 @@ class ViewLookupTable extends ViewRecord
                     ]);
                 }),
 
-            EditAction::make(),
+            EditAction::make()
+                ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
         ];
     }
 }
