@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\ChartType;
 use App\Support\CompanyScope;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -55,13 +56,6 @@ class DashboardWidgetsTable
                         strtolower((string) $record->type) === 'table' ? 'view' : 'chart',
                         ['record' => $record],
                     )),
-
-                // Ordine → cliccabile → edit
-                TextColumn::make('order')
-                    ->label('Ordine')
-                    ->numeric()
-                    ->sortable()
-                    ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl('edit', ['record' => $record])),
 
                 TextColumn::make('masterWidget.title')
                     ->label('Widget master')
@@ -140,6 +134,8 @@ class DashboardWidgetsTable
 
             ])
             ->recordActions([
+                EditAction::make(),
+
                 Action::make('duplicate')
                     ->label('Duplica')
                     ->icon(Heroicon::OutlinedDocumentDuplicate)
