@@ -8,8 +8,9 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
 /**
- * Esporta in Excel il risultato (già filtrato) della query di un DashboardWidget.
- * Riceve colonne e righe così come calcolate da WidgetDatasetRunner.
+ * Esporta in Excel una tabella generica: intestazioni + righe associative
+ * (chiavi = intestazioni). Usato per il risultato di un DashboardWidget, per i
+ * campi di una legenda schema e per i valori di una tabella di codifica.
  */
 class WidgetDatasetExport implements FromArray, ShouldAutoSize, WithHeadings, WithTitle
 {

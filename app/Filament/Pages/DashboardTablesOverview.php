@@ -26,7 +26,7 @@ class DashboardTablesOverview extends Page
 
     protected static ?string $navigationLabel = 'Prospetti';
 
-    protected static ?string $title = 'Tabelle';
+    protected static ?string $title = 'Prospetti';
 
     protected string $view = 'filament.pages.dashboard-tables-overview';
 

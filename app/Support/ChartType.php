@@ -52,7 +52,7 @@ class ChartType
             ],
             'table' => [
                 'label' => 'Tabella',
-                'icon' => Heroicon::OutlinedSignalSlash,
+                'icon' => Heroicon::OutlinedTableCells,
                 'description' => 'Solo tabella dati',
             ],
         ];

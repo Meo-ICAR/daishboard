@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             MenuCategorySeeder::class,
             DashboardSeeder::class,
             DashboardWidgetSeeder::class,
+            MediatoreDashboardSeeder::class,
+            HivDashboardSeeder::class,
             //  ChatHistorySeeder::class,
         ]);
     }

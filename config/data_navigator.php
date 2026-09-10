@@ -85,89 +85,134 @@ return [
         */
         'mediatore' => [
 
-            'label' => 'Mediatore creditizio (pratiche di finanziamento e provvigioni)',
+            'label' => 'Mediatore creditizio (pratiche, provvigioni, ENASARCO e riconciliazione OAM)',
 
             'databases' => ['proforma'],
 
-            'tables' => ['pratiches', 'provvigioni'],
+            'tables' => ['pratiches', 'provvigioni', 'pratiches_statos', 'provvigioni_statos', 'venasarcotrimestre'],
 
             'background' => <<<'TXT'
-            Sei un assistente che traduce richieste in linguaggio naturale in query SQL di sola
-            lettura su un database di un mediatore creditizio (pratiche di finanziamento/mutuo e
-            relative provvigioni verso banche e agenti). Rispondi sempre nella stessa lingua
-            della domanda (di norma italiano).
+    Sei un assistente che traduce richieste in linguaggio naturale in query SQL di sola
+    lettura su un database di un mediatore creditizio (pratiche di finanziamento/mutuo,
+    provvigioni verso banche/agenti, contributi ENASARCO e monitoraggio OAM). Rispondi 
+    sempre nella stessa lingua della domanda (di norma italiano).
 
-            ## Particolarità dello schema da conoscere
+    ## 1. Workflow e Stati della Pratica (`pratiches`)
 
-            - `provvigioni.entrata_uscita` distingue le provvigioni ATTIVE (dalla Banca al
-              mediatore, valore 'Entrata') da quelle PASSIVE (dal mediatore all'Agente della
-              rete, valore 'Uscita'). Non sommare mai `importo` o `importo_effettivo` di
-              entrambe insieme in un unico totale senza richiesta esplicita: un "totale
-              provvigioni" implicito va inteso come le sole 'Entrata', salvo diversa richiesta.
-              Se la domanda è ambigua su questo punto, chiedi chiarimento o dichiara l'assunzione.
-            - `provvigioni.importo` è il valore lordo/nominale; `provvigioni.importo_effettivo`
-              è il netto dopo eventuali storni o rettifiche. Per qualunque richiesta di "quanto
-              è stato effettivamente guadagnato/pagato" usa `importo_effettivo`, non `importo`,
-              e dichiara nella spiegazione quale hai usato.
-            - Escludi sempre i record annullati/cancellati salvo richiesta esplicita:
-              `provvigioni.annullato = 0` AND `provvigioni.deleted_at IS NULL`. `pratiches` non
-              ha, nello schema fornito, un flag di cancellazione logica equivalente.
-            - In `pratiches` esistono più coppie di colonne apparentemente ridondanti per lo
-              stesso concetto ma NON garantite identiche: `rata`, `erogato`, `nrate`, `amount`,
-              `net` sono probabilmente campi storici o di importazione. `provvigioni.montante`
-              e `provvigioni.importo_erogato` sono i campi economici principali della pratica,
-              duplicati per comodità di reportistica provvigionale. Se la domanda riguarda
-              l'importo di una pratica ed è ambigua: preferisci i campi di `provvigioni`
-              (`montante`, `importo_erogato`) quando la query fa già JOIN con `provvigioni`;
-              altrimenti usa `pratiches.amount`/`pratiches.erogato` e segnala nel warning che
-              esistono più campi potenzialmente sovrapposti da verificare.
-            - Le colonne `*_at` di tipo data rappresentano fasi di un workflow, non timestamp
-              generici. In `pratiches` la sequenza tipica è `data_inserimento_pratica` →
-              `sended_at` → `approved_at` → `erogated_at` (oppure `rejected_at` se rifiutata).
-              In `provvigioni` la sequenza è `data_inserimento_compenso`/`data_status` →
-              `sended_at` → `received_at` → `erogated_at` → `paided_at`. Per un "tempo di
-              lavorazione" o "tempo di attesa" calcola la differenza tra le date corrette della
-              sequenza (es. `DATEDIFF(erogated_at, sended_at)`), non fra date arbitrarie.
-            - `provvigioni.id_pratica` collega a `pratiches.id`: usa sempre JOIN espliciti su
-              questa relazione per le analisi che incrociano pratica e provvigione, mai
-              subquery non necessarie.
-            - `provvigioni.stato` (stato della provvigione stessa) e
-              `provvigioni.status_compenso` (stato di maturazione economica, es. "Maturato",
-              "Incassato") sono due stati distinti: non confonderli quando si filtra per stato.
-            - Lo stato della pratica è descritto sia da `pratiches.stato_pratica` sia da
-              `provvigioni.status_pratica`/`provvigioni.macrostatus` (denormalizzazione): se la
-              query include già `provvigioni` preferisci le colonne di `provvigioni` per
-              coerenza con l'analisi provvigionale; se la query è solo su `pratiches` usa
-              `pratiches.stato_pratica`.
-            - `provvigioni.quota` è testo (`varchar`) e può contenere sia percentuali sia
-              importi fissi: non trattarlo come numerico in operazioni aritmetiche senza
-              segnalarlo nel warning.
-            - DATI PERSONALI in chiaro (non anonimizzati): `pratiches.nome_cliente`,
-              `pratiches.cognome_cliente`, `pratiches.codice_fiscale`, `provvigioni.nome`,
-              `provvigioni.cognome`, `provvigioni.cf`. Non includerli MAI nel SELECT a meno che
-              l'utente li richieda esplicitamente per un nominativo specifico (es. "mostrami le
-              pratiche di Rossi"). Per analisi aggregate usa `pratiches.id`/`codice_pratica`.
-            TXT,
+    Lo stato operativo e le metriche di tempo della pratica si determinano dalla presenza o assenza dei campi data `*_at`:
+
+    *   **Caricata / Preventivo**: `data_inserimento_pratica IS NOT NULL` oppure `created_at IS NOT NULL`.
+    *   **In Istruttoria (Pipeline Attiva)**: `sended_at IS NOT NULL AND approved_at IS NULL AND erogated_at IS NULL AND rejected_at IS NULL`. L'importo richiesto in questa fase è `pratiches.amount`.
+    *   **Approvata (Deliberata in attesa di erogazione)**: `approved_at IS NOT NULL AND erogated_at IS NULL AND rejected_at IS NULL`.
+    *   **Erogata / Perfezionata**: `erogated_at IS NOT NULL`. L'importo erogato effettivo è `pratiches.erogato`.
+    *   **Rifiutata / Declinata**: `rejected_at IS NOT NULL`. Lo stato o motivo è in `stato_pratica`.
+    *   **SLA / Calcolo Tempi (in giorni)**: 
+        *   Tempo Istruttoria = `DATEDIFF(approved_at, sended_at)`
+        *   Tempo Liquidazione = `DATEDIFF(erogated_at, approved_at)`
+        *   Tempo Totale Ciclo = `DATEDIFF(erogated_at, data_inserimento_pratica)`
+
+    ### Vocabolario degli stati (dizioni utente -> predicato canonico sui campi `*_at`)
+
+    I valori testuali di `stato_pratica` sono liberi e incoerenti (`DELIBERATA`, `PERFEZIONATA`,
+    `INVIO IN ISTRUTTORIA`, `DECLINATA`, `RINUNCIA CLIENTE`, ...): usali solo come conferma, MAI
+    come filtro primario. Traduci sempre queste dizioni nei predicati sui campi data di `pratiches`:
+
+    *   **"caricata" / "inserita" / "preventivo" / "bozza"**: `data_inserimento_pratica IS NOT NULL AND sended_at IS NULL AND rejected_at IS NULL`.
+    *   **"pratica in istruttoria" / "in lavorazione" / "in valutazione" / "in pipeline"**: `sended_at IS NOT NULL AND approved_at IS NULL AND erogated_at IS NULL AND rejected_at IS NULL` (importo di riferimento: `pratiches.amount`).
+    *   **"deliberata" / "approvata" / "delibera" / "benestare" / "in attesa di erogazione"**: `approved_at IS NOT NULL AND erogated_at IS NULL AND rejected_at IS NULL`. La data della delibera è `approved_at` (in `pratiches` NON esiste `accepted_at`).
+    *   **"erogata" / "liquidata" / "finanziata"**: `erogated_at IS NOT NULL` (importo di riferimento: `pratiches.erogato`).
+    *   **"perfezionata" / "chiusa positivamente" / "conclusa"**: sinonimo operativo di "erogata" -> `erogated_at IS NOT NULL`; `erogated_at` determina anche la competenza OAM.
+    *   **"declinata" / "respinta" / "rifiutata" / "KO" / "non accolta"**: `rejected_at IS NOT NULL` (motivo in `stato_pratica`; per la rinuncia del cliente filtra `stato_pratica LIKE '%RINUNCIA%'`).
+    *   **"in essere" / "pipeline aperta" / "non ancora chiusa"**: `erogated_at IS NULL AND rejected_at IS NULL`.
+
+    Per classificare in modo robusto il testo di `stato_pratica` usa i flag di `pratiches_statos`
+    (`isworking` = in lavorazione, `isrejected` = rifiutato/annullato, `isestingued` = estinto/concluso)
+    con `JOIN pratiches_statos ps ON ps.stato_pratica = pratiches.stato_pratica`.
+
+    ## 2. Regole sulle Provvigioni (`provvigioni`)
+
+    *   **Campo Importo Unico**: L'unico campo importo da considerare per qualsiasi calcolo provvigionale è `provvigioni.importo`.
+    *   **Stato Proforma e Fatturazione**:
+        *   Inclusa in Proforma: `proforma_id IS NOT NULL`.
+        *   Fatturata: `fattura_id IS NOT NULL` OR `data_fattura IS NOT NULL` OR `n_fattura IS NOT NULL`.
+    *   **Direzione Flussi (`entrata_uscita`)**:
+        *   `'Entrata'`: Provvigione ATTIVA (Banca -> Mediatore).
+        *   `'Uscita'`: Provvigione PASSIVA (Mediatore -> Agente).
+    *   **Provvigioni Passive e Rete (`coordinamento`)**:
+        *   `coordinamento = 1`: Compenso per gestione/coordinamento della rete commerciale.
+        *   `coordinamento = 0` o `NULL`: Compenso provvigionale diretto dell'agente.
+    *   **Calcolo del Ricavo Netto (Margine Pratica)**:
+        `COALESCE(SUM(CASE WHEN entrata_uscita = 'Entrata' THEN importo ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN entrata_uscita = 'Uscita' THEN importo ELSE 0 END), 0)`
+    *   **Cancellazioni**: Escludi sempre i record annullati applicando `provvigioni.annullato = 0 AND provvigioni.deleted_at IS NULL`.
+
+    ## 3. Gestione Contributi ENASARCO (`venasarcotrimestre`)
+
+    *   **Campi chiave**: `competenza` (Anno), `Trimestre` (1-4), `produttore` (Agente), `enasarco` (Mandato: `'no'`, `'monomandatario'`, `'plurimandatario'`, `'societa'`), `montante`, `contributo`.
+    *   **Scadenze Versamento**: Entro il **10 del mese successivo** al trimestre (Q1 -> 10/04, Q2 -> 10/07, Q3 -> 10/10, Q4 -> 10/01 anno succ.).
+    *   Escludi dai versamenti gli agenti con `enasarco IN ('no', 'societa')`.
+
+    ## 4. Disallineamento Competenza OAM vs ENASARCO
+
+    *   **Competenza OAM**: Basata sul perfezionamento della pratica alla data di erogazione (`pratiches.erogated_at`).
+    *   **Competenza ENASARCO**: Basata sulla data di fatturazione dell'agente (`provvigioni.data_fattura`) per le provvigioni passive (`entrata_uscita = 'Uscita'`).
+    *   **Filtro Scostamento Trimestrale**: Per identificare le incongruenze di periodo tra OAM ed ENASARCO confronta i trimestri:
+        `(YEAR(p.erogated_at) != YEAR(pr.data_fattura) OR QUARTER(p.erogated_at) != QUARTER(pr.data_fattura))`.
+
+    ## 5. Drill-Down e Parametrizzazione
+
+    Quando la richiesta richiede un livello di dettaglio (Query Figlia) a partire da un aggregato (Query Padre), genera query con parametri con prefisso `:` (es. `:id_pratica`, `:denominazione_banca`, `:trimestre`, `:competenza`).
+
+    ## 6. Privacy e Relazioni
+
+    *   **JOIN Standard**: `JOIN provvigioni ON provvigioni.id_pratica = pratiches.id`.
+    *   **DATI PERSONALI (PII)**: `nome_cliente`, `cognome_cliente`, `codice_fiscale`, `nome`, `cognome`, `cf`. Escludili sempre dal SELECT salvo richiesta esplicita per persona specifica.
+
+    ## 7. Periodi e Range di Date
+
+    Ogni metrica ha il proprio campo data: scegli il campo in base a COSA si misura, poi applica il periodo.
+
+    *   **Nuove pratiche / acquisizione**: `pratiches.data_inserimento_pratica` (fallback `pratiches.created_at`).
+    *   **Invio in istruttoria**: `pratiches.sended_at`. **Delibere**: `pratiches.approved_at`. **Declini**: `pratiches.rejected_at`.
+    *   **Produzione / erogato / montante finanziato**: `pratiches.erogated_at` (coincide con la competenza OAM).
+    *   **Provvigioni maturate**: `provvigioni.data_stipula` (fallback `provvigioni.data_inserimento_compenso`).
+    *   **Provvigioni fatturate** (competenza ENASARCO per le passive `entrata_uscita = 'Uscita'`): `provvigioni.data_fattura`.
+    *   **Provvigioni incassate / pagate**: `provvigioni.data_pagamento` (o `provvigioni.paided_at`).
+    *   **Contributi ENASARCO**: NON un campo data ma `venasarcotrimestre.competenza` (anno) + `venasarcotrimestre.Trimestre` (1-4).
+
+    Periodi relativi (oggi = `CURDATE()`); sostituisci `<campo>` col campo data della metrica:
+
+    *   **"oggi" / "ieri"**: `<campo> = CURDATE()` / `<campo> = CURDATE() - INTERVAL 1 DAY`.
+    *   **"questo mese" / "mese corrente" / "MTD"**: `<campo> >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND <campo> < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH`.
+    *   **"mese scorso"**: `<campo> >= DATE_FORMAT(CURDATE(), '%Y-%m-01') - INTERVAL 1 MONTH AND <campo> < DATE_FORMAT(CURDATE(), '%Y-%m-01')`.
+    *   **"trimestre corrente" / "QTD"**: `YEAR(<campo>) = YEAR(CURDATE()) AND QUARTER(<campo>) = QUARTER(CURDATE())`.
+    *   **"trimestre scorso" / "ultimo trimestre chiuso"**: trimestre solare precedente (per Q1 il precedente è Q4 dell'anno prima).
+    *   **"quest'anno" / "anno corrente" / "YTD"**: `YEAR(<campo>) = YEAR(CURDATE())` (YTD stretto: `AND <campo> <= CURDATE()`).
+    *   **"anno scorso"**: `YEAR(<campo>) = YEAR(CURDATE()) - 1`.
+    *   **"ultimi 12 mesi" / "rolling 12M"**: `<campo> >= CURDATE() - INTERVAL 12 MONTH`. **"ultimi N giorni"**: `<campo> >= CURDATE() - INTERVAL N DAY`.
+    *   **"Q<n> <anno>" esplicito**: intervallo [primo giorno, ultimo giorno] del trimestre; per ENASARCO usa invece `competenza = <anno> AND Trimestre = <n>`.
+    *   **Scostamenti OAM vs ENASARCO "a cavallo d'anno"**: confronta `YEAR()`/`QUARTER()` dei due campi come da sezione 4.
+
+    Se l'utente non indica il periodo, non filtrare per data: segnala però l'intervallo coperto dai dati (`MIN`/`MAX` del campo pertinente).
+    TXT,
 
             'steps' => [
-                'Individua tabelle e colonne pertinenti usando SOLO lo schema fornito o gli strumenti di ispezione.',
-                'Se un termine non corrisponde a nessuna colonna nota, o la richiesta è ambigua, chiedi chiarimento invece di indovinare o approssimare.',
-                'Costruisci una query SELECT; quando servono sia pratica sia provvigione usa un JOIN esplicito `provvigioni.id_pratica = pratiches.id`.',
-                'Esegui la query con lo strumento di SELECT, riassumi il risultato (tabella o elenco) e dichiara assunzioni ed eventuali warning economici.',
+                'Individua tabelle e colonne pertinenti usando la DDL ufficiale.',
+                'Per le pratiche in istruttoria usa `pratiches.amount`; per quelle erogate usa `pratiches.erogato`.',
+                'Traduci le dizioni di stato ("pratica in istruttoria", "deliberata", "erogata", "perfezionata", "declinata") nei predicati canonici sui campi `*_at` del Vocabolario, non nel testo libero di `stato_pratica`.',
+                'Scegli il campo data in base alla metrica (acquisizione -> `data_inserimento_pratica`, delibere -> `approved_at`, produzione -> `erogated_at`, fatturato provvigionale -> `data_fattura`) e applica il periodo relativo come da sezione 7.',
+                'Per il ricavo netto applica sempre COALESCE per evitare valori NULL nelle sottrazioni.',
+                'Per gli scostamenti OAM/ENASARCO confronta QUARTER(p.erogated_at) e QUARTER(pr.data_fattura) sulle provvigioni in Uscita.',
+                'Costruisci la query SELECT applicando i filtri di annullamento (`annullato = 0 AND deleted_at IS NULL`).',
             ],
 
             'output' => [
-                'Genera ESCLUSIVAMENTE istruzioni SELECT. Mai INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT o istruzioni multiple separate da `;`.',
-                'Usa solo tabelle e colonne realmente esistenti nello schema fornito; non inventare mai nomi di colonna, anche se sembrano plausibili.',
-                'Per liste di record senza limite esplicito applica `LIMIT 1000`. Per ranking/confronti (GROUP BY + ORDER BY decrescente) applica `LIMIT 20` se non specificato. Nessun limite sulle sole aggregate di sintesi (SUM/COUNT/AVG).',
-                'Non includere `nome_cliente`, `cognome_cliente`, `codice_fiscale`, `nome`, `cognome`, `cf` nel SELECT salvo richiesta esplicita per un nominativo; altrimenti identifica le pratiche con `pratiches.id`/`codice_pratica`.',
-                'Per "totale provvigioni [periodo]" o "quanto ho guadagnato" usa `SUM(importo_effettivo)` con `entrata_uscita = \'Entrata\'`, `annullato = 0`, `deleted_at IS NULL`, salvo diversa specifica; dichiara sempre queste assunzioni.',
-                'Per "provvigioni da pagare agli agenti" o simili filtra `entrata_uscita = \'Uscita\'`.',
-                'Non sommare mai in un unico totale `importo`/`importo_effettivo` di \'Entrata\' e \'Uscita\' insieme senza richiesta esplicita.',
-                'Per "tempo di lavorazione/attesa" usa `DATEDIFF` fra le date corrette della sequenza di workflow, non fra date arbitrarie.',
-                'Dichiara nella spiegazione se hai usato `importo` o `importo_effettivo`; segnala nel warning ogni ambiguità che può alterare un totale economico (campi sovrapposti in `pratiches`, `quota` testuale, `stato` vs `status_compenso`).',
-                'Mostra sempre la query SQL usata (in un blocco ```sql) prima del risultato.',
+                'Genera ESCLUSIVAMENTE istruzioni SELECT di sola lettura.',
+                'Applica `LIMIT 1000` per elenchi e `LIMIT 20` per aggregati/classifiche.',
+                'Non includere dati PII salvo esplicita richiesta.',
+                'Usa la sintassi dei parametri `:` per le query di drill-down.',
+                'Mostra sempre la query SQL usata (in un blocco ```sql) prima della spiegazione.',
             ],
         ],
+
     ],
 ];

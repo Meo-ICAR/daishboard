@@ -46,7 +46,8 @@ class DataNavigatorProfileTest extends TestCase
         [$key, $profile] = $this->profile(new DataNavigatorAgent);
 
         $this->assertSame('mediatore', $key);
-        $this->assertSame(['pratiches', 'provvigioni'], $profile['tables']);
+        $this->assertContains('pratiches', $profile['tables']);
+        $this->assertContains('provvigioni', $profile['tables']);
     }
 
     public function test_hiv_instructions_carry_the_cohort_domain_rules(): void
@@ -65,8 +66,13 @@ class DataNavigatorProfileTest extends TestCase
         $text = $this->instructions(new DataNavigatorAgent);
 
         $this->assertStringContainsString('entrata_uscita', $text);
-        $this->assertStringContainsString('importo_effettivo', $text);
+        $this->assertStringContainsString('provvigioni.importo', $text);
         $this->assertStringContainsString('provvigioni.id_pratica', $text);
+        // Vocabolario degli stati: le dizioni sono mappate sui campi *_at, e accepted_at non esiste.
+        $this->assertStringContainsString('"deliberata"', $text);
+        $this->assertStringContainsString('"perfezionata"', $text);
+        $this->assertStringContainsString('approved_at IS NOT NULL AND erogated_at IS NULL', $text);
+        $this->assertStringNotContainsString('accepted_at IS NOT NULL', $text);
         // Nessuna legenda sincronizzata per proforma: fallback agli strumenti di ispezione.
         $this->assertStringContainsString('legenda non ancora sincronizzata', $text);
     }

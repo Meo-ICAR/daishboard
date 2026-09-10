@@ -15,13 +15,13 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use NeuronAI\Chat\Messages\UserMessage;
 use Throwable;
 use UnitEnum;
-use Filament\Support\Icons\Heroicon;
 
 /**
  * Chat con l'assistente dati (NeuronAI): traduce domande in query SQL di sola
@@ -33,9 +33,9 @@ class DataAssistant extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Legenda';
 
-    protected static ?string $navigationLabel = 'Assistente dati';
+    protected static ?string $navigationLabel = 'Assistente AI';
 
-    protected static ?string $title = 'Assistente dati';
+    protected static ?string $title = 'Assistente AI';
 
     protected string $view = 'filament.pages.data-assistant';
 

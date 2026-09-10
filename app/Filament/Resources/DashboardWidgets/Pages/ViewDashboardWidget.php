@@ -12,6 +12,8 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Enums\IconPosition;
@@ -71,10 +73,6 @@ class ViewDashboardWidget extends Page implements HasTable
      */
     #[Locked]
     public array $drilldowns = [];
-
-    /** URL dell'ultimo link di condivisione creato, mostrato in un banner. */
-    #[Locked]
-    public ?string $lastShareUrl = null;
 
     public function mount(int|string $record): void
     {
@@ -514,13 +512,18 @@ class ViewDashboardWidget extends Page implements HasTable
                             : null,
                     ]);
 
-                    $this->lastShareUrl = $share->publicUrl();
+                    $url = $share->publicUrl();
 
                     Notification::make()
                         ->title('Link pubblico creato')
-                        ->body($this->lastShareUrl)
+                        ->body($url)
                         ->success()
                         ->persistent()
+                        ->actions([
+                            Action::make('open')
+                                ->label('Apri')
+                                ->url($url, shouldOpenInNewTab: true),
+                        ])
                         ->send();
                 }),
 
@@ -534,27 +537,41 @@ class ViewDashboardWidget extends Page implements HasTable
                 ->modalHeading('Link pubblici di questa tabella')
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('Chiudi')
-                ->modalContent(fn () => view('filament.resources.dashboard-widgets.partials.shares-list', [
-                    'shares' => DashboardWidgetShare::query()
-                        ->where('dashboard_widget_id', $this->recordId)
-                        ->latest()
-                        ->get(),
-                ])),
+                ->schema(function (): array {
+                    $shares = $this->shareLinks();
+
+                    if ($shares === []) {
+                        return [TextEntry::make('empty')->hiddenLabel()->state('Nessun link creato.')];
+                    }
+
+                    return [
+                        RepeatableEntry::make('shares')
+                            ->hiddenLabel()
+                            ->state($shares)
+                            ->schema([
+                                TextEntry::make('title')->hiddenLabel()->weight('semibold'),
+                                TextEntry::make('url')
+                                    ->hiddenLabel()
+                                    ->copyable()
+                                    ->copyMessage('Link copiato')
+                                    ->url(fn (string $state): string => $state, shouldOpenInNewTab: true)
+                                    ->color('primary'),
+                                TextEntry::make('meta')->hiddenLabel()->color('gray')->size('xs'),
+                            ]),
+                    ];
+                }),
 
             Action::make('revokeShares')
-                ->label('Revoca link')
-                ->visible(false)
+                ->label('Revoca tutti i link')
                 ->icon(Heroicon::OutlinedTrash)
                 ->color('danger')
-                // ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
+                ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
                 ->requiresConfirmation()
                 ->modalDescription('Tutti i link pubblici di questa tabella smetteranno di funzionare.')
                 ->action(function (): void {
                     $deleted = DashboardWidgetShare::query()
                         ->where('dashboard_widget_id', $this->recordId)
                         ->delete();
-
-                    $this->lastShareUrl = null;
 
                     Notification::make()
                         ->title($deleted === 1 ? '1 link revocato' : "{$deleted} link revocati")
@@ -570,27 +587,44 @@ class ViewDashboardWidget extends Page implements HasTable
     }
 
     /**
-     * Revoca un singolo link condiviso dal suo ID.
-     * Chiamato dal partial Blade via wire:click.
+     * Link pubblici di questa tabella, pronti per la RepeatableEntry del modale
+     * "Link condivisi".
+     *
+     * @return array<int, array{title: string, url: string, meta: string}>
      */
-    public function revokeShare(int $shareId): void
+    public function shareLinks(): array
     {
-        $deleted = DashboardWidgetShare::query()
-            ->where('id', $shareId)
+        return DashboardWidgetShare::query()
             ->where('dashboard_widget_id', $this->recordId)
-            ->delete();
+            ->latest()
+            ->get()
+            ->map(fn (DashboardWidgetShare $share): array => [
+                'title' => $share->title ?: ('Widget #'.$share->dashboard_widget_id),
+                'url' => $share->publicUrl(),
+                'meta' => $this->describeShare($share),
+            ])
+            ->all();
+    }
 
-        if ($deleted) {
-            if ($this->lastShareUrl !== null) {
-                // Azzera il banner se il link revocato era quello appena creato
-                $this->lastShareUrl = null;
-            }
+    /**
+     * Riga di metadati leggibile per un link condiviso (data, visite, scadenza,
+     * figli inclusi).
+     */
+    protected function describeShare(DashboardWidgetShare $share): string
+    {
+        $parts = [
+            'Creato '.($share->created_at?->format('d/m/Y H:i') ?? '—'),
+            $share->views.' visite',
+            $share->expires_at
+                ? 'scade '.$share->expires_at->format('d/m/Y').($share->isExpired() ? ' (scaduto)' : '')
+                : 'nessuna scadenza',
+        ];
 
-            Notification::make()
-                ->title('Link revocato')
-                ->success()
-                ->send();
+        if ($share->include_children) {
+            $parts[] = 'figli inclusi';
         }
+
+        return implode(' · ', $parts);
     }
 
     public function getTitle(): string|Htmlable
