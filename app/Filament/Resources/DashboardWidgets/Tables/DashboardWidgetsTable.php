@@ -139,14 +139,14 @@ class DashboardWidgetsTable
                 Action::make('duplicate')
                     ->label('Duplica')
                     ->icon(Heroicon::OutlinedDocumentDuplicate)
-                    ->modalHeading('Duplica widget')
+                    ->modalHeading('Duplica estrazione dati')
                     ->modalSubmitActionLabel('Duplica')
                     // Il modale con la scelta dell'utente compare solo se il widget
                     // ha un proprietario; altrimenti la duplica parte subito.
                     ->schema(fn (DashboardWidget $record): array => $record->user_id === null ? [] : [
                         Select::make('user_id')
                             ->label('Assegna all\'utente')
-                            ->helperText('Predefinito: lo stesso utente. Lascia vuoto per un widget senza proprietario.')
+                            ->helperText('Predefinito: lo stesso utente. Lascia vuoto sesenza proprietario.')
                             ->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->default($record->user_id)
                             ->searchable()
