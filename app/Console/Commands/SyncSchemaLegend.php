@@ -8,6 +8,7 @@ use App\Models\SchemaLegendColumn;
 use App\Services\DateFieldSemanticsMap;
 use App\Services\ResearchDateRangeResolver;
 use App\Services\TableSchemaInspector;
+use App\Support\DataNavigatorProfile;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -70,7 +71,7 @@ class SyncSchemaLegend extends Command
                 $category = $semantics->categoryFor($table, $name)
                     ?? $semantics->categoryFor($table, strtolower($name));
 
-                $lookup = $this->resolveLookup($name, $foreignKeys, $connection, $inspector, $limit, $enumMax, $entityTables);
+                $lookup = $this->resolveLookup($table, $name, $foreignKeys, $connection, $inspector, $limit, $enumMax, $entityTables);
 
                 $record = SchemaLegendColumn::query()->updateOrCreate(
                     ['schema_legend_id' => $legend->id, 'name' => $name],
@@ -96,6 +97,22 @@ class SyncSchemaLegend extends Command
             $legend->update(['columns_count' => count($keptColumnIds)]);
 
             $this->info("{$table}: ".count($keptColumnIds).' campi sincronizzati.');
+        }
+
+        // Sincronizzazione completa (nessun argomento `tables`): rimuove le
+        // legende di questo database non più fra le tabelle principali del
+        // profilo — es. una codifica spostata dai `tables` alle lookup. Colonne
+        // e collegamenti sul pivot vanno via in cascata.
+        if ($this->argument('tables') === []) {
+            SchemaLegend::query()
+                ->where('connection', $connection)
+                ->where('database', $database)
+                ->whereNotIn('table_name', $tables)
+                ->get()
+                ->each(function (SchemaLegend $legend): void {
+                    $legend->delete();
+                    $this->warn("Legenda '{$legend->table_name}' rimossa (non più tra le tabelle principali).");
+                });
         }
 
         if (! $this->option('no-lookups')) {
@@ -144,13 +161,19 @@ class SyncSchemaLegend extends Command
         $exclude = (array) config('legend.lookup_exclude', []);
         $database = DB::connection($connection)->getDatabaseName();
 
+        // Le tabelle indicate come lookup da un hint del profilo restano nel
+        // catalogo anche se sono tabelle principali (es. `pratiches_statos`),
+        // così i campi che vi puntano ottengono il collegamento sul pivot.
+        $hintTargets = $this->hintLookupTables();
+
         $allTables = collect(DB::connection($connection)->select(
             "SELECT TABLE_NAME AS name FROM information_schema.TABLES
              WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME",
             [$database],
         ))
             ->pluck('name')
-            ->reject(fn (string $name): bool => in_array($name, $entityTables, true) || Str::is($exclude, $name))
+            ->reject(fn (string $name): bool => (in_array($name, $entityTables, true) && ! in_array($name, $hintTargets, true))
+                || Str::is($exclude, $name))
             ->values();
 
         $catalogued = 0;
@@ -208,15 +231,35 @@ class SyncSchemaLegend extends Command
     }
 
     /**
-     * Determina la lookup collegata: vincolo reale, altrimenti euristica `<nome>_id` → tabella plurale.
-     * I valori vengono elencati solo se la tabella collegata è una piccola
-     * enumerazione (non un'entità come patients).
+     * Tabelle indicate come lookup dagli hint `lookups` del profilo attivo.
+     *
+     * @return list<string>
+     */
+    protected function hintLookupTables(): array
+    {
+        return collect((array) (DataNavigatorProfile::forCurrentDatabase()['lookups'] ?? []))
+            ->map(fn ($hint): ?string => is_array($hint) ? ($hint['table'] ?? null) : (is_string($hint) ? $hint : null))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Determina la lookup collegata a un campo, in ordine di priorità:
+     *  1. hint esplicito `lookups` del profilo (`config/data_navigator.php`),
+     *     con chiave `tabella.campo` o solo `campo`;
+     *  2. vincolo di foreign key reale;
+     *  3. euristica `<nome>_id` → tabella al plurale.
+     * I valori vengono elencati se la tabella è piccola (<= enum max) e non è
+     * un'entità principale, oppure sempre se dichiarata via hint.
      *
      * @param  array<string, array{table: string, column: string, name: ?string}>  $foreignKeys
      * @param  list<string>  $entityTables
      * @return array{table?: string, key?: string, label?: ?string, name?: ?string, values?: array}
      */
     protected function resolveLookup(
+        string $table,
         string $column,
         array $foreignKeys,
         string $connection,
@@ -228,8 +271,16 @@ class SyncSchemaLegend extends Command
         $target = null;
         $key = 'id';
         $constraintName = null;
+        $declaredByHint = false;
 
-        if (isset($foreignKeys[$column])) {
+        $hints = (array) (DataNavigatorProfile::forCurrentDatabase()['lookups'] ?? []);
+        $hint = $hints["{$table}.{$column}"] ?? $hints[$column] ?? null;
+
+        if ($hint !== null) {
+            $target = is_array($hint) ? ($hint['table'] ?? null) : $hint;
+            $key = is_array($hint) ? ($hint['key'] ?? 'id') : 'id';
+            $declaredByHint = true;
+        } elseif (isset($foreignKeys[$column])) {
             $target = $foreignKeys[$column]['table'];
             $key = $foreignKeys[$column]['column'];
             $constraintName = $foreignKeys[$column]['name'];
@@ -241,7 +292,7 @@ class SyncSchemaLegend extends Command
             }
         }
 
-        if ($target === null) {
+        if ($target === null || ! Schema::connection($connection)->hasTable($target)) {
             return [];
         }
 
@@ -250,14 +301,14 @@ class SyncSchemaLegend extends Command
             ->first(fn (string $name): bool => strtolower($name) !== strtolower($key));
 
         $rowCount = (int) DB::connection($connection)->table($target)->count();
-        $isEnumeration = ! in_array($target, $entityTables, true) && $rowCount <= $enumMax;
+        $listValues = $rowCount <= $enumMax && ($declaredByHint || ! in_array($target, $entityTables, true));
 
         return [
             'table' => $target,
             'key' => $key,
             'label' => $label !== $key ? $label : null,
             'name' => $constraintName,
-            'values' => $isEnumeration ? $inspector->getLookupValues($target, $key, $connection, $limit) : null,
+            'values' => $listValues ? $inspector->getLookupValues($target, $key, $connection, $limit) : null,
         ];
     }
 }

@@ -1,0 +1,9 @@
+---
+paths:
+  - app/Console/Commands/SyncSchemaLegend.php
+---
+
+# Commands
+
+## legend:sync — campi data per tipo, hint lookup per profilo
+`date_category` è SOLO la classificazione semantica (DateFieldSemanticsMap, mappata solo per la coorte HIV patients/patient_visits). Per riconoscere un "campo data" in qualsiasi altro dominio si usa il TIPO SQL: SchemaLegendColumn::DATE_TYPES + `isDate()` + lo scope `dateFields()` (date_category NOT NULL OR LOWER(data_type) IN date/datetime/timestamp/...). SchemaLegendsTable "Campi data" e il filtro del ColumnsRelationManager (SchemaLegends) usano `dateFields()`, non `whereNotNull('date_category')`. Analogamente CohortFilterCatalog::dateColumnOptions() offre i campi date-typed anche senza categoria (preset generici). Lookup: `resolveLookup($table, $column, ...)` prova nell'ordine: hint `lookups` del profilo attivo (config/data_navigator.php, chiave `tabella.campo` o `campo` => stringa tabella o ['table'=>,'key'=>]) → FK reale → euristica `<nome>_id`→plurale. Un hint forza l'elenco valori anche se il target è una tabella principale del profilo, e `syncLookups` cataloga comunque quel target come LookupTable. Ma le CODIFICHE non vanno messe fra le `tables` del profilo: se ci stanno finiscono in "Dati" (schema_legends). Es. `mediatore.tables` = solo `[pratiches, provvigioni, venasarcotrimestre]`; `pratiches_statos`/`provvigioni_statos` sono catalogate come lookup e collegate ai campi via le FK reali (fk_pratiches_stato_pratica, fk_provvigioni_stato) — niente hint necessari. `mediatore.lookups` = []. Un `legend:sync` SENZA argomento `tables` (sync completo del profilo) fa il PRUNE: elimina le `schema_legends` di quel connection+database il cui `table_name` non è più fra le tabelle principali (colonne + pivot in cascata). `legend:sync <tabella>` (con argomento) NON fa prune. Dopo aver cambiato `dbai`: `php artisan config:clear && php artisan legend:sync && php artisan cache:clear`.

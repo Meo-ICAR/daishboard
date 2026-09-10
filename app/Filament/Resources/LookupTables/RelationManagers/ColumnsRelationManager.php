@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\LookupTables\RelationManagers;
 
 use App\Models\SchemaLegendColumn;
+use App\Support\DataNavigatorProfile;
 use BackedEnum;
 use Filament\Actions\AttachAction;
 use Filament\Actions\DetachAction;
@@ -77,7 +78,7 @@ class ColumnsRelationManager extends RelationManager
                     ->recordSelectSearchColumns(['name'])
                     ->recordSelectOptionsQuery(fn (Builder $query): Builder => $query
                         ->with('legend:id,table_name')
-                        ->whereHas('legend', fn (Builder $legend) => $legend->whereIn('table_name', ['patients', 'patient_visits']))),
+                        ->whereHas('legend', fn (Builder $legend) => $legend->whereIn('table_name', DataNavigatorProfile::cohortTables()))),
             ])
             ->recordActions([
                 DetachAction::make()->label('Scollega'),

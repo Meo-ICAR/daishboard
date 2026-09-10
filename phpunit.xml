@@ -26,6 +26,10 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <!-- Connessione read-only di test fissata alla coorte HIV, a prescindere
+             da dove lo sviluppatore punta `dbai` nel proprio .env. -->
+        <env name="DB_DATABASE_DBAI" value="hassisdadmin"/>
+        <env name="DATA_NAVIGATOR_PROFILE" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

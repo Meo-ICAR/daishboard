@@ -47,6 +47,24 @@ class DataNavigatorProfile
     }
 
     /**
+     * Tabelle principali ("di coorte") del database collegato: quelle su cui
+     * WidgetDatasetRunner inietta i filtri data/valore e CohortFilterCatalog
+     * costruisce le opzioni del builder dello studio. Prese dal profilo attivo
+     * (`tables`), con fallback su patients / patient_visits.
+     *
+     * @return list<string>
+     */
+    public static function cohortTables(): array
+    {
+        $tables = array_values(array_filter(
+            (array) (static::forCurrentDatabase()['tables'] ?? []),
+            static fn ($table): bool => is_string($table) && $table !== '',
+        ));
+
+        return $tables !== [] ? $tables : ['patients', 'patient_visits'];
+    }
+
+    /**
      * Colonna identificativa "parlante" configurata per il database collegato
      * (es. `pazientecode`), con cui sostituire l'`id` tecnico nelle viste
      * tabella. `null` se il database non ne ha una.

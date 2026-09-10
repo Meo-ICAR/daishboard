@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class SchemaLegendColumn extends Model
 {
     use HasFactory;
+
+    /** @var list<string> tipi SQL considerati "campo data" a prescindere dalla categoria semantica */
+    public const DATE_TYPES = ['date', 'datetime', 'timestamp', 'datetimetz', 'timestamptz'];
 
     protected $fillable = [
         'schema_legend_id',
@@ -57,7 +61,22 @@ class SchemaLegendColumn extends Model
 
     public function isDate(): bool
     {
-        return $this->date_category !== null;
+        return $this->date_category !== null
+            || in_array(strtolower((string) $this->data_type), self::DATE_TYPES, true);
+    }
+
+    /**
+     * Campi data: quelli con categoria semantica (coorte HIV) oppure di tipo
+     * SQL data/datetime (qualsiasi altro dominio).
+     *
+     * @param  Builder<SchemaLegendColumn>  $query
+     * @return Builder<SchemaLegendColumn>
+     */
+    public function scopeDateFields(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $inner): Builder => $inner
+            ->whereNotNull('date_category')
+            ->orWhereRaw('LOWER(data_type) IN ('.implode(',', array_fill(0, count(self::DATE_TYPES), '?')).')', self::DATE_TYPES));
     }
 
     public function isLookup(): bool

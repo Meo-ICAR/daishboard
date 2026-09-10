@@ -41,7 +41,7 @@ class SchemaLegendsTable
                     ->label('Campi data')
                     ->badge()
                     ->color('info')
-                    ->state(fn (SchemaLegend $record): int => $record->columns()->whereNotNull('date_category')->count()),
+                    ->state(fn (SchemaLegend $record): int => $record->columns()->dateFields()->count()),
                 TextColumn::make('lookup_columns')
                     ->label('Campi lookup')
                     ->badge()

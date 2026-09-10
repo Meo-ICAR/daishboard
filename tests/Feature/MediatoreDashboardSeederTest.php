@@ -7,48 +7,78 @@ use Database\Seeders\MediatoreDashboardSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class MediatoreDashboardSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Tutte le dashboard seminate, indicizzate per titolo. */
+    /**
+     * Il blueprint del seeder (privato) esposto via reflection.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function blueprint(): array
+    {
+        $method = new ReflectionMethod(MediatoreDashboardSeeder::class, 'blueprint');
+        $method->setAccessible(true);
+
+        return $method->invoke(new MediatoreDashboardSeeder);
+    }
+
+    /** @return array{masters: int, children: int} */
+    private function expectedCounts(?callable $filter = null): array
+    {
+        $masters = 0;
+        $children = 0;
+
+        foreach ($this->blueprint() as $group) {
+            if ($filter !== null && ! $filter($group)) {
+                continue;
+            }
+
+            foreach ($group['widgets'] as $widget) {
+                $masters++;
+                $children += count($widget['children'] ?? []);
+            }
+        }
+
+        return ['masters' => $masters, 'children' => $children];
+    }
+
     private function proformaDashboards(): Collection
     {
         return DB::table('dashboards')->where('database', 'proforma')->get()->keyBy('title');
     }
 
-    public function test_it_seeds_the_domain_dashboards_and_widgets(): void
+    public function test_it_seeds_every_blueprint_dashboard_and_widget(): void
     {
         $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
 
         $dashboards = $this->proformaDashboards();
 
-        foreach ([
-            'Pipeline & SLA Pratiche',
-            'Provvigioni & Redditività',
-            'ENASARCO & Disallineamenti OAM',
-            'Gestione Provvigioni & Fatturazione',
-        ] as $title) {
-            $this->assertArrayHasKey($title, $dashboards);
+        foreach ($this->blueprint() as $group) {
+            $this->assertArrayHasKey($group['dashboard'], $dashboards);
         }
 
-        // Dashboard di dominio: company_id NULL. Dashboard rettificata: company_id = 2.
         $this->assertNull($dashboards['Pipeline & SLA Pratiche']->company_id);
         $this->assertSame(2, (int) $dashboards['Gestione Provvigioni & Fatturazione']->company_id);
 
+        // Widget "di dominio" (dashboard con company_id NULL).
+        $domain = $this->expectedCounts(fn (array $g): bool => ! isset($g['company_id']));
         $domainIds = $dashboards->whereNull('company_id')->pluck('id');
         $domainWidgets = DB::table('dashboard_widgets')->whereIn('dashboard_id', $domainIds)->get();
-        $this->assertSame(13, $domainWidgets->whereNull('master_widget_id')->count());
-        $this->assertSame(3, $domainWidgets->whereNotNull('master_widget_id')->count());
+        $this->assertSame($domain['masters'], $domainWidgets->whereNull('master_widget_id')->count());
+        $this->assertSame($domain['children'], $domainWidgets->whereNotNull('master_widget_id')->count());
 
-        $rectifiedId = $dashboards['Gestione Provvigioni & Fatturazione']->id;
-        $rectified = DB::table('dashboard_widgets')->where('dashboard_id', $rectifiedId)->get();
-        $this->assertSame(16, $rectified->whereNull('master_widget_id')->count());
-        $this->assertSame(3, $rectified->whereNotNull('master_widget_id')->count());
-        // I widget rettificati ereditano company_id = 2 dalla loro dashboard.
-        $this->assertTrue($rectified->every(fn ($w): bool => (int) $w->company_id === 2));
+        // Dashboard rettificata (company_id = 2).
+        $rectified = $this->expectedCounts(fn (array $g): bool => ($g['company_id'] ?? null) === 2);
+        $rid = $dashboards['Gestione Provvigioni & Fatturazione']->id;
+        $rw = DB::table('dashboard_widgets')->where('dashboard_id', $rid)->get();
+        $this->assertSame($rectified['masters'], $rw->whereNull('master_widget_id')->count());
+        $this->assertSame($rectified['children'], $rw->whereNotNull('master_widget_id')->count());
+        $this->assertTrue($rw->every(fn ($w): bool => (int) $w->company_id === 2));
     }
 
     public function test_drilldown_children_reference_their_master_and_a_filter_column(): void
@@ -56,7 +86,7 @@ class MediatoreDashboardSeederTest extends TestCase
         $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
 
         $children = DB::table('dashboard_widgets')->whereNotNull('master_widget_id')->get();
-        $this->assertSame(6, $children->count());
+        $this->assertSame($this->expectedCounts()['children'], $children->count());
 
         foreach ($children as $child) {
             $this->assertNotNull($child->master_filter_column);
@@ -79,7 +109,7 @@ class MediatoreDashboardSeederTest extends TestCase
             ->whereNull('master_widget_id')
             ->get();
 
-        $this->assertSame(29, $masters->count());
+        $this->assertSame($this->expectedCounts()['masters'], $masters->count());
 
         foreach ($masters as $master) {
             $this->assertMatchesRegularExpression('/^\s*(--[^\n]*\n\s*)?SELECT\b/i', $master->query);
@@ -88,15 +118,37 @@ class MediatoreDashboardSeederTest extends TestCase
         }
     }
 
-    public function test_it_is_idempotent(): void
+    public function test_rerunning_the_seeder_syncs_in_place_without_duplicating(): void
     {
         $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
-        $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
 
+        // Simula una query "vecchia" da correggere e un widget obsoleto da rimuovere.
+        $pipelineId = DB::table('dashboards')->where('title', 'Pipeline & SLA Pratiche')->value('id');
+        DB::table('dashboard_widgets')
+            ->where('dashboard_id', $pipelineId)
+            ->where('title', 'Produzione erogata per mese')
+            ->update(['query' => 'SELECT 1']);
+        DB::table('dashboard_widgets')->insert([
+            'dashboard_id' => $pipelineId,
+            'title' => 'Widget obsoleto',
+            'type' => 'table',
+            'query' => 'SELECT 1',
+            'order' => 99,
+            'is_active' => true,
+        ]);
+
+        $this->seed(MediatoreDashboardSeeder::class);
+
+        // Nessun duplicato di dashboard.
         $this->assertSame(1, DB::table('dashboards')->where('title', 'Pipeline & SLA Pratiche')->count());
-        $this->assertSame(1, DB::table('dashboards')->where('title', 'Gestione Provvigioni & Fatturazione')->count());
 
-        $this->assertSame(35, DB::table('dashboard_widgets')
+        // La query è stata risincronizzata e il widget obsoleto rimosso.
+        $this->assertStringContainsString('DATE_FORMAT(erogated_at', DB::table('dashboard_widgets')
+            ->where('dashboard_id', $pipelineId)->where('title', 'Produzione erogata per mese')->value('query'));
+        $this->assertDatabaseMissing('dashboard_widgets', ['dashboard_id' => $pipelineId, 'title' => 'Widget obsoleto']);
+
+        $expected = $this->expectedCounts();
+        $this->assertSame($expected['masters'] + $expected['children'], DB::table('dashboard_widgets')
             ->whereIn('dashboard_id', DB::table('dashboards')->where('database', 'proforma')->pluck('id'))
             ->count());
     }

@@ -8,20 +8,22 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Cataloga i campi filtrabili delle tabelle documentate della coorte
- * (patients, patient_visits) a partire dalla legenda: campi data con i relativi
- * preset di intervallo, campi flag (tinyint) e campi collegati a tabelle di
- * lookup con i valori ammessi.
+ * Cataloga i campi filtrabili delle tabelle documentate della coorte a partire
+ * dalla legenda: campi data con i relativi preset di intervallo, campi flag
+ * (tinyint) e campi collegati a tabelle di lookup con i valori ammessi. Le
+ * tabelle sono quelle del profilo DataNavigator attivo
+ * (DataNavigatorProfile::cohortTables()), così il builder segue il database
+ * `dbai` collegato.
  *
  * Alimenta il form dello studio (ProjectForm) e la descrizione dei filtri.
  */
 class CohortFilterCatalog
 {
-    /** Tabelle documentate su cui è consentito costruire i filtri di coorte. */
-    public const TABLES = ['patients', 'patient_visits'];
-
     /** @var array<int, string> tipi numerici trattati come flag 0/1 */
     protected const FLAG_TYPES = ['tinyint', 'smallint', 'bit', 'bool', 'boolean'];
+
+    /** @var array<int, string> tipi di colonna filtrabili per data */
+    protected const DATE_TYPES = ['date', 'datetime', 'timestamp', 'datetimetz', 'timestamptz'];
 
     /** @var Collection<int, SchemaLegendColumn>|null */
     protected static ?Collection $columns = null;
@@ -36,7 +38,7 @@ class CohortFilterCatalog
         }
 
         $legends = SchemaLegend::query()
-            ->whereIn('table_name', static::TABLES)
+            ->whereIn('table_name', DataNavigatorProfile::cohortTables())
             ->with(['columns' => fn ($query) => $query->orderBy('position')])
             ->get()
             ->keyBy('id');
@@ -77,11 +79,21 @@ class CohortFilterCatalog
     public static function dateColumnOptions(): array
     {
         return static::columns()
-            ->filter(fn (SchemaLegendColumn $column): bool => $column->date_category !== null)
+            ->filter(fn (SchemaLegendColumn $column): bool => static::isDateFilterable($column))
             ->mapWithKeys(fn (SchemaLegendColumn $column): array => [
                 static::qualified($column) => static::label($column),
             ])
             ->all();
+    }
+
+    /**
+     * Campo filtrabile per data: ha una categoria semantica (coorte HIV) oppure
+     * è di tipo data/datetime (qualsiasi altro dominio senza mappa semantica).
+     */
+    protected static function isDateFilterable(SchemaLegendColumn $column): bool
+    {
+        return $column->date_category !== null
+            || in_array(strtolower((string) $column->data_type), static::DATE_TYPES, true);
     }
 
     /**
@@ -168,7 +180,7 @@ class CohortFilterCatalog
 
     protected static function isValueFilterable(SchemaLegendColumn $column): bool
     {
-        if ($column->date_category !== null) {
+        if (static::isDateFilterable($column)) {
             return false;
         }
 

@@ -5,6 +5,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | Applies to | Rule file |
 | --- | --- |
 | app/** | .ai/rules/app.md |
+| app/Console/Commands/SyncSchemaLegend.php | .ai/rules/commands.md |
 | config/data_navigator.php | .ai/rules/config.md |
 | app/Filament/Resources/DashboardWidgets/Pages/ViewDashboardWidget.php | .ai/rules/dashboard-widgets-pages.md |
 | app/Filament/Resources/DashboardWidgets/** | .ai/rules/dashboard-widgets.md |

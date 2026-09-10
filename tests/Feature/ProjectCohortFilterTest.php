@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Models\Project;
+use App\Models\SchemaLegend;
 use App\Models\User;
 use App\Services\WidgetDatasetRunner;
 use App\Support\CohortFilterCatalog;
@@ -44,6 +45,27 @@ class ProjectCohortFilterTest extends TestCase
             ['1', '0'],
             array_map('strval', array_keys(CohortFilterCatalog::valueOptions()['patient_visits.active'])),
         );
+    }
+
+    public function test_catalog_offers_date_typed_columns_of_a_non_hiv_profile_without_a_semantic_category(): void
+    {
+        // Simula una legenda proforma: colonne data senza date_category
+        // (nessuna voce nella DateFieldSemanticsMap per questo dominio).
+        config(['data_navigator.profile' => 'mediatore']);
+
+        $legend = SchemaLegend::create(['table_name' => 'pratiches', 'connection' => 'dbai', 'label' => 'Pratiche']);
+        $legend->columns()->createMany([
+            ['name' => 'erogated_at', 'data_type' => 'date', 'position' => 1, 'nullable' => true],
+            ['name' => 'stato_pratica', 'data_type' => 'varchar', 'position' => 2, 'nullable' => true],
+        ]);
+
+        CohortFilterCatalog::flush();
+        $dateColumns = CohortFilterCatalog::dateColumnOptions();
+
+        $this->assertArrayHasKey('pratiches.erogated_at', $dateColumns);
+        $this->assertArrayNotHasKey('pratiches.stato_pratica', $dateColumns);
+        // Non deve comparire tra i filtri per valore.
+        $this->assertArrayNotHasKey('pratiches.erogated_at', CohortFilterCatalog::valueColumnOptions());
     }
 
     public function test_catalog_resolves_a_named_preset_to_a_date_range(): void

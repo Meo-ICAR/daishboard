@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\DB;
  * Cruscotti del dominio "mediatore creditizio" (database `proforma`): pipeline
  * delle pratiche, analisi provvigionale e riconciliazione ENASARCO/OAM.
  *
- * Ogni query della raccolta operativa diventa un widget. Le query con parametro
- * di input (`:id_pratica`, `:denominazione_banca`, `:competenza`/`:trimestre`)
- * sono registrate come widget figli (drill-down) tramite `master_widget_id` +
- * `master_filter_column`: si aprono cliccando la cella numerica corrispondente
- * sul widget master, coerentemente con la convenzione descritta in
- * config/data_navigator.php (profilo `mediatore`, sezione 5).
+ * Il seeder è una SINCRONIZZAZIONE: rilanciandolo aggiorna in place le query e i
+ * tipi dei widget delle sue dashboard (chiave: dashboard + titolo) e rimuove i
+ * widget non più previsti dal blueprint. Le query con parametro di input
+ * (`:id_pratica`, `:denominazione_banca`, `:competenza`/`:trimestre`, ...) sono
+ * widget figli di drill-down (`master_widget_id` + `master_filter_column`):
+ * si aprono cliccando la cella numerica del master. Vedi config/data_navigator.php
+ * (profilo `mediatore`, §5) per la convenzione dei parametri.
  *
  * Le dashboard hanno `database = 'proforma'` per lo scoping di
  * App\Support\CompanyScope::byDatabase(). I widget "di dominio" hanno
- * `company_id` NULL (contenuto globale); la dashboard "Gestione Provvigioni &
- * Fatturazione" porta `company_id = 2` (rettifica dei widget storici della
- * company 1, riassegnati alla company 2).
+ * `company_id` NULL (contenuto globale); "Gestione Provvigioni & Fatturazione"
+ * porta `company_id = 2` (rework dei widget storici della company 1).
  */
 class MediatoreDashboardSeeder extends Seeder
 {
@@ -36,71 +36,105 @@ class MediatoreDashboardSeeder extends Seeder
         ];
 
         foreach ($this->blueprint() as $order => $group) {
-            // Idempotenza per singola dashboard: se esiste già (stesso titolo e
-            // company) non la ricrea.
             $companyId = $group['company_id'] ?? null;
 
-            $exists = DB::table('dashboards')
+            $dashboardId = DB::table('dashboards')
                 ->where('title', $group['dashboard'])
                 ->where('database', self::DATABASE)
                 ->when($companyId === null, fn ($q) => $q->whereNull('company_id'))
                 ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
-                ->exists();
+                ->value('id');
 
-            if ($exists) {
-                continue;
-            }
-
-            $dashboardId = DB::table('dashboards')->insertGetId([
-                'user_id' => null,
-                'company_id' => $companyId,
-                'database' => self::DATABASE,
-                'menu_category_id' => $categories[$group['category']],
-                'title' => $group['dashboard'],
-                'description' => $group['description'],
-                'icon' => $group['icon'],
-                'order' => $order + 1,
-                'is_active' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-
-            foreach ($group['widgets'] as $position => $widget) {
-                $masterId = DB::table('dashboard_widgets')->insertGetId([
-                    'dashboard_id' => $dashboardId,
-                    'company_id' => $companyId,
+            if ($dashboardId === null) {
+                $dashboardId = DB::table('dashboards')->insertGetId([
                     'user_id' => null,
-                    'project_id' => null,
-                    'master_widget_id' => null,
-                    'master_filter_column' => null,
-                    'title' => $widget['title'],
-                    'type' => $widget['type'],
-                    'query' => $widget['query'],
-                    'order' => $position + 1,
+                    'company_id' => $companyId,
+                    'database' => self::DATABASE,
+                    'menu_category_id' => $categories[$group['category']],
+                    'title' => $group['dashboard'],
+                    'description' => $group['description'],
+                    'icon' => $group['icon'],
+                    'order' => $order + 1,
                     'is_active' => true,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
+            } else {
+                DB::table('dashboards')->where('id', $dashboardId)->update([
+                    'description' => $group['description'],
+                    'icon' => $group['icon'],
+                    'menu_category_id' => $categories[$group['category']],
+                    'updated_at' => $now,
+                ]);
+            }
+
+            $keptTitles = [];
+
+            foreach ($group['widgets'] as $position => $widget) {
+                $masterId = $this->syncWidget($dashboardId, $companyId, null, $widget, $position + 1, $now);
+                $keptTitles[] = $widget['title'];
 
                 foreach ($widget['children'] ?? [] as $childPosition => $child) {
-                    DB::table('dashboard_widgets')->insert([
-                        'dashboard_id' => $dashboardId,
-                        'company_id' => $companyId,
-                        'user_id' => null,
-                        'project_id' => null,
-                        'master_widget_id' => $masterId,
-                        'master_filter_column' => $child['filter_column'],
+                    $this->syncWidget($dashboardId, $companyId, $masterId, [
                         'title' => $child['title'],
                         'type' => $child['type'],
                         'query' => $child['query'],
-                        'order' => $childPosition + 1,
-                        'is_active' => true,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
+                        'master_filter_column' => $child['filter_column'],
+                    ], $childPosition + 1, $now);
+                    $keptTitles[] = $child['title'];
                 }
             }
+
+            // Rimuove i widget di questa dashboard non più nel blueprint
+            // (solo quelli gestiti dal seeder: senza riferimento a una chat).
+            DB::table('dashboard_widgets')
+                ->where('dashboard_id', $dashboardId)
+                ->whereNull('chat_history_id')
+                ->whereNotIn('title', $keptTitles)
+                ->delete();
         }
+    }
+
+    /**
+     * Inserisce o aggiorna un widget, identificato da dashboard + titolo (+ ruolo
+     * master/figlio). Ritorna l'id.
+     *
+     * @param  array{title: string, type: string, query: string, master_filter_column?: ?string}  $w
+     */
+    private function syncWidget(int $dashboardId, ?int $companyId, ?int $masterId, array $w, int $order, mixed $now): int
+    {
+        $existing = DB::table('dashboard_widgets')
+            ->where('dashboard_id', $dashboardId)
+            ->where('title', $w['title'])
+            ->when($masterId === null, fn ($q) => $q->whereNull('master_widget_id'))
+            ->when($masterId !== null, fn ($q) => $q->where('master_widget_id', $masterId))
+            ->first();
+
+        $data = [
+            'company_id' => $companyId,
+            'master_widget_id' => $masterId,
+            'master_filter_column' => $w['master_filter_column'] ?? null,
+            'title' => $w['title'],
+            'type' => $w['type'],
+            'query' => $w['query'],
+            'order' => $order,
+            'is_active' => true,
+            'updated_at' => $now,
+        ];
+
+        if ($existing !== null) {
+            DB::table('dashboard_widgets')->where('id', $existing->id)->update($data);
+
+            return (int) $existing->id;
+        }
+
+        return DB::table('dashboard_widgets')->insertGetId([
+            ...$data,
+            'dashboard_id' => $dashboardId,
+            'user_id' => null,
+            'project_id' => null,
+            'created_at' => $now,
+        ]);
     }
 
     private function categoryId(string $name): int
@@ -121,10 +155,29 @@ class MediatoreDashboardSeeder extends Seeder
         return [
             [
                 'dashboard' => 'Pipeline & SLA Pratiche',
-                'description' => 'Pratiche in istruttoria, deliberate ed erogate con giorni di giacenza, code di liquidazione e tempi medi per banca e prodotto.',
+                'description' => 'Pratiche in istruttoria, deliberate ed erogate con giorni di giacenza, code di liquidazione, tempi medi per banca e prodotto e produzione erogata nel tempo.',
                 'icon' => 'heroicon-o-inbox-stack',
                 'category' => 'Produzione',
                 'widgets' => [
+                    [
+                        'title' => 'Pratiche per fase operativa',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    CASE
+        WHEN erogated_at IS NOT NULL THEN '4 · Erogata'
+        WHEN rejected_at IS NOT NULL THEN '5 · Rifiutata'
+        WHEN approved_at IS NOT NULL THEN '3 · Deliberata'
+        WHEN sended_at IS NOT NULL THEN '2 · In istruttoria'
+        ELSE '1 · Caricata'
+    END AS fase,
+    COUNT(id) AS numero_pratiche,
+    SUM(COALESCE(erogato, amount)) AS importo_totale
+FROM pratiches
+GROUP BY fase
+ORDER BY fase
+SQL,
+                    ],
                     [
                         'title' => 'Pratiche in istruttoria — giorni di giacenza',
                         'type' => 'table',
@@ -252,6 +305,20 @@ LIMIT 1000
 SQL,
                     ],
                     [
+                        'title' => 'Produzione erogata per mese',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    DATE_FORMAT(erogated_at, '%Y-%m') AS mese,
+    COUNT(id) AS pratiche_erogate,
+    SUM(erogato) AS importo_erogato
+FROM pratiches
+WHERE erogated_at IS NOT NULL
+GROUP BY DATE_FORMAT(erogated_at, '%Y-%m')
+ORDER BY mese
+SQL,
+                    ],
+                    [
                         'title' => 'SLA intermedi per fase e tipologia prodotto',
                         'type' => 'bar',
                         'query' => <<<'SQL'
@@ -275,7 +342,7 @@ SQL,
             ],
             [
                 'dashboard' => 'Provvigioni & Redditività',
-                'description' => 'Ricavo netto per pratica e per banca, provvigioni passive degli agenti (diretta vs coordinamento rete) e drill-down sulle singole righe provvigionali.',
+                'description' => 'Ricavo netto per pratica e per banca/istituto, provvigioni per stato pipeline e stato del compenso, provvigioni passive degli agenti (diretta vs coordinamento) e attivo da incassare.',
                 'icon' => 'heroicon-o-banknotes',
                 'category' => 'Contabilita',
                 'widgets' => [
@@ -315,6 +382,7 @@ SELECT
     pr.importo,
     pr.denominazione_riferimento,
     pr.coordinamento,
+    pr.stato,
     pr.status_compenso,
     pr.n_fattura,
     pr.data_fattura
@@ -376,30 +444,97 @@ SQL,
                         ],
                     ],
                     [
+                        'title' => 'Provvigioni per istituto finanziario',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    istituto_finanziario,
+    COUNT(id) AS numero_provvigioni,
+    COALESCE(SUM(CASE WHEN entrata_uscita = 'Entrata' THEN importo ELSE 0 END), 0) AS provvigioni_attive,
+    COALESCE(SUM(CASE WHEN entrata_uscita = 'Uscita' THEN importo ELSE 0 END), 0) AS provvigioni_passive,
+    (COALESCE(SUM(CASE WHEN entrata_uscita = 'Entrata' THEN importo ELSE 0 END), 0) -
+     COALESCE(SUM(CASE WHEN entrata_uscita = 'Uscita' THEN importo ELSE 0 END), 0)) AS margine_netto
+FROM provvigioni
+WHERE annullato = 0
+  AND deleted_at IS NULL
+GROUP BY istituto_finanziario
+ORDER BY margine_netto DESC
+LIMIT 30
+SQL,
+                    ],
+                    [
+                        'title' => 'Provvigioni per stato pipeline',
+                        'type' => 'pie',
+                        'query' => <<<'SQL'
+SELECT
+    stato,
+    COUNT(id) AS numero_provvigioni,
+    SUM(importo) AS importo_totale
+FROM provvigioni
+WHERE annullato = 0
+  AND deleted_at IS NULL
+GROUP BY stato
+ORDER BY importo_totale DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Provvigioni per stato del compenso',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    status_compenso,
+    COUNT(id) AS numero_provvigioni,
+    COALESCE(SUM(CASE WHEN entrata_uscita = 'Entrata' THEN importo ELSE 0 END), 0) AS attive,
+    COALESCE(SUM(CASE WHEN entrata_uscita = 'Uscita' THEN importo ELSE 0 END), 0) AS passive
+FROM provvigioni
+WHERE annullato = 0
+  AND deleted_at IS NULL
+GROUP BY status_compenso
+ORDER BY numero_provvigioni DESC
+SQL,
+                    ],
+                    [
                         'title' => 'Provvigioni passive agenti — diretta vs coordinamento rete',
                         'type' => 'bar',
                         'query' => <<<'SQL'
 SELECT
-    p.denominazione_agente,
-    COUNT(pr.id) AS totale_compensi,
-    SUM(CASE WHEN pr.coordinamento = 1 THEN pr.importo ELSE 0 END) AS compenso_coordinamento,
-    SUM(CASE WHEN pr.coordinamento = 0 OR pr.coordinamento IS NULL THEN pr.importo ELSE 0 END) AS compenso_diretto,
-    SUM(pr.importo) AS totale_provvigione_passiva
-FROM provvigioni pr
-INNER JOIN pratiches p ON pr.id_pratica = p.id
-WHERE pr.entrata_uscita = 'Uscita'
-  AND pr.annullato = 0
-  AND pr.deleted_at IS NULL
-GROUP BY p.denominazione_agente
+    denominazione_riferimento AS agente,
+    COUNT(id) AS totale_compensi,
+    SUM(CASE WHEN coordinamento = 1 THEN importo ELSE 0 END) AS compenso_coordinamento,
+    SUM(CASE WHEN coordinamento = 0 OR coordinamento IS NULL THEN importo ELSE 0 END) AS compenso_diretto,
+    SUM(importo) AS totale_provvigione_passiva
+FROM provvigioni
+WHERE entrata_uscita = 'Uscita'
+  AND annullato = 0
+  AND deleted_at IS NULL
+GROUP BY denominazione_riferimento
 ORDER BY totale_provvigione_passiva DESC
 LIMIT 20
+SQL,
+                    ],
+                    [
+                        'title' => 'Provvigioni attive da incassare per istituto',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    istituto_finanziario,
+    COUNT(id) AS numero_provvigioni,
+    SUM(importo) AS importo_da_incassare
+FROM provvigioni
+WHERE entrata_uscita = 'Entrata'
+  AND stato <> 'Pagato'
+  AND annullato = 0
+  AND deleted_at IS NULL
+GROUP BY istituto_finanziario
+ORDER BY importo_da_incassare DESC
+LIMIT 30
 SQL,
                     ],
                 ],
             ],
             [
                 'dashboard' => 'ENASARCO & Disallineamenti OAM',
-                'description' => 'Scadenziario trimestrale dei versamenti ENASARCO e pratiche il cui trimestre di competenza OAM (erogazione) non coincide con quello ENASARCO (fattura agente).',
+                'description' => 'Scadenziario e riepilogo dei contributi ENASARCO per trimestre e per agente, e pratiche il cui trimestre di competenza OAM (erogazione) non coincide con quello ENASARCO (fattura agente).',
                 'icon' => 'heroicon-o-calendar-days',
                 'category' => 'Contabilita',
                 'widgets' => [
@@ -420,7 +555,7 @@ SELECT
         WHEN 4 THEN STR_TO_DATE(CONCAT(competenza + 1, '-01-10'), '%Y-%m-%d')
     END AS data_scadenza_versamento
 FROM venasarcotrimestre
-WHERE competenza = 2026
+WHERE competenza = YEAR(CURDATE())
   AND enasarco NOT IN ('no', 'societa')
 GROUP BY competenza, Trimestre
 ORDER BY Trimestre ASC
@@ -447,6 +582,46 @@ LIMIT 1000
 SQL,
                             ],
                         ],
+                    ],
+                    [
+                        'title' => 'Contributo ENASARCO per trimestre',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    CONCAT(competenza, '-Q', Trimestre) AS periodo,
+    COUNT(DISTINCT produttore) AS agenti,
+    SUM(montante) AS imponibile,
+    SUM(contributo) AS contributo_enasarco
+FROM venasarcotrimestre
+WHERE enasarco NOT IN ('no', 'societa')
+GROUP BY competenza, Trimestre
+ORDER BY competenza, Trimestre
+SQL,
+                    ],
+                    [
+                        'title' => 'ENASARCO per agente — anno corrente',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    produttore AS agente,
+    enasarco AS tipo_mandato,
+    COUNT(DISTINCT Trimestre) AS trimestri,
+    SUM(montante) AS imponibile_anno,
+    SUM(contributo) AS contributo_anno
+FROM venasarcotrimestre
+WHERE competenza = YEAR(CURDATE())
+  AND enasarco NOT IN ('no', 'societa')
+GROUP BY produttore, enasarco
+ORDER BY contributo_anno DESC
+LIMIT 1000
+SQL,
+                    ],
+                    [
+                        'title' => 'Riepilogo ENASARCO totale (vista)',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT * FROM vwenasarcotot
+SQL,
                     ],
                     [
                         'title' => 'Pratiche con slittamento di trimestre di competenza (OAM vs ENASARCO)',
@@ -510,73 +685,141 @@ SQL,
             ],
 
             // -----------------------------------------------------------------
-            // Widget storici della company 1, rettificati e riassegnati alla
-            // company 2. Query originariamente auto-generate: corretti i type
-            // non canonici, la colonna inesistente `invoices.fornitori_id`
-            // (join su `fornitore_piva` / filtro `clienti_id`), un errore di
-            // sintassi e i parametri posizionali `?` -> figli di drill-down.
-            // Scartati i widget su tabelle non presenti in `proforma`
-            // (calls, calls_esitos, leads, proforma_provvigione,
-            // vwprovv2cogedetail) e la dashboard "Report Chiamate & Lead".
+            // Dashboard storica della company 1, riassegnata alla company 2 e
+            // rifatta sul modello dati REALE di proforma: i widget su `invoices`
+            // (tabella quasi vuota qui) sono stati sostituiti con equivalenti su
+            // `provvigioni`. Restano le analisi su `pratiches` perfezionate.
             // -----------------------------------------------------------------
             [
                 'dashboard' => 'Gestione Provvigioni & Fatturazione',
-                'description' => 'Monitoraggio provvigioni attive/passive, incassi, pagamenti ed ENASARCO.',
+                'description' => 'Provvigioni passive da liquidare, attivo da incassare, ultime provvigioni fatturate e analisi delle pratiche perfezionate per prodotto e agente.',
                 'icon' => 'heroicon-o-banknotes',
                 'category' => 'Produzione',
                 'company_id' => 2,
                 'widgets' => [
                     [
-                        'title' => 'Provvigioni per produttore',
+                        'title' => 'Provvigioni passive per agente',
                         'type' => 'pie',
                         'query' => <<<'SQL'
-SELECT fornitore, SUM(total_amount) AS provvigioni
-FROM invoices
-WHERE clienti_id IS NULL
-  AND fornitore IS NOT NULL
-GROUP BY fornitore
+SELECT
+    denominazione_riferimento AS agente,
+    COUNT(id) AS numero_provvigioni,
+    SUM(importo) AS totale_passivo
+FROM provvigioni
+WHERE entrata_uscita = 'Uscita'
+  AND annullato = 0
+  AND deleted_at IS NULL
+GROUP BY denominazione_riferimento
+ORDER BY totale_passivo DESC
+LIMIT 30
 SQL,
                         'children' => [
                             [
-                                'title' => 'Provvigioni per competenza',
-                                'type' => 'pie',
-                                'filter_column' => 'provvigioni',
+                                'title' => 'Provvigioni passive dell\'agente per anno',
+                                'type' => 'bar',
+                                'filter_column' => 'totale_passivo',
                                 'query' => <<<'SQL'
--- Parametro di input: :fornitore
-SELECT competenza, SUM(total_amount) AS provvigioni
-FROM invoices
-WHERE clienti_id IS NULL
-  AND fornitore = :fornitore
-GROUP BY competenza
-ORDER BY competenza
+-- Parametro di input: :denominazione_riferimento
+SELECT
+    YEAR(COALESCE(data_pagamento, data_status, data_inserimento_compenso)) AS anno,
+    COUNT(id) AS numero_provvigioni,
+    SUM(importo) AS totale_passivo
+FROM provvigioni
+WHERE entrata_uscita = 'Uscita'
+  AND annullato = 0
+  AND deleted_at IS NULL
+  AND denominazione_riferimento = :denominazione_riferimento
+GROUP BY anno
+ORDER BY anno
 SQL,
                             ],
                         ],
                     ],
                     [
-                        'title' => 'ENASARCO — anno corrente per fornitore',
+                        'title' => 'Provvigioni passive da liquidare per agente',
                         'type' => 'table',
                         'query' => <<<'SQL'
 SELECT
-    i.fornitore,
-    i.competenza,
-    SUM(i.total_amount) AS fatturato,
-    MAX(e.aliquota_agente) AS aliquota_agente,
-    MAX(e.minimale) AS minimale,
-    MAX(e.massimale) AS massimale
-FROM invoices i
-LEFT JOIN fornitoris f ON f.piva = i.fornitore_piva
-LEFT JOIN enasarcos e ON e.competenza = i.competenza AND e.enasarco = f.enasarco
-WHERE i.clienti_id IS NULL
-  AND i.competenza = YEAR(CURDATE())
-GROUP BY i.fornitore, i.competenza
+    denominazione_riferimento AS agente,
+    COUNT(id) AS numero_provvigioni,
+    SUM(importo) AS totale_da_liquidare
+FROM provvigioni
+WHERE stato = 'Inserito'
+  AND entrata_uscita = 'Uscita'
+  AND importo > 0
+  AND annullato = 0
+  AND deleted_at IS NULL
+GROUP BY denominazione_riferimento
+ORDER BY totale_da_liquidare DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Provvigioni passive da liquidare (dettaglio)',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    p.data_status AS data_stato,
+    p.denominazione_riferimento AS agente,
+    p.istituto_finanziario,
+    p.importo,
+    p.descrizione,
+    p.id_pratica AS pratica,
+    p.status_compenso AS stato_compenso
+FROM provvigioni p
+WHERE p.stato = 'Inserito'
+  AND p.entrata_uscita = 'Uscita'
+  AND p.importo > 0
+  AND p.annullato = 0
+  AND p.deleted_at IS NULL
+ORDER BY p.data_status DESC, p.denominazione_riferimento
+LIMIT 1000
+SQL,
+                    ],
+                    [
+                        'title' => 'Provvigioni attive da incassare',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    p.istituto_finanziario,
+    p.id_pratica AS pratica,
+    p.importo,
+    p.status_compenso AS stato_compenso,
+    p.data_fattura,
+    p.data_inserimento_compenso
+FROM provvigioni p
+WHERE p.entrata_uscita = 'Entrata'
+  AND p.stato <> 'Pagato'
+  AND p.annullato = 0
+  AND p.deleted_at IS NULL
+ORDER BY p.data_inserimento_compenso DESC
+LIMIT 1000
+SQL,
+                    ],
+                    [
+                        'title' => 'Ultime provvigioni fatturate',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    data_fattura,
+    n_fattura,
+    entrata_uscita,
+    denominazione_riferimento AS riferimento,
+    istituto_finanziario,
+    importo,
+    id_pratica AS pratica
+FROM provvigioni
+WHERE data_fattura IS NOT NULL
+  AND annullato = 0
+  AND deleted_at IS NULL
+ORDER BY data_fattura DESC
+LIMIT 30
 SQL,
                     ],
                     [
                         'title' => 'Pratiche perfezionate per prodotto',
                         'type' => 'pie',
                         'query' => <<<'SQL'
-SELECT tipo_prodotto, COUNT(*) AS n
+SELECT tipo_prodotto, COUNT(id) AS n
 FROM pratiches
 WHERE stato_pratica = 'PERFEZIONATA'
 GROUP BY tipo_prodotto
@@ -589,7 +832,7 @@ SQL,
                                 'filter_column' => 'n',
                                 'query' => <<<'SQL'
 -- Parametro di input: :tipo_prodotto
-SELECT denominazione_banca, COUNT(*) AS n
+SELECT denominazione_banca, COUNT(id) AS n
 FROM pratiches
 WHERE stato_pratica = 'PERFEZIONATA'
   AND tipo_prodotto = :tipo_prodotto
@@ -603,7 +846,7 @@ SQL,
                                 'filter_column' => 'n',
                                 'query' => <<<'SQL'
 -- Parametro di input: :tipo_prodotto
-SELECT denominazione_agente, COUNT(*) AS n
+SELECT denominazione_agente, COUNT(id) AS n
 FROM pratiches
 WHERE stato_pratica = 'PERFEZIONATA'
   AND tipo_prodotto = :tipo_prodotto
@@ -617,52 +860,11 @@ SQL,
                         'title' => 'Pratiche perfezionate: agente x prodotto',
                         'type' => 'table',
                         'query' => <<<'SQL'
-SELECT denominazione_agente, tipo_prodotto, COUNT(*) AS n
+SELECT denominazione_agente, tipo_prodotto, COUNT(id) AS n, SUM(erogato) AS totale_erogato
 FROM pratiches
 WHERE stato_pratica = 'PERFEZIONATA'
 GROUP BY denominazione_agente, tipo_prodotto
 ORDER BY n DESC
-SQL,
-                    ],
-                    [
-                        'title' => 'Provvigioni fornitori — ultimi 3 mesi',
-                        'type' => 'pie',
-                        'query' => <<<'SQL'
-SELECT fornitore, SUM(total_amount) AS provvigioni
-FROM invoices
-WHERE clienti_id IS NULL
-  AND fornitore IS NOT NULL
-  AND invoice_date > DATE_ADD(CURDATE(), INTERVAL -3 MONTH)
-GROUP BY fornitore
-SQL,
-                    ],
-                    [
-                        'title' => 'Ultime 3 fatture',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT * FROM invoices ORDER BY invoice_date DESC LIMIT 3
-SQL,
-                    ],
-                    [
-                        'title' => 'Agenti in ordine alfabetico',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT name FROM fornitoris ORDER BY name ASC
-SQL,
-                    ],
-                    [
-                        'title' => 'Fatture ricevute per agente',
-                        'type' => 'pie',
-                        'query' => <<<'SQL'
-SELECT
-    f.name AS nome_agente,
-    COUNT(i.id) AS numero_fatture,
-    SUM(i.total_amount) AS importo_totale_fatture
-FROM invoices i
-JOIN fornitoris f ON f.piva = i.fornitore_piva
-WHERE i.clienti_id IS NULL
-GROUP BY f.name
-ORDER BY f.name
 SQL,
                     ],
                     [
@@ -682,104 +884,27 @@ SQL,
                         'type' => 'table',
                         'query' => <<<'SQL'
 SELECT
-    p.id,
+    p.id AS id_pratica,
     p.codice_pratica,
-    p.nome_cliente,
-    p.cognome_cliente,
     p.denominazione_agente,
+    p.denominazione_banca,
+    p.tipo_prodotto,
+    p.stato_pratica,
     p.data_inserimento_pratica
 FROM pratiches p
 JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
 WHERE ps.isrejected = 1
+ORDER BY p.data_inserimento_pratica DESC
+LIMIT 1000
 SQL,
                     ],
                     [
-                        'title' => 'Fatture attive da incassare',
+                        'title' => 'Agenti in ordine alfabetico',
                         'type' => 'table',
                         'query' => <<<'SQL'
-SELECT
-    c.name AS istituto,
-    i.invoice_date AS data_fattura,
-    i.total_amount AS imponibile,
-    i.tax_amount AS iva,
-    (i.total_amount + i.tax_amount) AS totale_fattura,
-    i.invoice_number AS numero_fattura
-FROM invoices i
-JOIN clientis c ON i.clienti_id = c.id
-WHERE i.status <> 'paid'
-  AND i.paid_at IS NULL
-ORDER BY i.invoice_date ASC
-SQL,
-                    ],
-                    [
-                        'title' => 'Fatture fornitore da pagare',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT
-    f.name AS agente,
-    i.invoice_date AS data_fattura,
-    i.total_amount AS imponibile,
-    (i.total_amount + i.tax_amount) AS totale_fattura,
-    i.invoice_number AS numero_fattura_fornitore
-FROM invoices i
-JOIN fornitoris f ON f.piva = i.fornitore_piva
-WHERE i.paid_at IS NULL
-  AND i.clienti_id IS NULL
-SQL,
-                    ],
-                    [
-                        'title' => 'Riepilogo ENASARCO',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT * FROM vwenasarcotot
-SQL,
-                    ],
-                    [
-                        'title' => 'Provvigioni passive da liquidare (dettaglio)',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT
-    DATE_FORMAT(p.data_status, '%b') AS mese,
-    p.denominazione_riferimento AS agente,
-    p.data_status AS data_stato,
-    p.importo,
-    p.descrizione,
-    p.id_pratica AS pratica,
-    p.cognome,
-    p.id,
-    p.status_compenso AS stato
-FROM provvigioni p
-WHERE p.stato = 'Inserito'
-  AND p.entrata_uscita = 'Uscita'
-  AND p.importo > 0
-ORDER BY MONTH(p.data_status) DESC, p.denominazione_riferimento
-SQL,
-                    ],
-                    [
-                        'title' => 'Ultime fatture ricevute (40 giorni)',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT fornitore, invoice_date, total_amount, invoice_number
-FROM invoices
-WHERE fornitore IS NOT NULL
-  AND DATEDIFF(NOW(), invoice_date) < 40
-ORDER BY invoice_date DESC
-LIMIT 20
-SQL,
-                    ],
-                    [
-                        'title' => 'Provvigioni passive da liquidare per agente',
-                        'type' => 'table',
-                        'query' => <<<'SQL'
-SELECT
-    p.denominazione_riferimento AS agente,
-    SUM(p.importo) AS totale_da_liquidare
-FROM provvigioni p
-WHERE p.stato = 'Inserito'
-  AND p.entrata_uscita = 'Uscita'
-  AND p.importo > 0
-GROUP BY p.denominazione_riferimento
-ORDER BY p.denominazione_riferimento
+SELECT name AS agente, piva, enasarco AS mandato_enasarco
+FROM fornitoris
+ORDER BY name ASC
 SQL,
                     ],
                 ],

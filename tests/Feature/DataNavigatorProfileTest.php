@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Neuron\DataNavigatorAgent;
+use App\Services\WidgetDatasetRunner;
+use App\Support\DataNavigatorProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use ReflectionMethod;
 use Tests\TestCase;
@@ -75,6 +77,41 @@ class DataNavigatorProfileTest extends TestCase
         $this->assertStringNotContainsString('accepted_at IS NOT NULL', $text);
         // Nessuna legenda sincronizzata per proforma: fallback agli strumenti di ispezione.
         $this->assertStringContainsString('legenda non ancora sincronizzata', $text);
+    }
+
+    public function test_cohort_tables_follow_the_active_profile(): void
+    {
+        // dbai di test -> hassisdadmin -> profilo hiv.
+        $this->assertSame(['patients', 'patient_visits'], DataNavigatorProfile::cohortTables());
+
+        config(['data_navigator.profile' => 'mediatore']);
+
+        $tables = DataNavigatorProfile::cohortTables();
+        $this->assertContains('pratiches', $tables);
+        $this->assertContains('provvigioni', $tables);
+        $this->assertNotContains('patients', $tables);
+    }
+
+    public function test_runner_detects_the_active_profiles_cohort_tables_in_the_sql(): void
+    {
+        $runner = app(WidgetDatasetRunner::class);
+
+        // Profilo hiv: le tabelle proforma non sono di coorte.
+        $this->assertSame([], $runner->resolveCohortTableAliases('SELECT * FROM pratiches p'));
+
+        config(['data_navigator.profile' => 'mediatore']);
+
+        $aliases = $runner->resolveCohortTableAliases(
+            'SELECT * FROM pratiches p INNER JOIN provvigioni pr ON pr.id_pratica = p.id',
+        );
+        $this->assertSame(['pratiches' => 'p', 'provvigioni' => 'pr'], $aliases);
+
+        // `pratiches_statos` (codifica, non tabella di coorte) non deve essere
+        // scambiata per `pratiches`: il lookahead della regex la esclude.
+        $this->assertSame(
+            [],
+            $runner->resolveCohortTableAliases('SELECT * FROM pratiches_statos ps'),
+        );
     }
 
     public function test_unknown_database_without_profile_throws(): void

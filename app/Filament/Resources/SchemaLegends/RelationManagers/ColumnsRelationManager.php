@@ -96,8 +96,11 @@ class ColumnsRelationManager extends RelationManager
                     ->trueLabel('Solo campi data')
                     ->falseLabel('Escludi campi data')
                     ->queries(
-                        true: fn ($query) => $query->whereNotNull('date_category'),
-                        false: fn ($query) => $query->whereNull('date_category'),
+                        true: fn ($query) => $query->dateFields(),
+                        false: fn ($query) => $query->whereNull('date_category')->whereRaw(
+                            'LOWER(data_type) NOT IN ('.implode(',', array_fill(0, count(SchemaLegendColumn::DATE_TYPES), '?')).')',
+                            SchemaLegendColumn::DATE_TYPES,
+                        ),
                         blank: fn ($query) => $query,
                     ),
                 TernaryFilter::make('lookup_table')

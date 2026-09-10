@@ -2,22 +2,22 @@
 
 namespace App\Services;
 
+use App\Support\DataNavigatorProfile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
  * Esegue la query SQL di un DashboardWidget sulla connessione DBAI applicando,
- * quando richiesto, uno o più filtri data di coorte (patients / patient_visits)
- * iniettati nel SQL prima del raggruppamento.
+ * quando richiesto, uno o più filtri data/valore di coorte iniettati nel SQL
+ * prima del raggruppamento. Le "tabelle di coorte" sono quelle del profilo
+ * DataNavigator attivo (config/data_navigator.php), non più solo patients /
+ * patient_visits: così i filtri funzionano anche cambiando il database `dbai`.
  *
  * Unico punto di verità condiviso dalla UI Filament e dalla vista pubblica.
  */
 class WidgetDatasetRunner
 {
-    /** Tabelle della coorte pazienti su cui è consentito il filtro data. */
-    public const COHORT_TABLES = ['patients', 'patient_visits'];
-
     public function __construct(
         protected TableSchemaInspector $inspector,
         protected DateFieldSemanticsMap $semantics,
@@ -301,10 +301,15 @@ class WidgetDatasetRunner
     public function resolveCohortTableAliases(string $sql): array
     {
         $masked = $this->maskNestedSql($sql);
-        $tableList = implode('|', array_map('preg_quote', self::COHORT_TABLES));
+
+        // Tabelle del profilo attivo, dalla più lunga alla più corta così che
+        // `pratiches_statos` sia riconosciuta prima di `pratiches`.
+        $tables = DataNavigatorProfile::cohortTables();
+        usort($tables, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+        $tableList = implode('|', array_map('preg_quote', $tables));
 
         preg_match_all(
-            '/\b(?:from|join)\s+`?('.$tableList.')`?(?:\s+(?:as\s+)?`?([a-z_][a-z0-9_]*)`?)?/i',
+            '/\b(?:from|join)\s+`?('.$tableList.')`?(?![a-z0-9_])(?:\s+(?:as\s+)?`?([a-z_][a-z0-9_]*)`?)?/i',
             $masked,
             $matches,
             PREG_SET_ORDER,

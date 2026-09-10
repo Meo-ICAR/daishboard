@@ -89,7 +89,18 @@ return [
 
             'databases' => ['proforma'],
 
-            'tables' => ['pratiches', 'provvigioni', 'pratiches_statos', 'provvigioni_statos', 'venasarcotrimestre'],
+            // Tabelle principali ("Dati" / schema_legends). pratiches_statos e
+            // provvigioni_statos NON vanno qui: sono codifiche, vengono catalogate
+            // da `legend:sync` come lookup e collegate ai campi via le FK
+            // fk_pratiches_stato_pratica / fk_provvigioni_stato (e la stessa FK
+            // vale per pratiches.tipo_prodotto -> tipoprodotto).
+            'tables' => ['pratiches', 'provvigioni', 'venasarcotrimestre'],
+
+            // Hint di lookup opzionali per campi stringa denormalizzati senza FK.
+            // Chiave `tabella.campo` (o solo `campo`) => nome tabella o
+            // ['table' => ..., 'key' => ...]. Non servono qui: le codifiche di
+            // proforma hanno tutte una foreign key reale.
+            'lookups' => [],
 
             'background' => <<<'TXT'
     Sei un assistente che traduce richieste in linguaggio naturale in query SQL di sola
@@ -131,7 +142,10 @@ return [
 
     ## 2. Regole sulle Provvigioni (`provvigioni`)
 
-    *   **Campo Importo Unico**: L'unico campo importo da considerare per qualsiasi calcolo provvigionale è `provvigioni.importo`.
+    *   **Campo Importo Unico**: usa SEMPRE e SOLO `provvigioni.importo` per qualunque calcolo provvigionale, ricavo netto incluso. NON usare `provvigioni.importo_effettivo` né `provvigioni.importo_erogato`, anche se presenti.
+    *   **Istituto finanziario**: `provvigioni.istituto_finanziario` riporta la banca erogante direttamente sulla provvigione (sempre valorizzato, ~31 valori). Usalo per raggruppare per banca senza JOIN su `pratiches`; equivale a `pratiches.denominazione_banca`.
+    *   **Stato pratica sulla provvigione**: `provvigioni.status_pratica` e `provvigioni.macrostatus` esistono ma sono ATTUALMENTE non popolati (tutti NULL): non usarli come filtro finché non valorizzati. Per lo stato della pratica passa da `pratiches.stato_pratica` / `pratiches_statos`.
+    *   **Colonne da ignorare** su `provvigioni`: `importo_effettivo`, `importo_erogato`, `received_at`, `erogated_at`, `data_status_pratica`, `montante` (sempre 0). Non usarle né nei calcoli né nei filtri.
     *   **Stato Proforma e Fatturazione**:
         *   Inclusa in Proforma: `proforma_id IS NOT NULL`.
         *   Fatturata: `fattura_id IS NOT NULL` OR `data_fattura IS NOT NULL` OR `n_fattura IS NOT NULL`.
