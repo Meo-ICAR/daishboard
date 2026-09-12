@@ -2488,16 +2488,16 @@
         },
         {
             "name": "inspector-apm/inspector-php",
-            "version": "3.18.0",
+            "version": "3.18.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/inspector-apm/inspector-php.git",
-                "reference": "0eb86241dc91d34c6d8d84716b6d491997af1443"
+                "reference": "95d46a1ee6c7dc9afb8020d201d6cbd471738965"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/inspector-apm/inspector-php/zipball/0eb86241dc91d34c6d8d84716b6d491997af1443",
-                "reference": "0eb86241dc91d34c6d8d84716b6d491997af1443",
+                "url": "https://api.github.com/repos/inspector-apm/inspector-php/zipball/95d46a1ee6c7dc9afb8020d201d6cbd471738965",
+                "reference": "95d46a1ee6c7dc9afb8020d201d6cbd471738965",
                 "shasum": ""
             },
             "require": {
@@ -2544,9 +2544,9 @@
             ],
             "support": {
                 "issues": "https://github.com/inspector-apm/inspector-php/issues",
-                "source": "https://github.com/inspector-apm/inspector-php/tree/3.18.0"
+                "source": "https://github.com/inspector-apm/inspector-php/tree/3.18.3"
             },
-            "time": "2026-06-19T15:39:04+00:00"
+            "time": "2026-09-09T15:14:33+00:00"
         },
         {
             "name": "kirschbaum-development/eloquent-power-joins",
@@ -4703,16 +4703,16 @@
         },
         {
             "name": "neuron-core/neuron-ai",
-            "version": "3.16.12",
+            "version": "3.16.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/neuron-core/neuron-ai.git",
-                "reference": "7d5c845efff31bf66fe041d02c9fd6bf8a8c78f3"
+                "reference": "1645173b71b7fd267fc9e5622efbf4f3737a7c29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/neuron-core/neuron-ai/zipball/7d5c845efff31bf66fe041d02c9fd6bf8a8c78f3",
-                "reference": "7d5c845efff31bf66fe041d02c9fd6bf8a8c78f3",
+                "url": "https://api.github.com/repos/neuron-core/neuron-ai/zipball/1645173b71b7fd267fc9e5622efbf4f3737a7c29",
+                "reference": "1645173b71b7fd267fc9e5622efbf4f3737a7c29",
                 "shasum": ""
             },
             "require": {
@@ -4763,7 +4763,7 @@
             "description": "The PHP Agentic Framework.",
             "support": {
                 "issues": "https://github.com/neuron-core/neuron-ai/issues",
-                "source": "https://github.com/neuron-core/neuron-ai/tree/3.16.12"
+                "source": "https://github.com/neuron-core/neuron-ai/tree/3.16.13"
             },
             "funding": [
                 {
@@ -4771,7 +4771,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-09T08:45:48+00:00"
+            "time": "2026-09-10T10:28:34+00:00"
         },
         {
             "name": "neuron-core/neuron-laravel",
@@ -11073,16 +11073,16 @@
         },
         {
             "name": "laravel-lang/lang",
-            "version": "15.34.8",
+            "version": "15.35.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Laravel-Lang/lang.git",
-                "reference": "734c0c488b84f574a5688ff4e89e6714d9fdbc5e"
+                "reference": "6bf5c41b2bfb27f1158f18ece54d84103bff81c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Laravel-Lang/lang/zipball/734c0c488b84f574a5688ff4e89e6714d9fdbc5e",
-                "reference": "734c0c488b84f574a5688ff4e89e6714d9fdbc5e",
+                "url": "https://api.github.com/repos/Laravel-Lang/lang/zipball/6bf5c41b2bfb27f1158f18ece54d84103bff81c2",
+                "reference": "6bf5c41b2bfb27f1158f18ece54d84103bff81c2",
                 "shasum": ""
             },
             "require": {
@@ -11143,7 +11143,7 @@
                     "type": "yoomoney"
                 }
             ],
-            "time": "2026-09-02T09:02:27+00:00"
+            "time": "2026-09-10T12:27:21+00:00"
         },
         {
             "name": "laravel-lang/locale-list",
@@ -12031,16 +12031,16 @@
         },
         {
             "name": "laravel/boost",
-            "version": "v2.8.0",
+            "version": "v2.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/boost.git",
-                "reference": "ac0b51fbaf3cc19453aef7a1b188bce19a1ec049"
+                "reference": "820bc93b7826c456ca591cfecca463b4dc794a72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/boost/zipball/ac0b51fbaf3cc19453aef7a1b188bce19a1ec049",
-                "reference": "ac0b51fbaf3cc19453aef7a1b188bce19a1ec049",
+                "url": "https://api.github.com/repos/laravel/boost/zipball/820bc93b7826c456ca591cfecca463b4dc794a72",
+                "reference": "820bc93b7826c456ca591cfecca463b4dc794a72",
                 "shasum": ""
             },
             "require": {
@@ -12093,20 +12093,20 @@
                 "issues": "https://github.com/laravel/boost/issues",
                 "source": "https://github.com/laravel/boost"
             },
-            "time": "2026-09-08T17:07:40+00:00"
+            "time": "2026-09-10T15:25:39+00:00"
         },
         {
             "name": "laravel/mcp",
-            "version": "v0.9.4",
+            "version": "v0.9.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/mcp.git",
-                "reference": "7ca5b923630118696602d14348cd0466a5e853ec"
+                "reference": "923d8d8cd9ed46766d1a8b5269f8b4afc4c91c53"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/mcp/zipball/7ca5b923630118696602d14348cd0466a5e853ec",
-                "reference": "7ca5b923630118696602d14348cd0466a5e853ec",
+                "url": "https://api.github.com/repos/laravel/mcp/zipball/923d8d8cd9ed46766d1a8b5269f8b4afc4c91c53",
+                "reference": "923d8d8cd9ed46766d1a8b5269f8b4afc4c91c53",
                 "shasum": ""
             },
             "require": {
@@ -12167,7 +12167,7 @@
                 "issues": "https://github.com/laravel/mcp/issues",
                 "source": "https://github.com/laravel/mcp"
             },
-            "time": "2026-08-13T15:01:07+00:00"
+            "time": "2026-09-09T12:56:57+00:00"
         },
         {
             "name": "laravel/pail",
@@ -12336,16 +12336,16 @@
         },
         {
             "name": "laravel/pint",
-            "version": "v1.31.1",
+            "version": "v1.32.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/pint.git",
-                "reference": "b136cebaf0b3f7d288bdafad5088858d082580aa"
+                "reference": "006bd7825eb01daf92959d060b89cd9514fe4253"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/pint/zipball/b136cebaf0b3f7d288bdafad5088858d082580aa",
-                "reference": "b136cebaf0b3f7d288bdafad5088858d082580aa",
+                "url": "https://api.github.com/repos/laravel/pint/zipball/006bd7825eb01daf92959d060b89cd9514fe4253",
+                "reference": "006bd7825eb01daf92959d060b89cd9514fe4253",
                 "shasum": ""
             },
             "require": {
@@ -12402,7 +12402,7 @@
                 "issues": "https://github.com/laravel/pint/issues",
                 "source": "https://github.com/laravel/pint"
             },
-            "time": "2026-09-08T17:10:00+00:00"
+            "time": "2026-09-10T10:47:55+00:00"
         },
         {
             "name": "laravel/roster",
