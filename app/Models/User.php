@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +18,7 @@ use Illuminate\Support\Facades\Hash;
 
 #[Fillable(['name', 'email', 'password', 'company_id', 'project_id', 'dashboard_id'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -128,5 +130,14 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return (bool) $this->is_admin && $this->company_id === null;
+    }
+
+    /**
+     * Autorizza l'accesso al pannello Filament. Nessuna restrizione aggiuntiva
+     * oggi: tutti gli utenti registrati (via credenziali o Socialite) accedono.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 }

@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\BpmBridgeController;
 use App\Http\Controllers\SharedWidgetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+// SSO dal BPM esterno. Throttling per limitare il brute force sul token.
+Route::get('/bpm-landing/{subject_id}', [BpmBridgeController::class, 'handle'])
+    ->middleware('throttle:10,1')
+    ->name('bpm.landing');
 
 /*
  * Viste pubbliche condivise: nessuna autenticazione, sola lettura.
