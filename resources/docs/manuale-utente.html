@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daishboard &mdash; Manuale utente</title>
+<meta name="description" content="Guida operativa a Daishboard: login, dashboard, tabelle e grafici, studi e filtri di coorte, assistente dati, condivisione ed export.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ink: #17222a;
+    --muted: #5c6a70;
+    --faint: #93a09e;
+    --paper: #f5f8f6;
+    --raised: #ffffff;
+    --rule: #dde3e0;
+    --rule-strong: #c6cec9;
+    --accent: #0d7d78;
+    --accent-ink: #0a5a56;
+    --accent-soft: #e2efeb;
+    --focus: #0d7d78;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e8eeeb;
+      --muted: #9aa6a2;
+      --faint: #6b7975;
+      --paper: #0d1316;
+      --raised: #141b1e;
+      --rule: #25302d;
+      --rule-strong: #37433f;
+      --accent: #3dbcb1;
+      --accent-ink: #74d6cb;
+      --accent-soft: #13302d;
+      --focus: #3dbcb1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8eeeb;
+    --muted: #9aa6a2;
+    --faint: #6b7975;
+    --paper: #0d1316;
+    --raised: #141b1e;
+    --rule: #25302d;
+    --rule-strong: #37433f;
+    --accent: #3dbcb1;
+    --accent-ink: #74d6cb;
+    --accent-soft: #13302d;
+    --focus: #3dbcb1;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2 {
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 0.6rem;
+  }
+  h3 {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: 600;
+    margin: 1.6rem 0 0.5rem;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin: 0 0 0.9rem;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 17rem 1fr;
+    max-width: 78rem;
+    margin: 0 auto;
+  }
+
+  .toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    overflow-y: auto;
+    padding: 2.2rem 1.4rem 2.2rem 1.8rem;
+    border-right: 1px solid var(--rule);
+  }
+  .toc a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.92rem;
+    padding: 0.32rem 0;
+    border-left: 2px solid transparent;
+    padding-left: 0.7rem;
+    margin-left: -0.7rem;
+  }
+  .toc a:hover, .toc a:focus-visible {
+    color: var(--accent-ink);
+    border-left-color: var(--accent);
+  }
+  .toc .toc-title {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 1.1rem 0 0.3rem;
+  }
+  .toc .toc-title:first-child { margin-top: 0; }
+
+  main {
+    padding: 3rem clamp(1.4rem, 4vw, 4rem) 6rem;
+    max-width: 46rem;
+  }
+
+  header.hero {
+    margin-bottom: 2.6rem;
+  }
+  header.hero h1 { font-size: clamp(2rem, 1.5rem + 2vw, 2.8rem); }
+  header.hero p {
+    color: var(--muted);
+    max-width: 42ch;
+    font-size: 1.08rem;
+    margin: 0.8rem 0 0;
+  }
+
+  section {
+    padding: 2.2rem 0;
+    border-top: 1px solid var(--rule);
+    scroll-margin-top: 1.5rem;
+  }
+  section:first-of-type { border-top: none; }
+
+  p { margin: 0.7rem 0; }
+  ul, ol { margin: 0.6rem 0; padding-left: 1.3rem; }
+  li { margin: 0.35rem 0; }
+  li::marker { color: var(--faint); }
+
+  strong { color: var(--ink); }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.86em;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+  }
+
+  .card {
+    background: var(--raised);
+    border: 1px solid var(--rule);
+    border-radius: 0.7rem;
+    padding: 1.1rem 1.3rem;
+    margin: 1rem 0;
+  }
+  .card h4 {
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 0.8rem 1.1rem;
+    margin: 1rem 0;
+    font-size: 0.94rem;
+  }
+  .note strong { color: var(--accent-ink); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    font-weight: 500;
+  }
+
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.3rem;
+    margin: 0.9rem 0;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: -0.05rem;
+    width: 1.6rem; height: 1.6rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  footer {
+    max-width: 46rem;
+    padding: 2rem clamp(1.4rem, 4vw, 4rem) 3rem;
+    color: var(--faint);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .toc {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 1rem;
+      padding: 1.2rem 1.4rem;
+    }
+    .toc .toc-title { width: 100%; margin: 0.6rem 0 0.1rem; }
+    .toc .toc-title:first-child { margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="toc" aria-label="Indice">
+    <div class="toc-title">Daishboard</div>
+    <a href="#introduzione">Introduzione</a>
+    <a href="#accesso">Accesso</a>
+    <div class="toc-title">Navigare i dati</div>
+    <a href="#tabelle">Tabelle</a>
+    <a href="#grafici">Grafici</a>
+    <a href="#drill-down">Drill-down</a>
+    <div class="toc-title">Studi e filtri</div>
+    <a href="#studi">Studi (coorti)</a>
+    <a href="#filtro-data">Filtro coorte per data</a>
+    <div class="toc-title">Assistente e condivisione</div>
+    <a href="#assistente">Assistente dati</a>
+    <a href="#condivisione">Condivisione ed export</a>
+    <div class="toc-title">Riferimento</div>
+    <a href="#legenda">Legenda schema e lookup</a>
+    <a href="#ruoli">Ruoli e visibilit&agrave;</a>
+    <a href="#problemi">Problemi comuni</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <p class="eyebrow">Manuale utente</p>
+      <h1>Guida a Daishboard</h1>
+      <p>Come consultare dashboard, tabelle e grafici, costruire uno studio con filtri di coorte, usare l&rsquo;assistente dati e condividere i risultati.</p>
+    </header>
+
+    <section id="introduzione">
+      <h2>Introduzione</h2>
+      <p>Daishboard &egrave; lo strumento per esplorare i dati di una coorte clinica: pazienti, visite e trattamenti. Permette di consultare <strong>dashboard</strong> gi&agrave; predisposte, ciascuna composta da <strong>tabelle</strong> e <strong>grafici</strong>, di applicare <strong>filtri di coorte</strong> (uno &ldquo;studio&rdquo;) prima di ogni analisi, di scendere dal dato aggregato fino ai singoli pazienti (<strong>drill-down</strong>) e di porre domande in linguaggio naturale a un <strong>assistente dati</strong>.</p>
+      <p>Tutti i dati sono in <strong>sola lettura</strong>: consultare Daishboard non modifica mai l&rsquo;archivio clinico di origine.</p>
+    </section>
+
+    <section id="accesso">
+      <h2>Accesso</h2>
+      <p>Il pannello &egrave; raggiungibile alla rotta <code>/admin</code>. L&rsquo;accesso avviene con email e password oppure, se abilitato per la propria organizzazione, con un account <strong>Google</strong> o <strong>Microsoft</strong> tramite il pulsante corrispondente nella pagina di login.</p>
+      <p>Ogni utente vede solo i dati di propria competenza: i propri contenuti, quelli della propria azienda e quelli condivisi globalmente. Un amministratore vede tutti i contenuti della propria azienda; un super-amministratore vede tutto. Vedi <a href="#ruoli">Ruoli e visibilit&agrave;</a>.</p>
+    </section>
+
+    <section id="tabelle">
+      <h2>Tabelle</h2>
+      <p>La voce di menu <strong>Tabelle</strong> mostra l&rsquo;elenco delle tabelle disponibili, organizzate per categoria e per dashboard. Se sono presenti pi&ugrave; categorie, si sceglie prima quella di interesse; altrimenti si arriva direttamente all&rsquo;elenco.</p>
+      <ol class="steps">
+        <li>Scegliere la categoria (se presente).</li>
+        <li>Nella sezione della dashboard desiderata, individuare la tabella nell&rsquo;elenco. Le tabelle con dettagli collegati mostrano un link &ldquo;N figli&rdquo;.</li>
+        <li>Cliccare sulla tabella per aprirla: righe, colonne e conteggi vengono calcolati al momento.</li>
+      </ol>
+      <p>All&rsquo;interno di una tabella aperta:</p>
+      <ul>
+        <li><strong>Ricerca</strong>: il campo di ricerca filtra per sottostringa su tutte le colonne testuali (non sulle colonne numeriche).</li>
+        <li><strong>Ordinamento</strong>: si clicca l&rsquo;intestazione della colonna.</li>
+        <li><strong>Filtro coorte per data</strong>: azione nell&rsquo;header della tabella, vedi <a href="#filtro-data">sezione dedicata</a>.</li>
+        <li><strong>Esportazione ed condivisione</strong>: azioni nell&rsquo;header, vedi <a href="#condivisione">Condivisione ed export</a>.</li>
+      </ul>
+    </section>
+
+    <section id="grafici">
+      <h2>Grafici</h2>
+      <p>La voce di menu <strong>Grafici</strong> mostra i grafici principali della dashboard corrente, in una griglia. Cliccando su un grafico che ha grafici collegati, si passa alla vista dei suoi dettagli.</p>
+      <p>I tipi di grafico disponibili includono barre, linee, torta e ciambella; il tipo &egrave; deciso in fase di configurazione del grafico e pu&ograve; comunque essere cambiato da chi ha i permessi per modificarlo.</p>
+      <div class="note"><strong>Nota</strong> &mdash; se un grafico riporta un&rsquo;icona a forma di boccetta accanto al titolo, significa che a quel grafico sono applicati i filtri dello <a href="#studi">studio</a> attualmente selezionato.</div>
+    </section>
+
+    <section id="drill-down">
+      <h2>Drill-down: dal totale ai singoli pazienti</h2>
+      <p>Ogni valore numerico aggregato (un conteggio, una somma) &egrave; un punto di ingresso per vedere <em>chi</em> compone quel numero:</p>
+      <ul>
+        <li>Se la tabella/il grafico ha una tabella di dettaglio collegata, cliccando sul valore si apre direttamente quella tabella, gi&agrave; filtrata.</li>
+        <li>Se non c&rsquo;&egrave; una tabella di dettaglio collegata ma la query &egrave; un aggregato semplice, cliccando sul valore Daishboard genera al volo l&rsquo;elenco dei record che lo compongono, con un&rsquo;azione &ldquo;Torna all&rsquo;aggregato&rdquo; per risalire.</li>
+      </ul>
+    </section>
+
+    <section id="studi">
+      <h2>Studi (filtri di coorte)</h2>
+      <p>Uno <strong>studio</strong> &egrave; un insieme di filtri &mdash; per data e per valore &mdash; applicato automaticamente a tutte le tabelle e i grafici della dashboard, prima di ogni aggregazione. Serve per lavorare sempre sulla stessa sotto-popolazione di pazienti senza doverla ridefinire ogni volta.</p>
+      <p>Dalla vista Grafici, la modale <strong>&ldquo;Filtri studio&rdquo;</strong> permette di:</p>
+      <ul>
+        <li>aggiungere un filtro per <strong>intervallo di date</strong> su un campo data (es. data di arruolamento), scegliendo un intervallo predefinito o date libere;</li>
+        <li>aggiungere un filtro per <strong>valore</strong> su un campo di tipo lookup o flag (es. stato del fumo), selezionando uno o pi&ugrave; valori ammessi;</li>
+        <li>salvare lo studio, che resta selezionato per le analisi successive fino a nuova modifica.</li>
+      </ul>
+      <p>I valori proposti nei filtri (colonne disponibili, intervalli, opzioni) derivano dalla <a href="#legenda">legenda dello schema</a>: se un campo non compare tra le opzioni, probabilmente la legenda va aggiornata (contattare un amministratore).</p>
+    </section>
+
+    <section id="filtro-data">
+      <h2>Filtro coorte per data (in una singola tabella)</h2>
+      <p>Oltre ai filtri dello studio, ogni tabella espone una propria azione <strong>&ldquo;Filtro coorte&rdquo;</strong> nell&rsquo;header: permette di restringere temporaneamente i risultati di quella tabella per uno o pi&ugrave; intervalli di date, senza modificare lo studio salvato.</p>
+    </section>
+
+    <section id="assistente">
+      <h2>Assistente dati</h2>
+      <p>La voce di menu <strong>Assistente</strong> apre una chat in linguaggio naturale: si pu&ograve; chiedere un&rsquo;analisi (es. &ldquo;quanti pazienti arruolati nel 2023 per stato del fumo&rdquo;) e l&rsquo;assistente propone una query SQL di <strong>sola lettura</strong> sull&rsquo;archivio, mostrandone anche i risultati.</p>
+      <ul>
+        <li>Ogni utente ha le proprie conversazioni, elencate nella barra laterale; si possono riaprire in qualsiasi momento.</li>
+        <li>Sotto una risposta dell&rsquo;assistente che contiene una query, il pulsante <strong>&ldquo;Crea widget&rdquo;</strong> trasforma quella query in una nuova tabella/grafico della dashboard, riutilizzando la domanda posta come titolo.</li>
+      </ul>
+      <div class="note"><strong>Sola lettura</strong> &mdash; l&rsquo;assistente pu&ograve; solo leggere lo schema ed eseguire <code>SELECT</code>: non pu&ograve; mai modificare o cancellare dati nell&rsquo;archivio clinico.</div>
+    </section>
+
+    <section id="condivisione">
+      <h2>Condivisione ed esportazione</h2>
+      <h3>Esportazione Excel</h3>
+      <p>Dall&rsquo;header di una tabella, l&rsquo;azione di esportazione scarica i dati visualizzati (con i filtri correnti applicati) in un file Excel.</p>
+      <h3>Link pubblico</h3>
+      <p>L&rsquo;azione <strong>&ldquo;Condividi&rdquo;</strong> genera un link pubblico alla tabella, utilizzabile anche da chi non ha un account Daishboard:</p>
+      <ul>
+        <li>il link porta a una vista di sola lettura, con i filtri di data attivi al momento della condivisione gi&agrave; applicati;</li>
+        <li>si pu&ograve; scegliere se includere anche le eventuali tabelle di dettaglio collegate;</li>
+        <li>si pu&ograve; impostare una scadenza, dopo la quale il link smette di funzionare.</li>
+      </ul>
+    </section>
+
+    <section id="legenda">
+      <h2>Legenda schema e catalogo lookup</h2>
+      <p>Le voci di menu <strong>Legenda</strong> e <strong>Lookup</strong> documentano la struttura dei dati collegati: nome e tipo di ogni campo, eventuali valori ammessi (liste di lookup) e collegamenti tra tabelle. Sono pensate soprattutto per chi costruisce nuove tabelle/grafici o per capire il significato esatto di un campo: cliccando su un campo che ha una lookup associata si apre l&rsquo;elenco dei suoi valori possibili.</p>
+    </section>
+
+    <section id="ruoli">
+      <h2>Ruoli e visibilit&agrave;</h2>
+      <table>
+        <thead><tr><th>Ruolo</th><th>Cosa vede</th></tr></thead>
+        <tbody>
+          <tr><td>Super-amministratore</td><td>Tutti i contenuti di tutte le aziende.</td></tr>
+          <tr><td>Amministratore azienda</td><td>Tutti i contenuti della propria azienda, pi&ugrave; quelli globali.</td></tr>
+          <tr><td>Utente</td><td>I propri contenuti, quelli della propria azienda senza un proprietario specifico, e quelli globali.</td></tr>
+        </tbody>
+      </table>
+      <p>La dashboard e lo studio selezionati vengono ricordati e riproposti automaticamente al successivo accesso.</p>
+    </section>
+
+    <section id="problemi">
+      <h2>Problemi comuni</h2>
+      <div class="card">
+        <h4>Non vedo una tabella o un grafico che mi aspetto</h4>
+        <p>Potrebbe appartenere a un&rsquo;altra azienda o a un altro utente, oppure essere filtrata fuori dallo studio corrente. Controllare i <a href="#studi">filtri dello studio</a> attivi, o contattare un amministratore.</p>
+      </div>
+      <div class="card">
+        <h4>Un campo non compare tra le opzioni di filtro</h4>
+        <p>La <a href="#legenda">legenda dello schema</a> potrebbe non essere aggiornata. Un amministratore pu&ograve; risincronizzarla.</p>
+      </div>
+      <div class="card">
+        <h4>Il link pubblico condiviso non funziona pi&ugrave;</h4>
+        <p>I link di condivisione possono avere una scadenza: generarne uno nuovo dall&rsquo;azione &ldquo;Condividi&rdquo;.</p>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

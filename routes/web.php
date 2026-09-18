@@ -8,6 +8,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/docs/manuale-utente', function () {
+    return response()->file(resource_path('docs/manuale-utente.html'));
+})->name('docs.manuale-utente');
+
 // SSO dal BPM esterno. Throttling per limitare il brute force sul token.
 Route::get('/bpm-landing/{subject_id}', [BpmBridgeController::class, 'handle'])
     ->middleware('throttle:10,1')

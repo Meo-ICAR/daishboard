@@ -31,7 +31,7 @@ class DataAssistant extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Legenda';
+    protected static string|UnitEnum|null $navigationGroup = 'Documentazione';
 
     protected static ?string $navigationLabel = 'Assistente AI';
 
