@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh hassisto-vps *)",
+      "Bash(grep -v \"^-\\\\|LEGAL\\\\|authorized\\\\|monitor\\\\|evidence\\\\|consent\\\\|system$\\\\|criminal\\\\|advised\\\\|course\\\\|individuals\\\\|Anyone\")"
+    ]
+  }
+}
