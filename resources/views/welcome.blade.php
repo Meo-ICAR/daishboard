@@ -18,7 +18,7 @@
             </div>
             <div class="flex items-center space-x-4">
                 @auth
-                <a href="{{ route('filament.admin.pages.dashboard') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                <a href="{{ route('filament.admin.home') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
                     Pannello di controllo
                 </a>
                 @else
