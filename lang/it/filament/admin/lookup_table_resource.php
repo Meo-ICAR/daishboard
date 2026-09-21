@@ -7,6 +7,7 @@ return [
     'description' => 'Descrizione',
     'edit' => 'Modifica',
     'has_links' => 'Con collegamenti',
+    'is_data_table' => 'Tabella dati',
     'is_dictionary' => 'Dizionario',
     'key_column' => 'Colonna chiave',
     'label' => 'Etichetta',

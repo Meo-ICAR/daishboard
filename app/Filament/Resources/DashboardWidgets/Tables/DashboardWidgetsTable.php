@@ -113,8 +113,8 @@ class DashboardWidgetsTable
                 TernaryFilter::make('master_widget')
                     ->label(__('filament/admin/dashboard_widget_resource.master_widget'))
                     ->placeholder('Tutti')
-                    ->trueLabel('Con figli')
-                    ->falseLabel('Senza figli')
+                    ->trueLabel('Con dettagli')
+                    ->falseLabel('Senza dettagli')
                     ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
                         'true' => $query->whereNotNull('master_widget'),
                         'false' => $query->whereNull('master_widget'),

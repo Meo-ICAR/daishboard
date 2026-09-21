@@ -5,11 +5,11 @@ namespace App\Filament\Resources\SchemaLegends\Pages;
 use App\Exports\WidgetDatasetExport;
 use App\Filament\Resources\SchemaLegends\SchemaLegendResource;
 use App\Models\SchemaLegend;
-use App\Models\SchemaLegendColumn;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -20,34 +20,23 @@ class ViewSchemaLegend extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('exportExcel')
-                ->label(__('filament/admin/view_schema_legend.export_excel'))
+            Action::make('downloadTableExcel')
+                ->label('Download Excel')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
-                ->visible(fn (): bool => $this->record->columns()->exists())
                 ->action(function () {
                     /** @var SchemaLegend $record */
                     $record = $this->record;
 
-                    $headings = ['#', 'Campo', 'Tipo', 'Nullable', 'Commento', 'Categoria data', 'Range date / Valori lookup', 'Lookup'];
+                    $headings = $record->columns()->orderBy('position')->pluck('name')->all();
 
-                    $rows = $record->columns()
-                        ->with('lookupTables:id,table_name')
-                        ->orderBy('position')
+                    $rows = DB::connection($record->connection)
+                        ->table($record->table_name)
                         ->get()
-                        ->map(fn (SchemaLegendColumn $column): array => [
-                            '#' => $column->position,
-                            'Campo' => $column->name,
-                            'Tipo' => $column->data_type,
-                            'Nullable' => $column->nullable ? 'sì' : 'no',
-                            'Commento' => $column->comment,
-                            'Categoria data' => $column->date_category,
-                            'Range date / Valori lookup' => $column->summary(),
-                            'Lookup' => $column->lookup_table ?? $column->lookupTables->pluck('table_name')->first(),
-                        ])
+                        ->map(fn (object $row): array => (array) $row)
                         ->all();
 
-                    $name = Str::slug($record->table_name.'-legenda') ?: 'legenda';
+                    $name = Str::slug($record->table_name.'-dati') ?: 'dati';
 
                     return Excel::download(
                         new WidgetDatasetExport($headings, $rows, $record->table_name),

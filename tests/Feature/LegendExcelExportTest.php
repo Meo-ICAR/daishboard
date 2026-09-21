@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Exports\WidgetDatasetExport;
 use App\Filament\Resources\LookupTables\Pages\ViewLookupTable;
 use App\Filament\Resources\SchemaLegends\Pages\ViewSchemaLegend;
+use App\Filament\Resources\SchemaLegends\RelationManagers\ColumnsRelationManager;
 use App\Models\LookupTable;
 use App\Models\SchemaLegend;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
@@ -34,16 +36,38 @@ class LegendExcelExportTest extends TestCase
         $legend = SchemaLegend::query()->where('table_name', 'patients')->firstOrFail();
         $stamp = now()->format('Ymd-His');
 
-        Livewire::test(ViewSchemaLegend::class, ['record' => $legend->getKey()])
-            ->assertActionVisible('exportExcel')
-            ->callAction('exportExcel')
-            ->assertHasNoActionErrors();
+        Livewire::test(ColumnsRelationManager::class, [
+            'ownerRecord' => $legend,
+            'pageClass' => ViewSchemaLegend::class,
+        ])
+            ->assertTableActionVisible('exportExcel')
+            ->callTableAction('exportExcel')
+            ->assertHasNoTableActionErrors();
 
         Excel::assertDownloaded(
             "patients-legenda-{$stamp}.xlsx",
             fn (WidgetDatasetExport $export): bool => $export->headings() === [
                 '#', 'Campo', 'Tipo', 'Nullable', 'Commento', 'Categoria data', 'Range date / Valori lookup', 'Lookup',
             ] && count($export->array()) === $legend->columns()->count(),
+        );
+    }
+
+    public function test_schema_legend_view_downloads_all_table_records_as_excel(): void
+    {
+        $legend = SchemaLegend::query()->where('table_name', 'patients')->firstOrFail();
+        $stamp = now()->format('Ymd-His');
+        $expectedHeadings = $legend->columns()->orderBy('position')->pluck('name')->all();
+        $expectedRowCount = DB::connection($legend->connection)->table($legend->table_name)->count();
+
+        Livewire::test(ViewSchemaLegend::class, ['record' => $legend->getKey()])
+            ->assertActionExists('downloadTableExcel')
+            ->callAction('downloadTableExcel')
+            ->assertHasNoActionErrors();
+
+        Excel::assertDownloaded(
+            "patients-dati-{$stamp}.xlsx",
+            fn (WidgetDatasetExport $export): bool => $export->headings() === $expectedHeadings
+                && count($export->array()) === $expectedRowCount,
         );
     }
 

@@ -44,7 +44,7 @@
                                     {{ $chart['title'] }}
                                 </a>
                                 @if ($chart['hasChildren'])
-                                    <x-filament::badge color="gray" size="sm">figli</x-filament::badge>
+                                    <x-filament::badge color="gray" size="sm">Dettagli</x-filament::badge>
                                 @endif
                             @endif
 

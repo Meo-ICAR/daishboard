@@ -13,7 +13,8 @@ class SchemaLegendInfolist
         return $schema
             ->components([
                 Section::make()
-                    ->columns(3)
+                    ->columnSpanFull()
+                    ->columns(5)
                     ->schema([
                         TextEntry::make('table_name')->label('Tabella'),
                         TextEntry::make('connection')->label('Connessione')->badge(),

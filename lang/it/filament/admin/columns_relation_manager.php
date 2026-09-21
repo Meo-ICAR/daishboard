@@ -5,6 +5,9 @@ return [
     'comment' => 'Commento',
     'data_type' => 'Tipo',
     'date_category' => 'Categoria data',
+    'legend' => [
+        'table_name' => 'Tabella',
+    ],
     'lookup_table' => 'Tabella lookup',
     'modal_cancel_action_label' => 'Chiudi',
     'name' => 'Campo',

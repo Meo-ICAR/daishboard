@@ -15,7 +15,8 @@ class LookupTableInfolist
         return $schema
             ->components([
                 Section::make()
-                    ->columns(3)
+                    ->columnSpanFull()
+                    ->columns(6)
                     ->schema([
                         TextEntry::make('table_name')->label('Tabella'),
                         TextEntry::make('connection')->label('Connessione')->badge(),
@@ -28,6 +29,11 @@ class LookupTableInfolist
                             ->badge()
                             ->formatStateUsing(fn (bool $state): string => $state ? 'sì' : 'no (entità)')
                             ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+                        TextEntry::make('is_data_table')
+                            ->label('Tabella dati')
+                            ->badge()
+                            ->formatStateUsing(fn (bool $state): string => $state ? 'sì' : 'no')
+                            ->color(fn (bool $state): string => $state ? 'warning' : 'gray'),
                         TextEntry::make('columns_count')
                             ->label('Campi collegati')
                             ->badge()

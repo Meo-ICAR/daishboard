@@ -7,6 +7,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -47,6 +48,9 @@ class LookupTablesTable
                     ->label(__('filament/admin/lookup_table_resource.is_dictionary'))
                     ->boolean()
                     ->toggleable(),
+                ToggleColumn::make('is_data_table')
+                    ->label(__('filament/admin/lookup_table_resource.is_data_table'))
+                    ->disabled(fn (): bool => ! (auth()->user()?->isSuperAdmin() ?? false)),
                 TextColumn::make('synced_at')
                     ->label(__('filament/admin/lookup_table_resource.synced_at'))
                     ->dateTime()
@@ -56,6 +60,11 @@ class LookupTablesTable
             ->filters([
                 TernaryFilter::make('is_dictionary')
                     ->label(__('filament/admin/lookup_table_resource.is_dictionary')),
+                TernaryFilter::make('is_data_table')
+                    ->label(__('filament/admin/lookup_table_resource.is_data_table'))
+                    ->placeholder('Tutte')
+                    ->trueLabel('Solo dati')
+                    ->falseLabel('Solo lookup'),
                 TernaryFilter::make('has_links')
                     ->label(__('filament/admin/lookup_table_resource.has_links'))
                     ->queries(

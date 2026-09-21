@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\SchemaLegends\RelationManagers;
 
+use App\Exports\WidgetDatasetExport;
 use App\Filament\Resources\LookupTables\LookupTableResource;
 use App\Models\LookupTable;
+use App\Models\SchemaLegend;
 use App\Models\SchemaLegendColumn;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -20,6 +22,8 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ColumnsRelationManager extends RelationManager
 {
@@ -89,6 +93,42 @@ class ColumnsRelationManager extends RelationManager
                         default => null,
                     })
                     ->toggleable(),
+            ])
+            ->headerActions([
+                Action::make('exportExcel')
+                    ->label(__('filament/admin/view_schema_legend.export_excel'))
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->color('gray')
+                    ->visible(fn (): bool => $this->getOwnerRecord()->columns()->exists())
+                    ->action(function () {
+                        /** @var SchemaLegend $record */
+                        $record = $this->getOwnerRecord();
+
+                        $headings = ['#', 'Campo', 'Tipo', 'Nullable', 'Commento', 'Categoria data', 'Range date / Valori lookup', 'Lookup'];
+
+                        $rows = $record->columns()
+                            ->with('lookupTables:id,table_name')
+                            ->orderBy('position')
+                            ->get()
+                            ->map(fn (SchemaLegendColumn $column): array => [
+                                '#' => $column->position,
+                                'Campo' => $column->name,
+                                'Tipo' => $column->data_type,
+                                'Nullable' => $column->nullable ? 'sì' : 'no',
+                                'Commento' => $column->comment,
+                                'Categoria data' => $column->date_category,
+                                'Range date / Valori lookup' => $column->summary(),
+                                'Lookup' => $column->lookup_table ?? $column->lookupTables->pluck('table_name')->first(),
+                            ])
+                            ->all();
+
+                        $name = Str::slug($record->table_name.'-legenda') ?: 'legenda';
+
+                        return Excel::download(
+                            new WidgetDatasetExport($headings, $rows, $record->table_name),
+                            $name.'-'.now()->format('Ymd-His').'.xlsx',
+                        );
+                    }),
             ])
             ->filters([
                 TernaryFilter::make('date_category')

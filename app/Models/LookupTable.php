@@ -24,6 +24,7 @@ class LookupTable extends Model
         'label_column',
         'row_count',
         'is_dictionary',
+        'is_data_table',
         'values',
         'synced_at',
     ];
@@ -33,6 +34,7 @@ class LookupTable extends Model
         return [
             'row_count' => 'integer',
             'is_dictionary' => 'boolean',
+            'is_data_table' => 'boolean',
             'values' => 'array',
             'synced_at' => 'datetime',
         ];
