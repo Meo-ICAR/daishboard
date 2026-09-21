@@ -61,6 +61,7 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_EMULATE_PREPARES => true,
             ]) : [],
         ],
 
@@ -81,6 +82,7 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_EMULATE_PREPARES => true,
             ]) : [],
         ],
 
@@ -119,17 +121,17 @@ return [
          * Il driver viene letto da DB_CONNECTION_DBAI (es. mysql, pgsql, sqlsrv).
          */
         'dbai' => [
-            'driver'    => env('DB_CONNECTION_DBAI', 'mysql'),
-            'host'      => env('DB_HOST_DBAI', '127.0.0.1'),
-            'port'      => env('DB_PORT_DBAI', '3306'),
-            'database'  => env('DB_DATABASE_DBAI', ''),
-            'username'  => env('DB_USERNAME_DBAI', ''),
-            'password'  => env('DB_PASSWORD_DBAI', ''),
-            'charset'   => env('DB_CHARSET_DBAI', 'utf8mb4'),
+            'driver' => env('DB_CONNECTION_DBAI', 'mysql'),
+            'host' => env('DB_HOST_DBAI', '127.0.0.1'),
+            'port' => env('DB_PORT_DBAI', '3306'),
+            'database' => env('DB_DATABASE_DBAI', ''),
+            'username' => env('DB_USERNAME_DBAI', ''),
+            'password' => env('DB_PASSWORD_DBAI', ''),
+            'charset' => env('DB_CHARSET_DBAI', 'utf8mb4'),
             'collation' => env('DB_COLLATION_DBAI', 'utf8mb4_unicode_ci'),
-            'prefix'    => '',
+            'prefix' => '',
             'prefix_indexes' => true,
-            'strict'    => false,
+            'strict' => false,
         ],
 
     ],
