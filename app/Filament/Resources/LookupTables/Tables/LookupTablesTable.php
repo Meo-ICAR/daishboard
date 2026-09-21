@@ -18,46 +18,46 @@ class LookupTablesTable
             ->defaultSort('table_name')
             ->columns([
                 TextColumn::make('table_name')
-                    ->label('Tabella')
+                    ->label(__('filament/admin/lookup_table_resource.table_name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('label')
-                    ->label('Nome')
+                    ->label(__('filament/admin/lookup_table_resource.label'))
                     ->searchable(),
                 TextColumn::make('description')
-                    ->label('Descrizione')
+                    ->label(__('filament/admin/lookup_table_resource.description'))
                     ->limit(80)
                     ->tooltip(fn (?string $state): ?string => $state)
                     ->wrap(),
                 TextColumn::make('row_count')
-                    ->label('Righe')
+                    ->label(__('filament/admin/lookup_table_resource.row_count'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('values_count')
-                    ->label('Valori')
+                    ->label(__('filament/admin/lookup_table_resource.values_count'))
                     ->badge()
                     ->color('info')
                     ->state(fn (LookupTable $record): string => $record->values ? (string) count($record->values) : '—'),
                 TextColumn::make('columns_count')
-                    ->label('Campi collegati')
+                    ->label(__('filament/admin/lookup_table_resource.columns_count'))
                     ->badge()
                     ->color('warning')
                     ->state(fn (LookupTable $record): int => $record->columns()->count()),
                 IconColumn::make('is_dictionary')
-                    ->label('Enum')
+                    ->label(__('filament/admin/lookup_table_resource.is_dictionary'))
                     ->boolean()
                     ->toggleable(),
                 TextColumn::make('synced_at')
-                    ->label('Aggiornato')
+                    ->label(__('filament/admin/lookup_table_resource.synced_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 TernaryFilter::make('is_dictionary')
-                    ->label('Solo enumerazioni'),
+                    ->label(__('filament/admin/lookup_table_resource.is_dictionary')),
                 TernaryFilter::make('has_links')
-                    ->label('Con campi collegati')
+                    ->label(__('filament/admin/lookup_table_resource.has_links'))
                     ->queries(
                         true: fn ($query) => $query->has('columns'),
                         false: fn ($query) => $query->doesntHave('columns'),
@@ -65,8 +65,10 @@ class LookupTablesTable
                     ),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->label(__('filament/admin/lookup_table_resource.view')),
                 EditAction::make()
+                    ->label(__('filament/admin/lookup_table_resource.edit'))
                     ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
             ]);
     }

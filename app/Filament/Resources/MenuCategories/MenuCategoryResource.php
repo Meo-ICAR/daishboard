@@ -24,6 +24,12 @@ class MenuCategoryResource extends Resource
 {
     protected static ?string $model = MenuCategory::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
@@ -33,12 +39,6 @@ class MenuCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBars3;
 
-    protected static ?string $navigationLabel = 'Categorie menu';
-
-    protected static ?string $modelLabel = 'categoria menu';
-
-    protected static ?string $pluralModelLabel = 'categorie menu';
-
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
@@ -46,22 +46,22 @@ class MenuCategoryResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/menu_category_resource.name'))
                     ->required(),
                 TextInput::make('database')
-                    ->label('Database')
+                    ->label(__('filament/admin/menu_category_resource.database'))
                     ->maxLength(255),
                 TextInput::make('description')
-                    ->label('Descrizione'),
+                    ->label(__('filament/admin/menu_category_resource.description')),
                 TextInput::make('icon')
-                    ->label('Icona'),
+                    ->label(__('filament/admin/menu_category_resource.icon')),
                 TextInput::make('order')
-                    ->label('Ordine')
+                    ->label(__('filament/admin/menu_category_resource.order'))
                     ->required()
                     ->numeric()
                     ->default(0),
                 Toggle::make('is_active')
-                    ->label('Attiva')
+                    ->label(__('filament/admin/menu_category_resource.is_active'))
                     ->required(),
             ]);
     }
@@ -73,32 +73,32 @@ class MenuCategoryResource extends Resource
             ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/menu_category_resource.name'))
                     ->searchable(),
                 TextColumn::make('database')
-                    ->label('Database')
+                    ->label(__('filament/admin/menu_category_resource.database'))
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('description')
-                    ->label('Descrizione')
+                    ->label(__('filament/admin/menu_category_resource.description'))
                     ->searchable(),
                 TextColumn::make('icon')
-                    ->label('Icona')
+                    ->label(__('filament/admin/menu_category_resource.icon'))
                     ->searchable(),
                 TextColumn::make('order')
-                    ->label('Ordine')
+                    ->label(__('filament/admin/menu_category_resource.order'))
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_active')
-                    ->label('Attiva')
+                    ->label(__('filament/admin/menu_category_resource.is_active'))
                     ->boolean(),
                 TextColumn::make('created_at')
-                    ->label('Creata il')
+                    ->label(__('filament/admin/menu_category_resource.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Modificata il')
+                    ->label(__('filament/admin/menu_category_resource.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -107,12 +107,15 @@ class MenuCategoryResource extends Resource
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/menu_category_resource.edit')),
+                DeleteAction::make()
+                    ->label(__('filament/admin/menu_category_resource.delete')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label(__('filament/admin/menu_category_resource.delete_bulk')),
                 ]),
             ]);
     }
@@ -122,5 +125,20 @@ class MenuCategoryResource extends Resource
         return [
             'index' => ManageMenuCategories::route('/'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/menu_category_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/menu_category_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/menu_category_resource.plural_model_label');
     }
 }

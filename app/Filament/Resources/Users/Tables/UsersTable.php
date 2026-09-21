@@ -15,25 +15,25 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('company.name')
-                    ->label('Azienda')
+                    ->label(__('filament/admin/user_resource.company.name'))
                     ->searchable(),
                 TextColumn::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/user_resource.name'))
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email')
+                    ->label(__('filament/admin/user_resource.email'))
                     ->searchable(),
                 TextColumn::make('email_verified_at')
-                    ->label('Email verificata il')
+                    ->label(__('filament/admin/user_resource.email_verified_at'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->label('Creato il')
+                    ->label(__('filament/admin/user_resource.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Modificato il')
+                    ->label(__('filament/admin/user_resource.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -42,11 +42,13 @@ class UsersTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/user_resource.edit')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label(__('filament/admin/user_resource.delete_bulk')),
                 ]),
             ]);
     }

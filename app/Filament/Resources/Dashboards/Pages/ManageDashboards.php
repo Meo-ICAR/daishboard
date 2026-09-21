@@ -16,4 +16,14 @@ class ManageDashboards extends ManageRecords
             CreateAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/manage_dashboards.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/manage_dashboards.title');
+    }
 }

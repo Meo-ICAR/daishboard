@@ -19,15 +19,15 @@ class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBeaker;
 
     protected static string|UnitEnum|null $navigationGroup = null;
-
-    protected static ?string $navigationLabel = 'Restrizioni';
-
-    protected static ?string $modelLabel = 'restrizione';
-
-    protected static ?string $pluralModelLabel = 'restrizioni';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -55,5 +55,20 @@ class ProjectResource extends Resource
             'create' => CreateProject::route('/create'),
             'edit' => EditProject::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/project_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/project_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/project_resource.plural_model_label');
     }
 }

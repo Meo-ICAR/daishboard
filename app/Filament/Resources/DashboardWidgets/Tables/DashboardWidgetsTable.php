@@ -31,7 +31,7 @@ class DashboardWidgetsTable
 
                 // Dashboard → apre dashboard-charts-overview?dashboardId={id}
                 TextColumn::make('dashboard.title')
-                    ->label('Dashboard')
+                    ->label(__('filament/admin/dashboard_widget_resource.dashboard.title'))
                     ->searchable()
                     ->sortable()
                     ->url(fn (DashboardWidget $record): ?string => $record->dashboard_id !== null
@@ -41,14 +41,14 @@ class DashboardWidgetsTable
 
                 // Titolo → apre dashboard-widgets/{id} (view)
                 TextColumn::make('title')
-                    ->label('Titolo')
+                    ->label(__('filament/admin/dashboard_widget_resource.title'))
                     ->searchable()
                     ->sortable()
                     ->url(fn (DashboardWidget $record): string => DashboardWidgetResource::getUrl('view', ['record' => $record])),
 
                 // Tipo → icona + label; cliccabile → tabella se type = 'table', altrimenti grafico
                 TextColumn::make('type')
-                    ->label('Tipo')
+                    ->label(__('filament/admin/dashboard_widget_resource.type'))
                     ->sortable()
                     ->formatStateUsing(fn (?string $state): string => ChartType::label((string) $state))
                     ->icon(fn (?string $state): Heroicon => ChartType::icon((string) $state))
@@ -58,21 +58,21 @@ class DashboardWidgetsTable
                     )),
 
                 TextColumn::make('masterWidget.title')
-                    ->label('Widget master')
+                    ->label(__('filament/admin/dashboard_widget_resource.master_widget.title'))
                     ->placeholder('—')
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('master_filter_column')
-                    ->label('Colonna filtro master')
+                    ->label(__('filament/admin/dashboard_widget_resource.master_filter_column'))
                     ->placeholder('—')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('dashboard_id')
-                    ->label('Dashboard')
+                    ->label(__('filament/admin/dashboard_widget_resource.dashboard_id'))
                     ->relationship('dashboard', 'title')
                     ->default(auth()->user()?->dashboard_id
                         ?? Dashboard::query()->orderBy('order')->orderBy('id')->value('id'))
@@ -80,7 +80,7 @@ class DashboardWidgetsTable
                     ->searchable(),
 
                 SelectFilter::make('menu_category')
-                    ->label('Categoria di menu')
+                    ->label(__('filament/admin/dashboard_widget_resource.menu_category'))
                     ->options(fn (): array => MenuCategory::query()
                         ->orderBy('order')->orderBy('name')
                         ->pluck('name', 'id')->all())
@@ -93,13 +93,13 @@ class DashboardWidgetsTable
                     )),
 
                 SelectFilter::make('project_id')
-                    ->label('Restrizione')
+                    ->label(__('filament/admin/dashboard_widget_resource.project_id'))
                     ->relationship('project', 'name')
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('is_table')
-                    ->label('Tipo tabella')
+                    ->label(__('filament/admin/dashboard_widget_resource.is_table'))
                     ->placeholder('Tutti')
                     ->options([
                         'table' => 'Tabelle',
@@ -111,7 +111,7 @@ class DashboardWidgetsTable
                         default => $query,
                     }),
                 TernaryFilter::make('master_widget')
-                    ->label('Master')
+                    ->label(__('filament/admin/dashboard_widget_resource.master_widget'))
                     ->placeholder('Tutti')
                     ->trueLabel('Con figli')
                     ->falseLabel('Senza figli')
@@ -122,7 +122,7 @@ class DashboardWidgetsTable
                     }),
 
                 TernaryFilter::make('is_active')
-                    ->label('Stato')
+                    ->label(__('filament/admin/dashboard_widget_resource.is_active'))
                     ->queries(
                         true: fn ($query) => $query->where('is_active', true),
                         false: fn ($query) => $query->where('is_active', false),
@@ -134,10 +134,11 @@ class DashboardWidgetsTable
 
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/dashboard_widget_resource.edit')),
 
                 Action::make('duplicate')
-                    ->label('Duplica')
+                    ->label(__('filament/admin/dashboard_widget_resource.duplicate'))
                     ->icon(Heroicon::OutlinedDocumentDuplicate)
                     ->modalHeading('Duplica estrazione dati')
                     ->modalSubmitActionLabel('Duplica')

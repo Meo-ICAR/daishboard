@@ -30,22 +30,22 @@ class ProjectForm
                     ->description('Definisce i filtri applicati in modo trasversale alle dashboard ')
                     ->schema([
                         Select::make('user_id')
-                            ->label('Utente')
+                            ->label(__('filament/admin/project_resource.user_id'))
                             ->relationship('user', 'name')
-                            ->default(fn () => auth()->id())
+                            ->default(__('filament/admin/project_resource.user_id_default'))
                             ->searchable()
                             ->preload()
                             ->required(),
                         TextInput::make('name')
-                            ->label('Nome')
+                            ->label(__('filament/admin/project_resource.name'))
                             ->required()
                             ->maxLength(255)
                             ->default('Studio in corso'),
                         TextInput::make('database')
-                            ->label('Database')
+                            ->label(__('filament/admin/project_resource.database'))
                             ->maxLength(255),
                         Toggle::make('is_current')
-                            ->label('Restrizione in corso')
+                            ->label(__('filament/admin/project_resource.is_current'))
                             ->helperText('Solo la restrizione in corso viene applicata alle dashboard grafiche.')
                             ->default(true)
                             ->inline(false),
@@ -55,6 +55,7 @@ class ProjectForm
                     ->description('Restringono la coorte prima del raggruppamento. Scegli un preset oppure un intervallo personalizzato.')
                     ->schema([
                         Repeater::make('date_filters')
+                            ->label(__('filament/admin/project_resource.date_filters'))
                             ->hiddenLabel()
                             ->addActionLabel('Aggiungi filtro data')
                             ->reorderable(false)
@@ -63,14 +64,14 @@ class ProjectForm
                             ->itemLabel(fn (array $state): ?string => $state['column'] ?? null)
                             ->schema([
                                 Select::make('column')
-                                    ->label('Campo data')
+                                    ->label(__('filament/admin/project_resource.column'))
                                     ->options(CohortFilterCatalog::dateColumnOptions())
                                     ->searchable()
                                     ->required()
                                     ->live()
                                     ->columnSpanFull(),
                                 Select::make('preset')
-                                    ->label('Periodo')
+                                    ->label(__('filament/admin/project_resource.preset'))
                                     ->placeholder('Intervallo personalizzato')
                                     ->options(fn (Get $get): array => CohortFilterCatalog::datePresetOptions()[$get('column')] ?? [])
                                     ->disabled(fn (Get $get): bool => blank($get('column')))
@@ -82,12 +83,12 @@ class ProjectForm
                                     })
                                     ->columnSpanFull(),
                                 DatePicker::make('from')
-                                    ->label('Da')
+                                    ->label(__('filament/admin/project_resource.from'))
                                     ->native(false)
                                     ->disabled(fn (Get $get): bool => filled($get('preset')))
                                     ->dehydrated(),
                                 DatePicker::make('to')
-                                    ->label('A')
+                                    ->label(__('filament/admin/project_resource.to'))
                                     ->native(false)
                                     ->disabled(fn (Get $get): bool => filled($get('preset')))
                                     ->dehydrated()
@@ -99,6 +100,7 @@ class ProjectForm
                     ->description('Seleziona uno o più valori ammessi: la coorte è limitata ai record che li soddisfano (IN). Filtri su campi diversi sono combinati in AND.')
                     ->schema([
                         Repeater::make('value_filters')
+                            ->label(__('filament/admin/project_resource.value_filters'))
                             ->hiddenLabel()
                             ->addActionLabel('Aggiungi filtro valore')
                             ->reorderable(false)
@@ -114,7 +116,7 @@ class ProjectForm
                                     ->live()
                                     ->columnSpanFull(),
                                 Select::make('values')
-                                    ->label('Valori ammessi')
+                                    ->label(__('filament/admin/project_resource.values'))
                                     ->multiple()
                                     ->options(fn (Get $get): array => CohortFilterCatalog::valueOptions()[$get('column')] ?? [])
                                     ->disabled(fn (Get $get): bool => blank($get('column')))

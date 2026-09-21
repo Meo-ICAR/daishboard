@@ -22,15 +22,15 @@ class SchemaLegendResource extends Resource
 {
     protected static ?string $model = SchemaLegend::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
     protected static string|UnitEnum|null $navigationGroup = 'Legenda';
-
-    protected static ?string $navigationLabel = 'Dati';
-
-    protected static ?string $modelLabel = 'tabella';
-
-    protected static ?string $pluralModelLabel = 'legenda';
 
     protected static ?string $recordTitleAttribute = 'table_name';
 
@@ -75,5 +75,20 @@ class SchemaLegendResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/schema_legend_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/schema_legend_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/schema_legend_resource.plural_model_label');
     }
 }

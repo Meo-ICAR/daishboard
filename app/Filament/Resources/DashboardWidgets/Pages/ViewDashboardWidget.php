@@ -177,7 +177,7 @@ class ViewDashboardWidget extends Page implements HasTable
             if (in_array($name, $this->numericColumns, true)) {
                 $column->summarize(
                     Summarizer::make()
-                        ->label('Somma')
+                        ->label(__('filament/admin/view_dashboard_widget.somma'))
                         ->using(fn (): string => $this->columnSum($name)),
                 );
             }
@@ -429,7 +429,7 @@ class ViewDashboardWidget extends Page implements HasTable
     {
         return [
             Action::make('backToAggregate')
-                ->label('Torna all\'aggregato')
+                ->label(__('filament/admin/view_dashboard_widget.back_to_aggregate'))
                 ->icon(Heroicon::OutlinedArrowUturnLeft)
                 ->color('gray')
                 ->visible(fn (): bool => $this->drillFilters !== [])
@@ -438,12 +438,12 @@ class ViewDashboardWidget extends Page implements HasTable
             ...$this->dateFilterHeaderActions(),
 
             Action::make('runQuery')
-                ->label('Esegui di nuovo')
+                ->label(__('filament/admin/view_dashboard_widget.run_query'))
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->action(fn () => $this->runQuery()),
 
             Action::make('exportExcel')
-                ->label('Esporta Excel')
+                ->label(__('filament/admin/view_dashboard_widget.export_excel'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->visible(fn (): bool => $this->queryRows !== [])
@@ -461,14 +461,14 @@ class ViewDashboardWidget extends Page implements HasTable
                 }),
 
             Action::make('chart')
-                ->label('Grafico')
+                ->label(__('filament/admin/view_dashboard_widget.chart'))
                 ->icon(Heroicon::OutlinedChartBar)
                 ->color('gray')
                 ->visible(fn (): bool => strtolower((string) $this->widgetType) !== 'table')
                 ->url(fn (): string => $this->widgetResourceUrl('chart')),
 
             Action::make('share')
-                ->label('Condividi')
+                ->label(__('filament/admin/view_dashboard_widget.share'))
                 ->icon(Heroicon::OutlinedShare)
                 ->color('gray')
                 ->hidden(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
@@ -482,10 +482,10 @@ class ViewDashboardWidget extends Page implements HasTable
                 ])
                 ->schema([
                     TextInput::make('title')
-                        ->label('Titolo mostrato')
+                        ->label(__('filament/admin/view_dashboard_widget.titolo_mostrato'))
                         ->maxLength(255),
                     Select::make('expiry')
-                        ->label('Scadenza')
+                        ->label(__('filament/admin/view_dashboard_widget.scadenza'))
                         ->options([
                             '7' => '7 giorni',
                             '30' => '30 giorni',
@@ -495,7 +495,7 @@ class ViewDashboardWidget extends Page implements HasTable
                         ->default('30')
                         ->selectablePlaceholder(false),
                     Toggle::make('include_children')
-                        ->label('Consenti di aprire le tabelle figlio')
+                        ->label(__('filament/admin/view_dashboard_widget.consenti_di_aprire_le_tabelle_figlio'))
                         ->default(true),
                 ])
                 ->action(function (array $data): void {
@@ -515,20 +515,20 @@ class ViewDashboardWidget extends Page implements HasTable
                     $url = $share->publicUrl();
 
                     Notification::make()
-                        ->title('Link pubblico creato')
+                        ->title(__('filament/admin/view_dashboard_widget.link_pubblico_creato'))
                         ->body($url)
                         ->success()
                         ->persistent()
                         ->actions([
                             Action::make('open')
-                                ->label('Apri')
+                                ->label(__('filament/admin/view_dashboard_widget.open'))
                                 ->url($url, shouldOpenInNewTab: true),
                         ])
                         ->send();
                 }),
 
             Action::make('sharesList')
-                ->label('Link condivisi')
+                ->label(__('filament/admin/view_dashboard_widget.shares_list'))
                 ->icon(Heroicon::OutlinedLink)
                 ->color('gray')
                 ->badge(fn (): ?string => ($n = DashboardWidgetShare::query()
@@ -541,28 +541,33 @@ class ViewDashboardWidget extends Page implements HasTable
                     $shares = $this->shareLinks();
 
                     if ($shares === []) {
-                        return [TextEntry::make('empty')->hiddenLabel()->state('Nessun link creato.')];
+                        return [TextEntry::make('empty')
+                            ->label(__('filament/admin/view_dashboard_widget.empty'))->hiddenLabel()->state(__('filament/admin/view_dashboard_widget.nessun_link_creato.'))];
                     }
 
                     return [
                         RepeatableEntry::make('shares')
+                            ->label(__('filament/admin/view_dashboard_widget.shares'))
                             ->hiddenLabel()
                             ->state($shares)
                             ->schema([
-                                TextEntry::make('title')->hiddenLabel()->weight('semibold'),
+                                TextEntry::make('title')
+                                    ->label(__('filament/admin/view_dashboard_widget.title'))->hiddenLabel()->weight('semibold'),
                                 TextEntry::make('url')
+                                    ->label(__('filament/admin/view_dashboard_widget.url'))
                                     ->hiddenLabel()
                                     ->copyable()
                                     ->copyMessage('Link copiato')
                                     ->url(fn (string $state): string => $state, shouldOpenInNewTab: true)
                                     ->color('primary'),
-                                TextEntry::make('meta')->hiddenLabel()->color('gray')->size('xs'),
+                                TextEntry::make('meta')
+                                    ->label(__('filament/admin/view_dashboard_widget.meta'))->hiddenLabel()->color('gray')->size('xs'),
                             ]),
                     ];
                 }),
 
             Action::make('revokeShares')
-                ->label('Revoca tutti i link')
+                ->label(__('filament/admin/view_dashboard_widget.revoke_shares'))
                 ->icon(Heroicon::OutlinedTrash)
                 ->color('danger')
                 ->visible(fn (): bool => DashboardWidgetShare::query()->where('dashboard_widget_id', $this->recordId)->exists())
@@ -580,7 +585,7 @@ class ViewDashboardWidget extends Page implements HasTable
                 }),
 
             Action::make('edit')
-                ->label('Modifica')
+                ->label(__('filament/admin/view_dashboard_widget.edit'))
                 ->icon(Heroicon::OutlinedPencilSquare)
                 ->url(fn (): string => $this->widgetResourceUrl('edit')),
         ];
@@ -588,7 +593,7 @@ class ViewDashboardWidget extends Page implements HasTable
 
     /**
      * Link pubblici di questa tabella, pronti per la RepeatableEntry del modale
-     * "Link condivisi".
+     * __('filament/admin/view_dashboard_widget.link_condivisi').
      *
      * @return array<int, array{title: string, url: string, meta: string}>
      */
@@ -635,7 +640,7 @@ class ViewDashboardWidget extends Page implements HasTable
     public function getSubheading(): string|Htmlable|null
     {
         if ($this->drillFilters !== []) {
-            return 'Dettaglio dei record · '.collect($this->drillFilters)
+            return __('filament/admin/view_dashboard_widget.subheading').collect($this->drillFilters)
                 ->map(fn (array $filter): string => ($filter['label'] ?? $filter['expr'] ?? '?')
                     .' = '.Str::limit((string) ($filter['value'] ?? 'NULL'), 60))
                 ->implode('   ·   ');
@@ -650,5 +655,10 @@ class ViewDashboardWidget extends Page implements HasTable
             DashboardWidgetResource::getUrl() => 'Dashboard Widget',
             '#' => $this->getTitle(),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/view_dashboard_widget.title');
     }
 }

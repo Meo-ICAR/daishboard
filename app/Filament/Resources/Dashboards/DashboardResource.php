@@ -10,8 +10,8 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -25,17 +25,17 @@ class DashboardResource extends Resource
 {
     protected static ?string $model = Dashboard::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;
 
-   // protected static bool $shouldRegisterNavigation = false;
-
-    protected static ?string $navigationLabel = 'Dashboard';
-
-    protected static ?string $modelLabel = 'dashboard';
-
-    protected static ?string $pluralModelLabel = 'dashboard';
+    // protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -44,26 +44,26 @@ class DashboardResource extends Resource
         return $schema
             ->components([
                 Select::make('user_id')
-                    ->label('Utente')
+                    ->label(__('filament/admin/dashboard_resource.user_id'))
                     ->relationship('user', 'name'),
                 Select::make('menu_category_id')
-                    ->label('Categoria menu')
+                    ->label(__('filament/admin/dashboard_resource.menu_category_id'))
                     ->relationship('menuCategory', 'name'),
                 TextInput::make('title')
-                    ->label('Titolo')
+                    ->label(__('filament/admin/dashboard_resource.title'))
                     ->required(),
                 Textarea::make('description')
-                    ->label('Descrizione')
+                    ->label(__('filament/admin/dashboard_resource.description'))
                     ->columnSpanFull(),
                 TextInput::make('icon')
-                    ->label('Icona'),
+                    ->label(__('filament/admin/dashboard_resource.icon')),
                 TextInput::make('order')
-                    ->label('Ordine')
+                    ->label(__('filament/admin/dashboard_resource.order'))
                     ->required()
                     ->numeric()
                     ->default(0),
                 Toggle::make('is_active')
-                    ->label('Attiva')
+                    ->label(__('filament/admin/dashboard_resource.is_active'))
                     ->required(),
             ]);
     }
@@ -74,31 +74,31 @@ class DashboardResource extends Resource
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('Utente')
+                    ->label(__('filament/admin/dashboard_resource.user.name'))
                     ->searchable(),
                 TextColumn::make('menuCategory.name')
-                    ->label('Categoria menu')
+                    ->label(__('filament/admin/dashboard_resource.menu_category.name'))
                     ->searchable(),
                 TextColumn::make('title')
-                    ->label('Titolo')
+                    ->label(__('filament/admin/dashboard_resource.title'))
                     ->searchable(),
                 TextColumn::make('icon')
-                    ->label('Icona')
+                    ->label(__('filament/admin/dashboard_resource.icon'))
                     ->searchable(),
                 TextColumn::make('order')
-                    ->label('Ordine')
+                    ->label(__('filament/admin/dashboard_resource.order'))
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_active')
-                    ->label('Attiva')
+                    ->label(__('filament/admin/dashboard_resource.is_active'))
                     ->boolean(),
                 TextColumn::make('created_at')
-                    ->label('Creata il')
+                    ->label(__('filament/admin/dashboard_resource.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Modificata il')
+                    ->label(__('filament/admin/dashboard_resource.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -107,12 +107,15 @@ class DashboardResource extends Resource
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/dashboard_resource.edit')),
+                DeleteAction::make()
+                    ->label(__('filament/admin/dashboard_resource.delete')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label(__('filament/admin/dashboard_resource.delete_bulk')),
                 ]),
             ]);
     }
@@ -122,5 +125,20 @@ class DashboardResource extends Resource
         return [
             'index' => ManageDashboards::route('/'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/dashboard_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/dashboard_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/dashboard_resource.plural_model_label');
     }
 }

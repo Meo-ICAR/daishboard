@@ -21,6 +21,12 @@ class CompanyResource extends Resource
 {
     protected static ?string $model = Company::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
@@ -29,12 +35,6 @@ class CompanyResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
     protected static string|UnitEnum|null $navigationGroup = 'Impostazioni';
-
-    protected static ?string $navigationLabel = 'Aziende';
-
-    protected static ?string $modelLabel = 'azienda';
-
-    protected static ?string $pluralModelLabel = 'aziende';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -71,5 +71,20 @@ class CompanyResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/company_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/company_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/company_resource.plural_model_label');
     }
 }

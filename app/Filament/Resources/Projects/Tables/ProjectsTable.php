@@ -18,25 +18,25 @@ class ProjectsTable
             ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('Utente')
+                    ->label(__('filament/admin/project_resource.user.name'))
                     ->searchable(),
                 TextColumn::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/project_resource.name'))
                     ->searchable(),
                 TextColumn::make('database')
-                    ->label('Database')
+                    ->label(__('filament/admin/project_resource.database'))
                     ->placeholder('—')
                     ->toggleable(),
                 IconColumn::make('is_current')
-                    ->label('In corso')
+                    ->label(__('filament/admin/project_resource.is_current'))
                     ->boolean(),
                 TextColumn::make('created_at')
-                    ->label('Creato il')
+                    ->label(__('filament/admin/project_resource.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Modificato il')
+                    ->label(__('filament/admin/project_resource.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -45,11 +45,13 @@ class ProjectsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/project_resource.edit')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label(__('filament/admin/project_resource.delete_bulk')),
                 ]),
             ]);
     }

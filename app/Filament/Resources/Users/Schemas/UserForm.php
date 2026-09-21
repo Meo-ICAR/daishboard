@@ -15,23 +15,23 @@ class UserForm
         return $schema
             ->components([
                 Select::make('company_id')
-                    ->label('Azienda')
+                    ->label(__('filament/admin/user_resource.company_id'))
                     ->relationship('company', 'name'),
                 TextInput::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/user_resource.name'))
                     ->required(),
                 TextInput::make('email')
-                    ->label('Email')
+                    ->label(__('filament/admin/user_resource.email'))
                     ->email()
                     ->required(),
                 DateTimePicker::make('email_verified_at')
-                    ->label('Email verificata il'),
+                    ->label(__('filament/admin/user_resource.email_verified_at')),
                 TextInput::make('password')
-                    ->label('Password')
+                    ->label(__('filament/admin/user_resource.password'))
                     ->password()
                     ->required(),
                 Toggle::make('is_admin')
-                    ->label('Admin')
+                    ->label(__('filament/admin/user_resource.is_admin'))
                     ->required(),
             ]);
     }

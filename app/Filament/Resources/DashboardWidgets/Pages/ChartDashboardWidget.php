@@ -90,7 +90,7 @@ class ChartDashboardWidget extends Page
             ...$this->dateFilterHeaderActions(),
 
             Action::make('configureChart')
-                ->label('Grafico')
+                ->label(__('filament/admin/chart_dashboard_widget.configure_chart'))
                 ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
                 ->visible(fn (): bool => $this->queryColumns !== [])
                 ->modalHeading('Configura il grafico')
@@ -102,15 +102,15 @@ class ChartDashboardWidget extends Page
                 ])
                 ->schema([
                     Select::make('chartType')
-                        ->label('Tipo di grafico')
+                        ->label(__('filament/admin/chart_dashboard_widget.tipo_di_grafico'))
                         ->options(DashboardWidgetChart::TYPE_LABELS)
                         ->required(),
                     Select::make('labelColumn')
-                        ->label('Categoria (asse X)')
+                        ->label(__('filament/admin/chart_dashboard_widget.categoria_asse_x'))
                         ->options(fn (): array => array_combine($this->queryColumns, $this->queryColumns))
                         ->required(),
                     Select::make('valueColumns')
-                        ->label('Valori (asse Y)')
+                        ->label(__('filament/admin/chart_dashboard_widget.valori_asse_y'))
                         ->helperText('Ogni colonna scelta è una serie con un colore diverso.')
                         ->options(fn (): array => $this->yColumnOptions())
                         ->multiple()
@@ -135,18 +135,18 @@ class ChartDashboardWidget extends Page
                 }),
 
             Action::make('runQuery')
-                ->label('Esegui di nuovo')
+                ->label(__('filament/admin/chart_dashboard_widget.run_query'))
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->action(fn () => $this->runQuery()),
 
             Action::make('table')
-                ->label('Tabella')
+                ->label(__('filament/admin/chart_dashboard_widget.table'))
                 ->icon(Heroicon::OutlinedTableCells)
                 ->color('gray')
                 ->url(fn (): string => $this->widgetResourceUrl('view')),
 
             Action::make('edit')
-                ->label('Modifica')
+                ->label(__('filament/admin/chart_dashboard_widget.edit'))
                 ->icon(Heroicon::OutlinedPencilSquare)
                 ->url(fn (): string => $this->widgetResourceUrl('edit')),
         ];
@@ -167,7 +167,12 @@ class ChartDashboardWidget extends Page
         return [
             DashboardWidgetResource::getUrl() => 'Dashboard Widget',
             $this->widgetResourceUrl('view') => $this->widgetTitle ?? ('Widget #'.$this->recordId),
-            '#' => 'Grafico',
+            '#' => __('filament/admin/chart_dashboard_widget.grafico'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/chart_dashboard_widget.title');
     }
 }

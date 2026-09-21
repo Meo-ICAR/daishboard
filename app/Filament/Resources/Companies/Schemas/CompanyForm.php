@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Companies\Schemas;
 
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class CompanyForm
@@ -13,36 +13,36 @@ class CompanyForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/company_resource.name'))
                     ->required(),
                 TextInput::make('urlogo')
-                    ->label('URL logo'),
+                    ->label(__('filament/admin/company_resource.urlogo')),
                 TextInput::make('url_attivazione')
-                    ->label('URL attivazione'),
+                    ->label(__('filament/admin/company_resource.url_attivazione')),
                 TextInput::make('email_admin')
-                    ->label('Email amministratore')
+                    ->label(__('filament/admin/company_resource.email_admin'))
                     ->email(),
                 TextInput::make('db_secrete')
-                    ->label('Chiave segreta DB'),
+                    ->label(__('filament/admin/company_resource.db_secrete')),
                 TextInput::make('db_connection')
-                    ->label('Connessione DB')
+                    ->label(__('filament/admin/company_resource.db_connection'))
                     ->required()
                     ->default('mysql'),
                 TextInput::make('db_host')
-                    ->label('Host DB'),
+                    ->label(__('filament/admin/company_resource.db_host')),
                 TextInput::make('db_port')
-                    ->label('Porta DB')
+                    ->label(__('filament/admin/company_resource.db_port'))
                     ->required()
                     ->default('3306'),
                 TextInput::make('db_database')
-                    ->label('Nome database'),
+                    ->label(__('filament/admin/company_resource.db_database')),
                 TextInput::make('db_username')
-                    ->label('Utente DB'),
+                    ->label(__('filament/admin/company_resource.db_username')),
                 TextInput::make('db_password')
-                    ->label('Password DB')
+                    ->label(__('filament/admin/company_resource.db_password'))
                     ->password(),
                 Textarea::make('aibackground')
-                    ->label('Contesto AI')
+                    ->label(__('filament/admin/company_resource.aibackground'))
                     ->columnSpanFull(),
             ]);
     }

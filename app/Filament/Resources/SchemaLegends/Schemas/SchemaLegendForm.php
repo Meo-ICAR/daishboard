@@ -13,19 +13,19 @@ class SchemaLegendForm
         return $schema
             ->components([
                 TextInput::make('table_name')
-                    ->label('Tabella')
+                    ->label(__('filament/admin/schema_legend_resource.table_name'))
                     ->disabled(),
                 TextInput::make('connection')
-                    ->label('Connessione')
+                    ->label(__('filament/admin/schema_legend_resource.connection'))
                     ->disabled(),
                 TextInput::make('database')
-                    ->label('Database')
+                    ->label(__('filament/admin/schema_legend_resource.database'))
                     ->maxLength(255),
                 TextInput::make('label')
-                    ->label('Nome leggibile')
+                    ->label(__('filament/admin/schema_legend_resource.label'))
                     ->maxLength(255),
                 Textarea::make('description')
-                    ->label('Descrizione')
+                    ->label(__('filament/admin/schema_legend_resource.description'))
                     ->rows(3)
                     ->columnSpanFull(),
             ]);

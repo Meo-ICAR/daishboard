@@ -16,4 +16,14 @@ class ManageMenuCategories extends ManageRecords
             CreateAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/manage_menu_categories.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/manage_menu_categories.title');
+    }
 }

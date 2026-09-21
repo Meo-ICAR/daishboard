@@ -16,4 +16,14 @@ class EditSchemaLegend extends EditRecord
             ViewAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/edit_schema_legend.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/edit_schema_legend.title');
+    }
 }

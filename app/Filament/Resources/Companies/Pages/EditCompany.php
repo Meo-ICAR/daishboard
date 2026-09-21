@@ -20,4 +20,14 @@ class EditCompany extends EditRecord
             RestoreAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/edit_company.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/edit_company.title');
+    }
 }

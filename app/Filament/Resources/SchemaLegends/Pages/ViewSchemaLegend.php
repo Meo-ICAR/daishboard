@@ -21,7 +21,7 @@ class ViewSchemaLegend extends ViewRecord
     {
         return [
             Action::make('exportExcel')
-                ->label('Scarica Excel')
+                ->label(__('filament/admin/view_schema_legend.export_excel'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->visible(fn (): bool => $this->record->columns()->exists())
@@ -58,5 +58,15 @@ class ViewSchemaLegend extends ViewRecord
             EditAction::make()
                 ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/view_schema_legend.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/view_schema_legend.title');
     }
 }

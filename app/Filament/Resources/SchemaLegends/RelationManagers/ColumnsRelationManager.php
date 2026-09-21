@@ -19,12 +19,13 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ColumnsRelationManager extends RelationManager
 {
     protected static string $relationship = 'columns';
 
-    protected static ?string $title = 'Campi';
+    protected static ?string $title = null;
 
     protected static string|BackedEnum|null $icon = Heroicon::OutlinedTableCells;
 
@@ -37,38 +38,38 @@ class ColumnsRelationManager extends RelationManager
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('lookupTables:id,table_name,description'))
             ->columns([
                 TextColumn::make('position')
-                    ->label('#')
+                    ->label(__('filament/admin/columns_relation_manager.position'))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
-                    ->label('Campo')
+                    ->label(__('filament/admin/columns_relation_manager.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('data_type')
-                    ->label('Tipo')
+                    ->label(__('filament/admin/columns_relation_manager.data_type'))
                     ->badge()
                     ->color('gray'),
                 IconColumn::make('nullable')
-                    ->label('Null')
+                    ->label(__('filament/admin/columns_relation_manager.nullable'))
                     ->boolean(),
                 TextColumn::make('comment')
-                    ->label('Commento')
+                    ->label(__('filament/admin/columns_relation_manager.comment'))
                     ->searchable()
                     ->wrap(),
                 TextColumn::make('date_category')
-                    ->label('Categoria data')
+                    ->label(__('filament/admin/columns_relation_manager.date_category'))
                     ->badge()
                     ->color('info')
                     ->placeholder('—'),
                 TextColumn::make('summary')
-                    ->label('Range date / Valori lookup')
+                    ->label(__('filament/admin/columns_relation_manager.summary'))
                     ->state(fn (SchemaLegendColumn $record): ?string => $record->summary())
                     ->wrap()
                     ->limit(140)
                     ->tooltip(fn (SchemaLegendColumn $record): ?string => $record->summary())
                     ->placeholder('—'),
                 TextColumn::make('lookup_table')
-                    ->label('Lookup')
+                    ->label(__('filament/admin/columns_relation_manager.lookup_table'))
                     ->badge()
                     ->color('warning')
                     ->placeholder('—')
@@ -91,6 +92,7 @@ class ColumnsRelationManager extends RelationManager
             ])
             ->filters([
                 TernaryFilter::make('date_category')
+                    ->label(__('filament/admin/columns_relation_manager.date_category'))
                     ->label('Campi data')
                     ->placeholder('Tutti')
                     ->trueLabel('Solo campi data')
@@ -104,6 +106,7 @@ class ColumnsRelationManager extends RelationManager
                         blank: fn ($query) => $query,
                     ),
                 TernaryFilter::make('lookup_table')
+                    ->label(__('filament/admin/columns_relation_manager.lookup_table'))
                     ->label('Campi lookup')
                     ->placeholder('Tutti')
                     ->trueLabel('Solo campi lookup')
@@ -116,7 +119,7 @@ class ColumnsRelationManager extends RelationManager
             ])
             ->recordActions([
                 Action::make('openLookup')
-                    ->label('Valori lookup')
+                    ->label(__('filament/admin/columns_relation_manager.open_lookup'))
                     ->icon(Heroicon::OutlinedListBullet)
                     ->color('warning')
                     ->visible(fn (SchemaLegendColumn $record): bool => $this->resolveLookupTable($record) !== null)
@@ -125,11 +128,11 @@ class ColumnsRelationManager extends RelationManager
                         : null)
                     ->openUrlInNewTab(),
                 Action::make('view')
-                    ->label('Dettaglio')
+                    ->label(__('filament/admin/columns_relation_manager.view'))
                     ->icon(Heroicon::OutlinedEye)
                     ->modalHeading(fn (SchemaLegendColumn $record): string => "Campo · {$record->name}")
                     ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Chiudi')
+                    ->modalCancelActionLabel(__('filament/admin/columns_relation_manager.modal_cancel_action_label'))
                     ->schema(fn (Schema $schema): Schema => self::detailSchema($schema)),
             ])
             ->toolbarActions([]);
@@ -172,7 +175,7 @@ class ColumnsRelationManager extends RelationManager
                     TextEntry::make('comment')->label('Commento')->columnSpanFull()->placeholder('—'),
                 ]),
 
-            Section::make('Range di date associati')
+            Section::make(__('filament/admin/columns_relation_manager.range_di_date_associati'))
                 ->visible(fn (SchemaLegendColumn $record): bool => filled($record->date_ranges))
                 ->schema([
                     RepeatableEntry::make('date_ranges')
@@ -198,7 +201,7 @@ class ColumnsRelationManager extends RelationManager
                         ]),
                 ]),
 
-            Section::make('Relazione')
+            Section::make(__('filament/admin/columns_relation_manager.relazione'))
                 ->visible(fn (SchemaLegendColumn $record): bool => $record->lookup_table !== null && blank($record->lookup_values))
                 ->schema([
                     TextEntry::make('lookup_table')
@@ -213,7 +216,7 @@ class ColumnsRelationManager extends RelationManager
                     TextEntry::make('foreign_key_name')->label('Vincolo')->placeholder('euristica'),
                 ]),
 
-            Section::make('Tabelle lookup collegate')
+            Section::make(__('filament/admin/columns_relation_manager.tabelle_lookup_collegate'))
                 ->description('Clicca una tabella per vedere i valori assumibili.')
                 ->visible(fn (SchemaLegendColumn $record): bool => $record->lookupTables()->exists())
                 ->schema([
@@ -233,5 +236,10 @@ class ColumnsRelationManager extends RelationManager
                         ]),
                 ]),
         ]);
+    }
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('filament/admin/columns_relation_manager.title');
     }
 }

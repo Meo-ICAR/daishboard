@@ -17,7 +17,7 @@ class ListLookupTables extends ListRecords
     {
         return [
             Action::make('sync')
-                ->label('Sincronizza lookup')
+                ->label(__('filament/admin/list_lookup_tables.sync'))
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                 ->requiresConfirmation()
@@ -26,11 +26,21 @@ class ListLookupTables extends ListRecords
                     Artisan::call('legend:sync');
 
                     Notification::make()
-                        ->title('Catalogo lookup sincronizzato')
+                        ->title(__('filament/admin/list_lookup_tables.catalogo_lookup_sincronizzato'))
                         ->body(trim(Artisan::output()))
                         ->success()
                         ->send();
                 }),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/list_lookup_tables.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/list_lookup_tables.title');
     }
 }

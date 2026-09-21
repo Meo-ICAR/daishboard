@@ -1,0 +1,36 @@
+<?php
+
+return [
+
+    'apri' => 'Apri',
+    'back_to_aggregate' => 'Backtoaggregate',
+    'chart' => 'Chart',
+    'condividi' => 'Condividi',
+    'consenti_di_aprire_le_tabelle_figlio' => 'Consenti di aprire le tabelle figlio',
+    'edit' => 'Edit',
+    'empty' => 'Empty',
+    'esegui_di_nuovo' => 'Esegui di nuovo',
+    'esporta_excel' => 'Esporta Excel',
+    'export_excel' => 'Exportexcel',
+    'grafico' => 'Grafico',
+    'link_condivisi' => 'Link condivisi',
+    'link_pubblico_creato' => 'Link pubblico creato',
+    'meta' => 'Meta',
+    'modifica' => 'Modifica',
+    'navigation_label' => 'View Dashboard Widget',
+    'nessun_link_creato.' => 'Nessun link creato.',
+    'open' => 'Open',
+    'revoca_tutti_i_link' => 'Revoca tutti i link',
+    'revoke_shares' => 'Revokeshares',
+    'run_query' => 'Runquery',
+    'scadenza' => 'Scadenza',
+    'share' => 'Share',
+    'shares' => 'Shares',
+    'shares_list' => 'Shareslist',
+    'somma' => 'Somma',
+    'subheading' => 'Dettaglio dei record · ',
+    'title' => 'Title',
+    'titolo_mostrato' => 'Titolo mostrato',
+    'url' => 'Url',
+
+];

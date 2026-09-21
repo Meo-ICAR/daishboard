@@ -22,15 +22,15 @@ class LookupTableResource extends Resource
 {
     protected static ?string $model = LookupTable::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
 
     protected static string|UnitEnum|null $navigationGroup = 'Legenda';
-
-    protected static ?string $navigationLabel = 'Codifiche';
-
-    protected static ?string $modelLabel = 'tabella';
-
-    protected static ?string $pluralModelLabel = 'tabelle';
 
     protected static ?string $recordTitleAttribute = 'table_name';
 
@@ -73,5 +73,20 @@ class LookupTableResource extends Resource
     public static function canEdit(Model $record): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/lookup_table_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/lookup_table_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/lookup_table_resource.plural_model_label');
     }
 }

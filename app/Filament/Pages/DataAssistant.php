@@ -33,9 +33,9 @@ class DataAssistant extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Documentazione';
 
-    protected static ?string $navigationLabel = 'Assistente AI';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Assistente AI';
+    protected static ?string $title = null;
 
     protected string $view = 'filament.pages.data-assistant';
 
@@ -205,7 +205,7 @@ class DataAssistant extends Page
     {
         return [
             Action::make('newConversation')
-                ->label('Nuova conversazione')
+                ->label(__('filament/admin/data_assistant.new_conversation'))
                 ->icon('heroicon-o-plus')
                 ->action('newConversation'),
         ];
@@ -219,7 +219,7 @@ class DataAssistant extends Page
     public function createWidgetAction(): Action
     {
         return Action::make('createWidget')
-            ->label('Crea widget dalla query')
+            ->label(__('filament/admin/data_assistant.create_widget'))
             ->modalHeading('Crea widget dashboard')
             ->modalSubmitActionLabel('Crea widget')
             ->fillForm(function (array $arguments): array {
@@ -235,20 +235,20 @@ class DataAssistant extends Page
             })
             ->schema([
                 TextInput::make('title')
-                    ->label('Titolo (domanda)')
+                    ->label(__('filament/admin/data_assistant.titolo_domanda'))
                     ->required()
                     ->maxLength(255),
                 Select::make('dashboard_id')
-                    ->label('Dashboard')
+                    ->label(__('filament/admin/data_assistant.dashboard'))
                     ->options(fn (): array => Dashboard::query()
                         ->orderBy('order')->orderBy('id')
                         ->pluck('title', 'id')->all())
                     ->required(),
                 TextInput::make('type')
-                    ->label('Tipo')
+                    ->label(__('filament/admin/data_assistant.tipo'))
                     ->default('Table'),
                 Textarea::make('query')
-                    ->label('Query SQL')
+                    ->label(__('filament/admin/data_assistant.query_s_q_l'))
                     ->required()
                     ->rows(10)
                     ->columnSpanFull(),
@@ -264,12 +264,12 @@ class DataAssistant extends Page
                 ]);
 
                 Notification::make()
-                    ->title('Widget creato')
+                    ->title(__('filament/admin/data_assistant.widget_creato'))
                     ->body($widget->title)
                     ->success()
                     ->actions([
                         Action::make('open')
-                            ->label('Apri widget')
+                            ->label(__('filament/admin/data_assistant.open'))
                             ->url(DashboardWidgetResource::getUrl('view', ['record' => $widget]), shouldOpenInNewTab: true),
                     ])
                     ->send();
@@ -339,5 +339,15 @@ class DataAssistant extends Page
         }
 
         return Str::markdown($text, ['html_input' => 'escape', 'allow_unsafe_links' => false]);
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/data_assistant.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/data_assistant.navigation_label');
     }
 }

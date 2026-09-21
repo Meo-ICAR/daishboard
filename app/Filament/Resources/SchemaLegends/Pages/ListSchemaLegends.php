@@ -17,7 +17,7 @@ class ListSchemaLegends extends ListRecords
     {
         return [
             Action::make('sync')
-                ->label('Sincronizza schema')
+                ->label(__('filament/admin/list_schema_legends.sync'))
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                 ->requiresConfirmation()
@@ -26,11 +26,21 @@ class ListSchemaLegends extends ListRecords
                     Artisan::call('legend:sync');
 
                     Notification::make()
-                        ->title('Legenda sincronizzata')
+                        ->title(__('filament/admin/list_schema_legends.legenda_sincronizzata'))
                         ->body(trim(Artisan::output()))
                         ->success()
                         ->send();
                 }),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/list_schema_legends.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/list_schema_legends.title');
     }
 }

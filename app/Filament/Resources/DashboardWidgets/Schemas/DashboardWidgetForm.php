@@ -24,12 +24,12 @@ class DashboardWidgetForm
         return $schema
             ->components([
                 Select::make('dashboard_id')
-                    ->label('Dashboard')
+                    ->label(__('filament/admin/dashboard_widget_resource.dashboard_id'))
                     ->relationship('dashboard', 'title')
                     ->live()
                     ->required(),
                 Select::make('project_id')
-                    ->label('Restrizione')
+                    ->label(__('filament/admin/dashboard_widget_resource.project_id'))
                     ->helperText('Applica  restrizione (date, flag, lookup) alla selezione del widget. Sono elencati solo le restrizioni dello stesso database della dashboard.')
                     ->relationship(
                         name: 'project',
@@ -57,10 +57,10 @@ class DashboardWidgetForm
                     ->preload()
                     ->nullable(),
                 Select::make('chat_history_id')
-                    ->label('Cronologia chat')
+                    ->label(__('filament/admin/dashboard_widget_resource.chat_history_id'))
                     ->relationship('chatHistory', 'id'),
                 Select::make('master_widget_id')
-                    ->label('Widget master')
+                    ->label(__('filament/admin/dashboard_widget_resource.master_widget_id'))
                     ->helperText('Widget di cui questo è un dettaglio/drill-down.')
                     ->relationship(
                         name: 'masterWidget',
@@ -74,35 +74,35 @@ class DashboardWidgetForm
                     ->live()
                     ->nullable(),
                 TextInput::make('master_filter_column')
-                    ->label('Colonna di filtro dal master')
+                    ->label(__('filament/admin/dashboard_widget_resource.master_filter_column'))
                     ->helperText('Colonna della query del widget master su cui filtrare (es. n_pazienti, totale_centri).')
                     ->placeholder('n_pazienti')
                     ->datalist(fn (Get $get): array => static::masterQueryColumns($get('master_widget_id')))
                     ->maxLength(255)
                     ->nullable(),
                 TextInput::make('title')
-                    ->label('Titolo'),
+                    ->label(__('filament/admin/dashboard_widget_resource.title')),
                 Select::make('type')
-                    ->label('Tipo grafico')
+                    ->label(__('filament/admin/dashboard_widget_resource.type'))
                     ->options(array_map(
                         fn (array $meta): string => $meta['label'].' — '.$meta['description'],
                         ChartType::all(),
                     ))
                     ->required(),
                 Textarea::make('query')
-                    ->label('Query SQL')
+                    ->label(__('filament/admin/dashboard_widget_resource.query'))
                     ->columnSpanFull(),
                 TextInput::make('settings')
-                    ->label('Impostazioni'),
+                    ->label(__('filament/admin/dashboard_widget_resource.settings')),
                 TextInput::make('grid_position')
-                    ->label('Posizione griglia'),
+                    ->label(__('filament/admin/dashboard_widget_resource.grid_position')),
                 TextInput::make('order')
-                    ->label('Ordine')
+                    ->label(__('filament/admin/dashboard_widget_resource.order'))
                     ->required()
                     ->numeric()
                     ->default(0),
                 Toggle::make('is_active')
-                    ->label('Attivo')
+                    ->label(__('filament/admin/dashboard_widget_resource.is_active'))
                     ->required(),
             ]);
     }

@@ -22,7 +22,7 @@ class ViewLookupTable extends ViewRecord
     {
         return [
             Action::make('liveValues')
-                ->label('Mostra valori')
+                ->label(__('filament/admin/view_lookup_table.live_values'))
                 ->icon(Heroicon::OutlinedListBullet)
                 ->color('gray')
                 ->modalHeading(fn (): string => 'Valori · '.$this->record->table_name)
@@ -36,7 +36,8 @@ class ViewLookupTable extends ViewRecord
 
                     if ($values === []) {
                         return [
-                            TextEntry::make('empty')->hiddenLabel()->state('Nessun valore.'),
+                            TextEntry::make('empty')
+                                ->label(__('filament/admin/view_lookup_table.empty'))->hiddenLabel()->state(__('filament/admin/view_lookup_table.nessun_valore.')),
                         ];
                     }
 
@@ -44,21 +45,23 @@ class ViewLookupTable extends ViewRecord
 
                     return [
                         TextEntry::make('count')
+                            ->label(__('filament/admin/view_lookup_table.count'))
                             ->hiddenLabel()
                             ->color('gray')
                             ->state(count($values).' valori'),
                         RepeatableEntry::make('values')
+                            ->label(__('filament/admin/view_lookup_table.values'))
                             ->hiddenLabel()
                             ->state($values)
                             ->columns($hasLabel ? 2 : 1)
                             ->schema(array_values(array_filter([
                                 TextEntry::make('value')
-                                    ->label($record->key_column ?: 'Valore')
+                                    ->label(__('filament/admin/view_lookup_table.value'))
                                     ->weight('semibold')
                                     ->placeholder('∅'),
                                 $hasLabel
                                     ? TextEntry::make('label')
-                                        ->label($record->label_column)
+                                        ->label(__('filament/admin/view_lookup_table.label'))
                                         ->color('gray')
                                         ->placeholder('∅')
                                     : null,
@@ -67,7 +70,7 @@ class ViewLookupTable extends ViewRecord
                 }),
 
             Action::make('exportExcel')
-                ->label('Scarica Excel')
+                ->label(__('filament/admin/view_lookup_table.export_excel'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
                 ->visible(fn (): bool => filled($this->record->values) || filled($this->record->key_column))
@@ -100,5 +103,15 @@ class ViewLookupTable extends ViewRecord
             EditAction::make()
                 ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/view_lookup_table.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/view_lookup_table.title');
     }
 }

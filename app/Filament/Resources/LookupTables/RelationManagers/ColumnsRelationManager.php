@@ -22,7 +22,7 @@ class ColumnsRelationManager extends RelationManager
 {
     protected static string $relationship = 'columns';
 
-    protected static ?string $title = 'Campi collegati';
+    protected static ?string $title = null;
 
     protected static string|BackedEnum|null $icon = Heroicon::OutlinedLink;
 
@@ -53,19 +53,19 @@ class ColumnsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('legend.table_name')
-                    ->label('Tabella')
+                    ->label(__('filament/admin/columns_relation_manager.legend.table_name'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('name')
-                    ->label('Campo')
+                    ->label(__('filament/admin/columns_relation_manager.name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('data_type')
-                    ->label('Tipo')
+                    ->label(__('filament/admin/columns_relation_manager.data_type'))
                     ->badge()
                     ->color('gray'),
                 TextColumn::make('comment')
-                    ->label('Commento')
+                    ->label(__('filament/admin/columns_relation_manager.comment'))
                     ->wrap()
                     ->limit(140),
             ])
@@ -86,5 +86,10 @@ class ColumnsRelationManager extends RelationManager
             ->toolbarActions([
                 DetachBulkAction::make(),
             ]);
+    }
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('filament/admin/columns_relation_manager.title');
     }
 }

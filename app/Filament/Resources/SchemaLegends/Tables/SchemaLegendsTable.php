@@ -18,43 +18,45 @@ class SchemaLegendsTable
             ->modifyQueryUsing(fn ($query) => CompanyScope::byDatabase($query))
             ->columns([
                 TextColumn::make('table_name')
-                    ->label('Tabella')
+                    ->label(__('filament/admin/schema_legend_resource.table_name'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('database')
-                    ->label('Database')
+                    ->label(__('filament/admin/schema_legend_resource.database'))
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('label')
-                    ->label('Nome')
+                    ->label(__('filament/admin/schema_legend_resource.label'))
                     ->searchable(),
                 TextColumn::make('description')
-                    ->label('Descrizione')
+                    ->label(__('filament/admin/schema_legend_resource.description'))
                     ->limit(90)
                     ->tooltip(fn (?string $state): ?string => $state)
                     ->wrap(),
                 TextColumn::make('columns_count')
-                    ->label('Campi')
+                    ->label(__('filament/admin/schema_legend_resource.columns_count'))
                     ->badge()
                     ->sortable(),
                 TextColumn::make('date_columns')
-                    ->label('Campi data')
+                    ->label(__('filament/admin/schema_legend_resource.date_columns'))
                     ->badge()
                     ->color('info')
                     ->state(fn (SchemaLegend $record): int => $record->columns()->dateFields()->count()),
                 TextColumn::make('lookup_columns')
-                    ->label('Campi lookup')
+                    ->label(__('filament/admin/schema_legend_resource.lookup_columns'))
                     ->badge()
                     ->color('warning')
                     ->state(fn (SchemaLegend $record): int => $record->columns()->whereNotNull('lookup_table')->count()),
                 TextColumn::make('synced_at')
-                    ->label('Aggiornato')
+                    ->label(__('filament/admin/schema_legend_resource.synced_at'))
                     ->dateTime()
                     ->sortable(),
             ])
             ->recordActions([
-                ViewAction::make(),
+                ViewAction::make()
+                    ->label(__('filament/admin/schema_legend_resource.view')),
                 EditAction::make()
+                    ->label(__('filament/admin/schema_legend_resource.edit'))
                     ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
             ]);
     }

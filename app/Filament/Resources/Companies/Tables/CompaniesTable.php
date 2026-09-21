@@ -18,62 +18,67 @@ class CompaniesTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nome')
+                    ->label(__('filament/admin/company_resource.name'))
                     ->searchable(),
                 TextColumn::make('urlogo')
-                    ->label('URL logo')
+                    ->label(__('filament/admin/company_resource.urlogo'))
                     ->searchable(),
                 TextColumn::make('url_attivazione')
-                    ->label('URL attivazione')
+                    ->label(__('filament/admin/company_resource.url_attivazione'))
                     ->searchable(),
                 TextColumn::make('email_admin')
-                    ->label('Email amministratore')
+                    ->label(__('filament/admin/company_resource.email_admin'))
                     ->searchable(),
                 TextColumn::make('db_secrete')
-                    ->label('Chiave segreta DB')
+                    ->label(__('filament/admin/company_resource.db_secrete'))
                     ->searchable(),
                 TextColumn::make('db_connection')
-                    ->label('Connessione DB')
+                    ->label(__('filament/admin/company_resource.db_connection'))
                     ->searchable(),
                 TextColumn::make('db_host')
-                    ->label('Host DB')
+                    ->label(__('filament/admin/company_resource.db_host'))
                     ->searchable(),
                 TextColumn::make('db_port')
-                    ->label('Porta DB')
+                    ->label(__('filament/admin/company_resource.db_port'))
                     ->searchable(),
                 TextColumn::make('db_database')
-                    ->label('Nome database')
+                    ->label(__('filament/admin/company_resource.db_database'))
                     ->searchable(),
                 TextColumn::make('db_username')
-                    ->label('Utente DB')
+                    ->label(__('filament/admin/company_resource.db_username'))
                     ->searchable(),
                 TextColumn::make('created_at')
-                    ->label('Creata il')
+                    ->label(__('filament/admin/company_resource.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->label('Modificata il')
+                    ->label(__('filament/admin/company_resource.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('deleted_at')
-                    ->label('Eliminata il')
+                    ->label(__('filament/admin/company_resource.deleted_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->label(__('filament/admin/company_resource.trashed')),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->label(__('filament/admin/company_resource.edit')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label(__('filament/admin/company_resource.delete_bulk')),
+                    ForceDeleteBulkAction::make()
+                        ->label(__('filament/admin/company_resource.force_delete_bulk')),
+                    RestoreBulkAction::make()
+                        ->label(__('filament/admin/company_resource.restore_bulk')),
                 ]),
             ]);
     }

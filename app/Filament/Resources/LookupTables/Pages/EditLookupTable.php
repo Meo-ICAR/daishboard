@@ -16,4 +16,14 @@ class EditLookupTable extends EditRecord
             ViewAction::make(),
         ];
     }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/edit_lookup_table.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/edit_lookup_table.title');
+    }
 }

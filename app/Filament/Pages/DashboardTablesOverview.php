@@ -24,9 +24,9 @@ class DashboardTablesOverview extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
-    protected static ?string $navigationLabel = 'Prospetti';
+    protected static ?string $navigationLabel = null;
 
-    protected static ?string $title = 'Prospetti';
+    protected static ?string $title = null;
 
     protected string $view = 'filament.pages.dashboard-tables-overview';
 
@@ -278,7 +278,7 @@ class DashboardTablesOverview extends Page
     public function getSubheading(): ?string
     {
         if ($this->level === 'categories') {
-            return 'Scegli una categoria per vederne le dashboard e le tabelle.';
+            return __('filament/admin/dashboard_tables_overview.subheading');
         }
 
         return count($this->sections).' dashboard · espandi una sezione per aprire le sue tabelle.';
@@ -288,11 +288,21 @@ class DashboardTablesOverview extends Page
     {
         return [
             Action::make('resetCategories')
-                ->label('Tutte le categorie')
+                ->label(__('filament/admin/dashboard_tables_overview.reset_categories'))
                 ->icon(Heroicon::OutlinedSquares2x2)
                 ->color('gray')
                 ->visible(fn (): bool => $this->level === 'sections' && count($this->categories) > 1)
                 ->url(fn (): string => static::getUrl()),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return __('filament/admin/dashboard_tables_overview.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/dashboard_tables_overview.navigation_label');
     }
 }

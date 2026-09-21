@@ -21,15 +21,15 @@ class DashboardWidgetResource extends Resource
 {
     protected static ?string $model = DashboardWidget::class;
 
+    protected static ?string $navigationLabel = null;
+
+    protected static ?string $modelLabel = null;
+
+    protected static ?string $pluralModelLabel = null;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;
 
     protected static string|UnitEnum|null $navigationGroup = null;
-
-    protected static ?string $navigationLabel = 'Estrazioni dati';
-
-    protected static ?string $modelLabel = 'estrazione';
-
-    protected static ?string $pluralModelLabel = 'estrazioni';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -59,5 +59,20 @@ class DashboardWidgetResource extends Resource
             'chart' => ChartDashboardWidget::route('/{record}/chart'),
             'edit' => EditDashboardWidget::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('filament/admin/dashboard_widget_resource.navigation_label');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament/admin/dashboard_widget_resource.model_label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament/admin/dashboard_widget_resource.plural_model_label');
     }
 }
