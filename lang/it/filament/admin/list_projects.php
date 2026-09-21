@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'List Projects',
-    'title' => 'List Projects',
+    'navigation_label' => 'Elenco restrizioni',
+    'title' => 'Elenco restrizioni',
 
 ];

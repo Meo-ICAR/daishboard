@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Edit Lookup Table',
-    'title' => 'Edit Lookup Table',
+    'navigation_label' => 'Modifica tabella lookup',
+    'title' => 'Modifica tabella lookup',
 
 ];

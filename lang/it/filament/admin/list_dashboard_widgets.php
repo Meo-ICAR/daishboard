@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'List Dashboard Widgets',
-    'title' => 'List Dashboard Widgets',
+    'navigation_label' => 'Elenco estrazioni',
+    'title' => 'Elenco estrazioni',
 
 ];

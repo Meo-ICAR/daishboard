@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Edit Company',
-    'title' => 'Edit Company',
+    'navigation_label' => 'Modifica azienda',
+    'title' => 'Modifica azienda',
 
 ];

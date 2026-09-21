@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Manage Menu Categories',
-    'title' => 'Manage Menu Categories',
+    'navigation_label' => 'Gestione categorie menu',
+    'title' => 'Gestione categorie menu',
 
 ];

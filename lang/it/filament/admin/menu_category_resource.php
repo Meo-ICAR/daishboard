@@ -2,19 +2,19 @@
 
 return [
 
-    'created_at' => 'Created',
+    'created_at' => 'Creato il',
     'database' => 'Database',
-    'delete' => 'Delete',
-    'delete_bulk' => 'Delete Bulk',
-    'description' => 'Description',
-    'edit' => 'Edit',
-    'icon' => 'Icon',
-    'is_active' => 'Is Active',
+    'delete' => 'Elimina',
+    'delete_bulk' => 'Elimina selezionati',
+    'description' => 'Descrizione',
+    'edit' => 'Modifica',
+    'icon' => 'Icona',
+    'is_active' => 'Attivo',
     'model_label' => 'categoria menu',
-    'name' => 'Name',
+    'name' => 'Nome',
     'navigation_label' => 'Categorie menu',
-    'order' => 'Order',
+    'order' => 'Ordine',
     'plural_model_label' => 'categorie menu',
-    'updated_at' => 'Updated',
+    'updated_at' => 'Aggiornato il',
 
 ];

@@ -2,17 +2,17 @@
 
 return [
 
-    'count' => 'Count',
-    'empty' => 'Empty',
-    'export_excel' => 'Exportexcel',
-    'label' => 'Label',
-    'live_values' => 'Livevalues',
+    'count' => 'Conteggio',
+    'empty' => 'Vuoto',
+    'export_excel' => 'Esporta Excel',
+    'label' => 'Etichetta',
+    'live_values' => 'Valori live',
     'mostra_valori' => 'Mostra valori',
-    'navigation_label' => 'View Lookup Table',
+    'navigation_label' => 'Tabella lookup',
     'nessun_valore.' => 'Nessun valore.',
     'scarica_excel' => 'Scarica Excel',
-    'title' => 'View Lookup Table',
-    'value' => 'Value',
-    'values' => 'Values',
+    'title' => 'Tabella lookup',
+    'value' => 'Valore',
+    'values' => 'Valori',
 
 ];

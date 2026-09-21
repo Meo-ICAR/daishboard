@@ -2,9 +2,9 @@
 
 return [
 
-    'export_excel' => 'Exportexcel',
-    'navigation_label' => 'View Schema Legend',
+    'export_excel' => 'Esporta Excel',
+    'navigation_label' => 'Legenda schema',
     'scarica_excel' => 'Scarica Excel',
-    'title' => 'View Schema Legend',
+    'title' => 'Legenda schema',
 
 ];

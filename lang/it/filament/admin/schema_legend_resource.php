@@ -2,19 +2,19 @@
 
 return [
 
-    'columns_count' => 'Columns Count',
-    'connection' => 'Connection',
+    'columns_count' => 'Numero colonne',
+    'connection' => 'Connessione',
     'database' => 'Database',
-    'date_columns' => 'Date Columns',
-    'description' => 'Description',
-    'edit' => 'Edit',
-    'label' => 'Label',
-    'lookup_columns' => 'Lookup Columns',
+    'date_columns' => 'Colonne data',
+    'description' => 'Descrizione',
+    'edit' => 'Modifica',
+    'label' => 'Etichetta',
+    'lookup_columns' => 'Colonne lookup',
     'model_label' => 'tabella',
     'navigation_label' => 'Dati',
     'plural_model_label' => 'legenda',
-    'synced_at' => 'Synced',
-    'table_name' => 'Table Name',
-    'view' => 'View',
+    'synced_at' => 'Sincronizzato il',
+    'table_name' => 'Nome tabella',
+    'view' => 'Visualizza',
 
 ];

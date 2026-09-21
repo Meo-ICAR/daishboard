@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Edit Dashboard Widget',
-    'title' => 'Edit Dashboard Widget',
+    'navigation_label' => 'Modifica estrazione',
+    'title' => 'Modifica estrazione',
 
 ];

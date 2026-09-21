@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Manage Dashboards',
-    'title' => 'Manage Dashboards',
+    'navigation_label' => 'Gestione dashboard',
+    'title' => 'Gestione dashboard',
 
 ];

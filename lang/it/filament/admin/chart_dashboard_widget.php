@@ -3,17 +3,17 @@
 return [
 
     'categoria_asse_x' => 'Categoria (asse X)',
-    'configure_chart' => 'Configurechart',
-    'edit' => 'Edit',
+    'configure_chart' => 'Configura grafico',
+    'edit' => 'Modifica',
     'esegui_di_nuovo' => 'Esegui di nuovo',
     'grafico' => 'Grafico',
     'modifica' => 'Modifica',
-    'navigation_label' => 'Chart Dashboard Widget',
-    'run_query' => 'Runquery',
+    'navigation_label' => 'Grafico',
+    'run_query' => 'Esegui query',
     'tabella' => 'Tabella',
-    'table' => 'Table',
+    'table' => 'Tabella',
     'tipo_di_grafico' => 'Tipo di grafico',
-    'title' => 'Chart Dashboard Widget',
+    'title' => 'Grafico',
     'valori_asse_y' => 'Valori (asse Y)',
 
 ];

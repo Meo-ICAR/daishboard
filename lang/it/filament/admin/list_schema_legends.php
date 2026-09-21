@@ -3,9 +3,9 @@
 return [
 
     'legenda_sincronizzata' => 'Legenda sincronizzata',
-    'navigation_label' => 'List Schema Legends',
+    'navigation_label' => 'Legenda schema',
     'sincronizza_schema' => 'Sincronizza schema',
-    'sync' => 'Sync',
-    'title' => 'List Schema Legends',
+    'sync' => 'Sincronizza',
+    'title' => 'Legenda schema',
 
 ];

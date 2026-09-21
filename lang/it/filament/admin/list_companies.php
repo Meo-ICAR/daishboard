@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'List Companies',
-    'title' => 'List Companies',
+    'navigation_label' => 'Elenco aziende',
+    'title' => 'Elenco aziende',
 
 ];

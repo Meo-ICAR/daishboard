@@ -3,9 +3,9 @@
 return [
 
     'catalogo_lookup_sincronizzato' => 'Catalogo lookup sincronizzato',
-    'navigation_label' => 'List Lookup Tables',
+    'navigation_label' => 'Elenco tabelle lookup',
     'sincronizza_lookup' => 'Sincronizza lookup',
-    'sync' => 'Sync',
-    'title' => 'List Lookup Tables',
+    'sync' => 'Sincronizza',
+    'title' => 'Elenco tabelle lookup',
 
 ];

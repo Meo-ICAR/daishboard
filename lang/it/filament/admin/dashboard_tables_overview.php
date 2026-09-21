@@ -3,7 +3,7 @@
 return [
 
     'navigation_label' => 'Prospetti',
-    'reset_categories' => 'Resetcategories',
+    'reset_categories' => 'Reimposta categorie',
     'subheading' => 'Scegli una categoria per vederne le dashboard e le tabelle.',
     'title' => 'Prospetti',
     'tutte_le_categorie' => 'Tutte le categorie',
