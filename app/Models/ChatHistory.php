@@ -25,15 +25,16 @@ class ChatHistory extends Model
         ];
     }
 
-       protected static function booted(): void
+    protected static function booted(): void
     {
         static::addGlobalScope('owned', function (Builder $builder): void {
-            /** @var \App\Models\User|null $user */
+            /** @var User|null $user */
             $user = auth()->user();
 
             // Nessun utente autenticato: nessun risultato
             if ($user === null) {
                 $builder->whereRaw('0 = 1');
+
                 return;
             }
 
@@ -42,13 +43,15 @@ class ChatHistory extends Model
                 return;
             }
 
-            // Admin di azienda: vede gli utenti della stessa azienda
+            // Admin di azienda: vede le chat degli utenti della stessa azienda
+            // (chat_histories non ha company_id: si passa dalla relazione user).
             if ($user->isAdmin()) {
                 $companyId = $user->company_id;
-                $builder->where(function (Builder $query) use ($companyId): void {
+                $builder->whereHas('user', function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')
-                          ->orWhere('company_id', $companyId);
+                        ->orWhere('company_id', $companyId);
                 });
+
                 return;
             }
 
