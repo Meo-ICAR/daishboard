@@ -24,12 +24,19 @@ class BpmBridgeController extends Controller
         $validated = $request->validate([
             'token' => ['required', 'string', 'max:2048'],
             'user_email' => ['required', 'email', 'max:255'],
+            'source' => ['nullable', 'string', 'max:64'],
         ]);
 
         $token = $validated['token'];
         $userEmail = $validated['user_email'];
+        $source = $validated['source'] ?? 'unicobpm';
 
-        $bpmBaseUrl = (string) config('services.bpm.url');
+        $bpmBaseUrl = (string) config("services.bridge_sources.{$source}");
+
+        if ($bpmBaseUrl === '') {
+            Log::warning('BPM bridge: sorgente sconosciuta, richiesta rifiutata.', ['source' => $source]);
+            abort(403);
+        }
 
         if (! str_starts_with($bpmBaseUrl, 'https://')) {
             Log::warning('BPM bridge: URL di verifica non HTTPS, richiesta rifiutata.');

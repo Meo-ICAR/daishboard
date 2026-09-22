@@ -49,4 +49,21 @@ return [
     'bpm' => [
         'url' => env('BPM_API_URL', 'https://unicobpm.hassisto.com'), // Il secondo parametro è un fallback
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bridge SSO sources
+    |--------------------------------------------------------------------------
+    |
+    | App esterne autorizzate a emettere token SSO verso /bpm-landing (vedi
+    | BpmBridgeController). La chiave è il valore atteso nel parametro
+    | 'source' della richiesta (default 'unicobpm' per compatibilità con i
+    | link già in circolazione che non lo specificano); il valore è l'URL
+    | base dell'app da interrogare su /api/verify-token.
+    |
+    */
+    'bridge_sources' => [
+        'unicobpm' => env('BPM_API_URL', 'https://unicobpm.hassisto.com'),
+        'clinicaldb' => env('CLINICALDB_API_URL', 'https://clinicaldb.archiprevaleat.com'),
+    ],
 ];
