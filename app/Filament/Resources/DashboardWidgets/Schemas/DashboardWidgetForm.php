@@ -69,6 +69,9 @@ class DashboardWidgetForm
                             ? $query->whereKeyNot($record->getKey())
                             : $query,
                     )
+                    ->getOptionLabelFromRecordUsing(fn (DashboardWidget $record): string => filled($record->title)
+                        ? $record->title
+                        : "Widget #{$record->id}")
                     ->searchable()
                     ->preload()
                     ->live()
