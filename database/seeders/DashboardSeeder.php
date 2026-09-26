@@ -20,7 +20,7 @@ class DashboardSeeder extends Seeder
             [
                 'user_id' => $userId,
                 'menu_category_id' => $menuCategoryId,
-                'title' => 'Dashboard Generale',
+                'name' => 'Dashboard Generale',
                 'description' => 'Panoramica principale con KPI, metriche globali e indicatori aziendali.',
                 'icon' => 'heroicon-o-home',
                 'order' => 1,
@@ -29,7 +29,7 @@ class DashboardSeeder extends Seeder
             [
                 'user_id' => $userId,
                 'menu_category_id' => $menuCategoryId,
-                'title' => 'Analisi Pazienti & Visite',
+                'name' => 'Analisi Pazienti & Visite',
                 'description' => 'Statistiche relative ai pazienti, fasce d\'età, trattamenti e centri medici.',
                 'icon' => 'heroicon-o-user-group',
                 'order' => 2,
@@ -38,7 +38,7 @@ class DashboardSeeder extends Seeder
             [
                 'user_id' => $userId,
                 'menu_category_id' => $menuCategoryId,
-                'title' => 'Gestione Provvigioni & Fatturazione',
+                'name' => 'Gestione Provvigioni & Fatturazione',
                 'description' => 'Monitoraggio provvigioni attive/passive, incassi, pagamenti ed Enasarco.',
                 'icon' => 'heroicon-o-banknotes',
                 'order' => 3,
@@ -47,7 +47,7 @@ class DashboardSeeder extends Seeder
             [
                 'user_id' => $userId,
                 'menu_category_id' => $menuCategoryId,
-                'title' => 'Report Chiamate & Lead',
+                'name' => 'Report Chiamate & Lead',
                 'description' => 'Riepilogo chiamate effettuate, esiti, orari di picco e gestione dei lead caldi.',
                 'icon' => 'heroicon-o-phone',
                 'order' => 4,

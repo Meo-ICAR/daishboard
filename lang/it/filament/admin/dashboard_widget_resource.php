@@ -3,7 +3,7 @@
 return [
 
     'chat_history_id' => 'Cronologia chat',
-    'dashboard.title' => 'Titolo',
+    'dashboard.name' => 'Titolo',
     'dashboard_id' => 'Dashboard',
     'duplicate' => 'Duplica',
     'edit' => 'Modifica',
@@ -19,7 +19,7 @@ return [
     'navigation_label' => 'Estrazioni dati',
     'order' => 'Ordine',
     'plural_model_label' => 'estrazioni',
-    'project_id' => 'Restrizione',
+    'project_id' => 'Periodo',
     'query' => 'Query',
     'settings' => 'Impostazioni',
     'title' => 'Titolo',

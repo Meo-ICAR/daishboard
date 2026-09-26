@@ -30,7 +30,7 @@ return [
 
         /*
         |----------------------------------------------------------------------
-        | Coorte HIV (ricerca osservazionale) — database hassisdadmin
+        | Coorte HIV (ricerca osservazionale) — database clinicaldb
         |----------------------------------------------------------------------
         */
         'hiv' => [
@@ -38,7 +38,7 @@ return [
             'label' => 'Coorte HIV (ricerca osservazionale)',
 
             // Nomi dei database serviti da questo profilo.
-            'databases' => ['hassisdadmin'],
+            'databases' => ['clinicaldb'],
 
             // Tabelle principali documentate nello schema del prompt (e da legend:sync).
             'tables' => ['patients', 'patient_visits'],
@@ -46,6 +46,12 @@ return [
             // Colonna identificativa "parlante" con cui sostituire `id` nelle
             // viste tabella (es. il codice paziente al posto dell'id tecnico).
             'identifier_column' => 'pazientecode',
+
+            // Hint espliciti per legend:sync sulle colonne collegate a una lookup,
+            // quando la chiave non è `id` o il vincolo di FK non è dichiarato a DB.
+            'lookups' => [
+                'centercode' => ['table' => 'centers', 'key' => 'centercode'],
+            ],
 
             'background' => <<<'TXT'
             Sei un assistente che aiuta ricercatori medici a interrogare un database di coorte

@@ -35,10 +35,10 @@ class OwnershipStampingTest extends TestCase
     {
         $base = match ($modelClass) {
             DashboardWidget::class => [
-                'dashboard_id' => Dashboard::create(['title' => 'D', 'order' => 0, 'is_active' => true])->id,
+                'dashboard_id' => Dashboard::create(['name' => 'D', 'order' => 0, 'is_active' => true])->id,
                 'title' => 'W', 'type' => 'Table', 'query' => 'SELECT 1', 'order' => 0, 'is_active' => true,
             ],
-            Dashboard::class => ['title' => 'D', 'order' => 0, 'is_active' => true],
+            Dashboard::class => ['name' => 'D', 'order' => 0, 'is_active' => true],
             Project::class => ['name' => 'Studio', 'date_filters' => [], 'is_current' => true],
         };
 

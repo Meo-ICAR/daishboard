@@ -49,8 +49,8 @@ class DashboardResource extends Resource
                 Select::make('menu_category_id')
                     ->label(__('filament/admin/dashboard_resource.menu_category_id'))
                     ->relationship('menuCategory', 'name'),
-                TextInput::make('title')
-                    ->label(__('filament/admin/dashboard_resource.title'))
+                TextInput::make('name')
+                    ->label(__('filament/admin/dashboard_resource.name'))
                     ->required(),
                 Textarea::make('description')
                     ->label(__('filament/admin/dashboard_resource.description'))
@@ -79,8 +79,8 @@ class DashboardResource extends Resource
                 TextColumn::make('menuCategory.name')
                     ->label(__('filament/admin/dashboard_resource.menu_category.name'))
                     ->searchable(),
-                TextColumn::make('title')
-                    ->label(__('filament/admin/dashboard_resource.title'))
+                TextColumn::make('name')
+                    ->label(__('filament/admin/dashboard_resource.name'))
                     ->searchable(),
                 TextColumn::make('icon')
                     ->label(__('filament/admin/dashboard_resource.icon'))

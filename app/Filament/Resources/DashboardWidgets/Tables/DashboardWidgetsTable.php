@@ -30,8 +30,8 @@ class DashboardWidgetsTable
             ->columns([
 
                 // Dashboard → apre dashboard-charts-overview?dashboardId={id}
-                TextColumn::make('dashboard.title')
-                    ->label(__('filament/admin/dashboard_widget_resource.dashboard.title'))
+                TextColumn::make('dashboard.name')
+                    ->label(__('filament/admin/dashboard_widget_resource.dashboard.name'))
                     ->searchable()
                     ->sortable()
                     ->url(fn (DashboardWidget $record): ?string => $record->dashboard_id !== null
@@ -73,7 +73,7 @@ class DashboardWidgetsTable
             ->filters([
                 SelectFilter::make('dashboard_id')
                     ->label(__('filament/admin/dashboard_widget_resource.dashboard_id'))
-                    ->relationship('dashboard', 'title')
+                    ->relationship('dashboard', 'name')
                     ->default(auth()->user()?->dashboard_id
                         ?? Dashboard::query()->orderBy('order')->orderBy('id')->value('id'))
                     ->preload()

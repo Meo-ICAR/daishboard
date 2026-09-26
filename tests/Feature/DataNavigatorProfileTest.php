@@ -34,7 +34,7 @@ class DataNavigatorProfileTest extends TestCase
 
     public function test_it_selects_the_profile_from_the_connected_database_name(): void
     {
-        // La connessione dbai di test punta a hassisdadmin -> profilo hiv.
+        // La connessione dbai di test punta a clinicaldb -> profilo hiv.
         [$key, $profile] = $this->profile(new DataNavigatorAgent);
 
         $this->assertSame('hiv', $key);
@@ -81,7 +81,7 @@ class DataNavigatorProfileTest extends TestCase
 
     public function test_cohort_tables_follow_the_active_profile(): void
     {
-        // dbai di test -> hassisdadmin -> profilo hiv.
+        // dbai di test -> clinicaldb -> profilo hiv.
         $this->assertSame(['patients', 'patient_visits'], DataNavigatorProfile::cohortTables());
 
         config(['data_navigator.profile' => 'mediatore']);

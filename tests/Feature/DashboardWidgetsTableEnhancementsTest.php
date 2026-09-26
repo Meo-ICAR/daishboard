@@ -23,7 +23,7 @@ class DashboardWidgetsTableEnhancementsTest extends TestCase
     {
         parent::setUp();
         $this->actingAs(User::factory()->create(['is_admin' => true, 'company_id' => null])); // superadmin
-        $this->dashboard = Dashboard::create(['title' => 'D', 'order' => 0, 'is_active' => true]);
+        $this->dashboard = Dashboard::create(['name' => 'D', 'order' => 0, 'is_active' => true]);
     }
 
     private function widget(array $attrs = []): DashboardWidget
@@ -49,7 +49,7 @@ class DashboardWidgetsTableEnhancementsTest extends TestCase
             ->sortTable('title')->sortTable('title', 'desc')
             ->sortTable('type')
             ->sortTable('order')
-            ->sortTable('dashboard.title')
+            ->sortTable('dashboard.name')
             ->sortTable('masterWidget.title')
             ->sortTable('master_filter_column')
             ->sortTable('is_active')
@@ -72,8 +72,8 @@ class DashboardWidgetsTableEnhancementsTest extends TestCase
     {
         $catA = MenuCategory::create(['name' => 'Cat A', 'order' => 0, 'is_active' => true]);
         $catB = MenuCategory::create(['name' => 'Cat B', 'order' => 1, 'is_active' => true]);
-        $dashA = Dashboard::create(['title' => 'DA', 'menu_category_id' => $catA->id, 'order' => 1, 'is_active' => true]);
-        $dashB = Dashboard::create(['title' => 'DB', 'menu_category_id' => $catB->id, 'order' => 2, 'is_active' => true]);
+        $dashA = Dashboard::create(['name' => 'DA', 'menu_category_id' => $catA->id, 'order' => 1, 'is_active' => true]);
+        $dashB = Dashboard::create(['name' => 'DB', 'menu_category_id' => $catB->id, 'order' => 2, 'is_active' => true]);
 
         $wA = DashboardWidget::create(['dashboard_id' => $dashA->id, 'title' => 'A', 'type' => 'bar', 'query' => 'SELECT 1', 'order' => 0, 'is_active' => true]);
         $wB = DashboardWidget::create(['dashboard_id' => $dashB->id, 'title' => 'B', 'type' => 'bar', 'query' => 'SELECT 1', 'order' => 0, 'is_active' => true]);

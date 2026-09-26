@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Elenco restrizioni',
-    'title' => 'Elenco restrizioni',
+    'navigation_label' => 'Elenco periodi',
+    'title' => 'Elenco periodi',
 
 ];

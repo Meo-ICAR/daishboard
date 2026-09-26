@@ -8,7 +8,7 @@ return [
     'dashboard' => 'Dashboard',
     'navigation_label' => 'Cruscotto',
     'periodo' => 'Periodo',
-    'restrizione_in_corso' => 'Restrizione in corso',
+    'restrizione_in_corso' => 'Periodo in corso',
     'rimuovi_filtri' => 'Rimuovi filtri',
     'study_filters' => 'Filtri studio',
     'subheading' => 'Grafici figlio di: {$this->masterTitle}',

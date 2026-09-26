@@ -29,7 +29,7 @@ class DashboardWidgetTypeFilterTest extends TestCase
 
         $this->actingAs(User::factory()->create()); // superadmin
 
-        $dashboardId = Dashboard::create(['title' => 'D', 'order' => 0, 'is_active' => true])->id;
+        $dashboardId = Dashboard::create(['name' => 'D', 'order' => 0, 'is_active' => true])->id;
 
         $make = fn (?string $type): DashboardWidget => DashboardWidget::create([
             'dashboard_id' => $dashboardId,

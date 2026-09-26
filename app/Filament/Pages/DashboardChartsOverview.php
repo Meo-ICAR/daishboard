@@ -224,7 +224,7 @@ class DashboardChartsOverview extends Page
             return "{$label} {$range}";
         }, $this->activeProjectFilters());
 
-        return 'Restrizione in corso · '.implode('   ·   ', $parts);
+        return 'Periodo in corso · '.implode('   ·   ', $parts);
     }
 
     /**
@@ -254,7 +254,7 @@ class DashboardChartsOverview extends Page
                         ->label('Dashboard')
                         ->options(fn (): array => Dashboard::query()
                             ->orderBy('order')->orderBy('id')
-                            ->pluck('title', 'id')->all())
+                            ->pluck('name', 'id')->all())
                         ->selectablePlaceholder(false)
                         ->required(),
                 ])
@@ -267,12 +267,12 @@ class DashboardChartsOverview extends Page
                 }),
 
             Action::make('studyFilters')
-                ->label('Restrizione in corso')
+                ->label('Periodo in corso')
                 ->icon(Heroicon::OutlinedFunnel)
                 ->badge(fn (): ?string => ($n = count($this->activeProjectFilters())) > 0 ? (string) $n : null)
                 ->badgeColor('warning')
                 ->visible(fn (): bool => filled($this->dateFilterCatalog))
-                ->modalHeading('Restrizione in corso')
+                ->modalHeading('Periodo in corso')
                 ->modalDescription('Applicati a tutti i grafici della dashboard e memorizzati nel tuo studio.')
                 ->fillForm(fn (): array => [
                     'filters' => $this->projectFilters === []
@@ -341,7 +341,7 @@ class DashboardChartsOverview extends Page
     protected function dashboardTitle(): ?string
     {
         return $this->dashboardId !== null
-            ? Dashboard::whereKey($this->dashboardId)->value('title')
+            ? Dashboard::whereKey($this->dashboardId)->value('name')
             : null;
     }
 

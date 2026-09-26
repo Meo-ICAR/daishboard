@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Projects\Schemas;
 
 use App\Support\CohortFilterCatalog;
+use App\Support\CompanyScope;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -32,7 +33,7 @@ class ProjectForm
                         Select::make('user_id')
                             ->label(__('filament/admin/project_resource.user_id'))
                             ->relationship('user', 'name')
-                            ->default(__('filament/admin/project_resource.user_id_default'))
+                            ->default(fn () => auth()->id())
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -43,10 +44,11 @@ class ProjectForm
                             ->default('Studio in corso'),
                         TextInput::make('database')
                             ->label(__('filament/admin/project_resource.database'))
+                            ->default(fn () => CompanyScope::currentDatabase())
                             ->maxLength(255),
                         Toggle::make('is_current')
                             ->label(__('filament/admin/project_resource.is_current'))
-                            ->helperText('Solo la restrizione in corso viene applicata alle dashboard grafiche.')
+                            ->helperText('Solo il periodo in corso viene applicato alle dashboard grafiche.')
                             ->default(true)
                             ->inline(false),
                     ]),

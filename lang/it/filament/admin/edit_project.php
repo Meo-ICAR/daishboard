@@ -2,7 +2,7 @@
 
 return [
 
-    'navigation_label' => 'Modifica restrizione',
-    'title' => 'Modifica restrizione',
+    'navigation_label' => 'Modifica periodo',
+    'title' => 'Modifica periodo',
 
 ];

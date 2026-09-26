@@ -183,7 +183,7 @@ class DashboardTablesOverview extends Page
             ->get()
             ->map(fn (Dashboard $dashboard): array => [
                 'id' => (int) $dashboard->getKey(),
-                'title' => $dashboard->title ?? ('Dashboard #'.$dashboard->getKey()),
+                'title' => $dashboard->name ?? ('Dashboard #'.$dashboard->getKey()),
                 'tables' => $this->tableTree($dashboard),
                 'expanded' => $expandId !== null && (int) $dashboard->getKey() === $expandId,
             ])

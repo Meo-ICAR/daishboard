@@ -62,7 +62,7 @@ class SchemaLegendSyncHintsTest extends TestCase
         // Legenda di una tabella che non è (più) fra le tabelle principali del profilo.
         $orphan = SchemaLegend::create([
             'connection' => 'dbai',
-            'database' => 'hassisdadmin',
+            'database' => 'clinicaldb',
             'table_name' => 'centers',
             'label' => 'Centers',
         ]);

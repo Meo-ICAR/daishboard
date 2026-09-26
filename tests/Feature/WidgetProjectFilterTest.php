@@ -33,7 +33,7 @@ class WidgetProjectFilterTest extends TestCase
         return Dashboard::create([
             'user_id' => $this->user->id,
             'database' => $database,
-            'title' => 'Dashboard test',
+            'name' => 'Dashboard test',
             'order' => 0,
             'is_active' => true,
         ]);
@@ -70,10 +70,10 @@ class WidgetProjectFilterTest extends TestCase
 
     public function test_edit_form_lists_only_projects_of_the_same_database(): void
     {
-        $dashboard = $this->dashboard('hassisdadmin');
+        $dashboard = $this->dashboard('clinicaldb');
         $widget = $this->widget($dashboard, 'SELECT 1');
 
-        $sameDb = Project::create(['user_id' => $this->user->id, 'name' => 'Stesso DB', 'database' => 'hassisdadmin', 'is_current' => true, 'date_filters' => []]);
+        $sameDb = Project::create(['user_id' => $this->user->id, 'name' => 'Stesso DB', 'database' => 'clinicaldb', 'is_current' => true, 'date_filters' => []]);
         $noDb = Project::create(['user_id' => $this->user->id, 'name' => 'Senza DB', 'database' => null, 'is_current' => false, 'date_filters' => []]);
         $otherDb = Project::create(['user_id' => $this->user->id, 'name' => 'Altro DB', 'database' => 'altro', 'is_current' => false, 'date_filters' => []]);
 

@@ -49,7 +49,7 @@ class MediatoreDashboardSeederTest extends TestCase
 
     private function proformaDashboards(): Collection
     {
-        return DB::table('dashboards')->where('database', 'proforma')->get()->keyBy('title');
+        return DB::table('dashboards')->where('database', 'proforma')->get()->keyBy('name');
     }
 
     public function test_it_seeds_every_blueprint_dashboard_and_widget(): void
@@ -123,7 +123,7 @@ class MediatoreDashboardSeederTest extends TestCase
         $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
 
         // Simula una query "vecchia" da correggere e un widget obsoleto da rimuovere.
-        $pipelineId = DB::table('dashboards')->where('title', 'Pipeline & SLA Pratiche')->value('id');
+        $pipelineId = DB::table('dashboards')->where('name', 'Pipeline & SLA Pratiche')->value('id');
         DB::table('dashboard_widgets')
             ->where('dashboard_id', $pipelineId)
             ->where('title', 'Produzione erogata per mese')
@@ -140,7 +140,7 @@ class MediatoreDashboardSeederTest extends TestCase
         $this->seed(MediatoreDashboardSeeder::class);
 
         // Nessun duplicato di dashboard.
-        $this->assertSame(1, DB::table('dashboards')->where('title', 'Pipeline & SLA Pratiche')->count());
+        $this->assertSame(1, DB::table('dashboards')->where('name', 'Pipeline & SLA Pratiche')->count());
 
         // La query è stata risincronizzata e il widget obsoleto rimosso.
         $this->assertStringContainsString('DATE_FORMAT(erogated_at', DB::table('dashboard_widgets')

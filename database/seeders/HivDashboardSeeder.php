@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cruscotti clinici della coorte HIV (database `hassisdadmin`, company 3):
+ * Cruscotti clinici della coorte HIV (database `clinicaldb`, company 3):
  * rischio cardiovascolare / placca carotidea, demografia & trattamenti e
  * gestione pazienti.
  *
@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
  */
 class HivDashboardSeeder extends Seeder
 {
-    private const DATABASE = 'hassisdadmin';
+    private const DATABASE = 'clinicaldb';
 
     private const COMPANY_ID = 3;
 
@@ -35,7 +35,7 @@ class HivDashboardSeeder extends Seeder
 
         foreach ($this->blueprint() as $order => $group) {
             $exists = DB::table('dashboards')
-                ->where('title', $group['dashboard'])
+                ->where('name', $group['dashboard'])
                 ->where('database', self::DATABASE)
                 ->where('company_id', self::COMPANY_ID)
                 ->exists();
@@ -49,7 +49,7 @@ class HivDashboardSeeder extends Seeder
                 'company_id' => self::COMPANY_ID,
                 'database' => self::DATABASE,
                 'menu_category_id' => $category,
-                'title' => $group['dashboard'],
+                'name' => $group['dashboard'],
                 'description' => $group['description'],
                 'icon' => $group['icon'],
                 'order' => $order + 1,

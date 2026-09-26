@@ -24,7 +24,7 @@ class IdentifierColumnSwapTest extends TestCase
     private function widget(string $query): DashboardWidget
     {
         return DashboardWidget::create([
-            'dashboard_id' => Dashboard::create(['title' => 'D', 'order' => 0, 'is_active' => true])->id,
+            'dashboard_id' => Dashboard::create(['name' => 'D', 'order' => 0, 'is_active' => true])->id,
             'title' => 'W',
             'type' => 'Table',
             'query' => $query,
@@ -33,9 +33,9 @@ class IdentifierColumnSwapTest extends TestCase
         ]);
     }
 
-    public function test_profile_for_hassisdadmin_exposes_pazientecode_as_identifier(): void
+    public function test_profile_for_clinicaldb_exposes_pazientecode_as_identifier(): void
     {
-        $this->assertSame('hassisdadmin', DataNavigatorProfile::databaseName());
+        $this->assertSame('clinicaldb', DataNavigatorProfile::databaseName());
         $this->assertSame('pazientecode', DataNavigatorProfile::identifierColumn());
     }
 

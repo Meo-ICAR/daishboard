@@ -36,7 +36,7 @@ class DashboardWidgetVisibilityTest extends TestCase
         $userB = User::factory()->create(['company_id' => $this->companyB->id, 'is_admin' => false]);
 
         $dashboardId = Dashboard::withoutEvents(fn () => Dashboard::create([
-            'title' => 'D', 'order' => 0, 'is_active' => true,
+            'name' => 'D', 'order' => 0, 'is_active' => true,
         ]))->id;
 
         $make = fn (?int $companyId, ?int $userId): int => DashboardWidget::withoutEvents(

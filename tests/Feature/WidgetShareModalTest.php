@@ -24,7 +24,7 @@ class WidgetShareModalTest extends TestCase
         $this->actingAs(User::factory()->create());
 
         $this->widget = DashboardWidget::create([
-            'dashboard_id' => Dashboard::create(['title' => 'D', 'order' => 0, 'is_active' => true])->id,
+            'dashboard_id' => Dashboard::create(['name' => 'D', 'order' => 0, 'is_active' => true])->id,
             'title' => 'Pazienti per etnia',
             'type' => 'table',
             'query' => 'SELECT etnia_id, COUNT(*) AS n FROM patients WHERE active = 1 GROUP BY etnia_id',

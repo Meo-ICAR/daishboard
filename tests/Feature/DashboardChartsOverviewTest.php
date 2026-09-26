@@ -24,7 +24,7 @@ class DashboardChartsOverviewTest extends TestCase
         $this->actingAs(User::factory()->create()); // superadmin: nessun filtro di ownership
 
         $this->dashboardId = Dashboard::create([
-            'title' => 'D', 'order' => 0, 'is_active' => true,
+            'name' => 'D', 'order' => 0, 'is_active' => true,
         ])->id;
     }
 

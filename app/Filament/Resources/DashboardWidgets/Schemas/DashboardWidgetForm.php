@@ -25,12 +25,12 @@ class DashboardWidgetForm
             ->components([
                 Select::make('dashboard_id')
                     ->label(__('filament/admin/dashboard_widget_resource.dashboard_id'))
-                    ->relationship('dashboard', 'title')
+                    ->relationship('dashboard', 'name')
                     ->live()
                     ->required(),
                 Select::make('project_id')
                     ->label(__('filament/admin/dashboard_widget_resource.project_id'))
-                    ->helperText('Applica  restrizione (date, flag, lookup) alla selezione del widget. Sono elencati solo le restrizioni dello stesso database della dashboard.')
+                    ->helperText('Applica  periodo (date, flag, lookup) alla selezione del widget. Sono elencati solo i periodi dello stesso database della dashboard.')
                     ->relationship(
                         name: 'project',
                         titleAttribute: 'name',

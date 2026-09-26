@@ -21,7 +21,7 @@ class HivDashboardSeederTest extends TestCase
     private function widgets(): Collection
     {
         $ids = DB::table('dashboards')
-            ->where('database', 'hassisdadmin')
+            ->where('database', 'clinicaldb')
             ->where('company_id', 3)
             ->pluck('id');
 
@@ -33,9 +33,9 @@ class HivDashboardSeederTest extends TestCase
         $this->seedHiv();
 
         $dashboards = DB::table('dashboards')
-            ->where('database', 'hassisdadmin')
+            ->where('database', 'clinicaldb')
             ->where('company_id', 3)
-            ->pluck('title');
+            ->pluck('name');
 
         $this->assertCount(3, $dashboards);
         $this->assertEqualsCanonicalizing([

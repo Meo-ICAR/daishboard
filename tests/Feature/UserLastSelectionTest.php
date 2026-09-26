@@ -29,8 +29,8 @@ class UserLastSelectionTest extends TestCase
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
 
-        $this->dashA = Dashboard::create(['title' => 'Dash A', 'order' => 0, 'is_active' => true]);
-        $this->dashB = Dashboard::create(['title' => 'Dash B', 'order' => 1, 'is_active' => true]);
+        $this->dashA = Dashboard::create(['name' => 'Dash A', 'order' => 0, 'is_active' => true]);
+        $this->dashB = Dashboard::create(['name' => 'Dash B', 'order' => 1, 'is_active' => true]);
 
         foreach ([$this->dashA, $this->dashB] as $dashboard) {
             DashboardWidget::create([

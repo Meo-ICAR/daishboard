@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 class ArchiprevaleatUsersSeeder extends Seeder
 {
     /**
-     * Importa gli utenti del database legacy hassisdadmin (coorte HIV) come
+     * Importa gli utenti del database legacy clinicaldb (coorte HIV) come
      * utenti della company Archiprevaleat. Solo nome ed email sono noti da
      * quella fonte: se un utente con la stessa email esiste già viene
      * lasciato invariato (nessun insert, nessun update).

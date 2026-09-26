@@ -37,10 +37,10 @@ class DashboardTablesOverviewTest extends TestCase
         $this->catB = MenuCategory::create(['name' => 'Categoria B', 'order' => 1, 'is_active' => true]);
         $catChartOnly = MenuCategory::create(['name' => 'Solo grafici', 'order' => 2, 'is_active' => true]);
 
-        $this->dashA = Dashboard::create(['title' => 'Analisi Pazienti', 'menu_category_id' => $this->catA->id, 'order' => 0, 'is_active' => true]);
-        $this->dashA2 = Dashboard::create(['title' => 'Analisi Trattamenti', 'menu_category_id' => $this->catA->id, 'order' => 1, 'is_active' => true]);
-        $dashB = Dashboard::create(['title' => 'Dashboard B', 'menu_category_id' => $this->catB->id, 'order' => 0, 'is_active' => true]);
-        $dashChart = Dashboard::create(['title' => 'Solo grafico', 'menu_category_id' => $catChartOnly->id, 'order' => 0, 'is_active' => true]);
+        $this->dashA = Dashboard::create(['name' => 'Analisi Pazienti', 'menu_category_id' => $this->catA->id, 'order' => 0, 'is_active' => true]);
+        $this->dashA2 = Dashboard::create(['name' => 'Analisi Trattamenti', 'menu_category_id' => $this->catA->id, 'order' => 1, 'is_active' => true]);
+        $dashB = Dashboard::create(['name' => 'Dashboard B', 'menu_category_id' => $this->catB->id, 'order' => 0, 'is_active' => true]);
+        $dashChart = Dashboard::create(['name' => 'Solo grafico', 'menu_category_id' => $catChartOnly->id, 'order' => 0, 'is_active' => true]);
 
         $make = fn (Dashboard $dashboard, array $attrs): DashboardWidget => DashboardWidget::create([
             'dashboard_id' => $dashboard->id,

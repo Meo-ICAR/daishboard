@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
 
         $overridesByHost = [
             'dashboard.archiprevaleat.com' => [
-                'database.connections.dbai.database' => 'hassisdadmin',
+                'database.connections.dbai.database' => 'clinicaldb',
                 'data_navigator.profile' => 'hiv',
             ],
         ];

@@ -3,7 +3,7 @@
 return [
 
     'chat_history_id' => 'Chat History',
-    'dashboard.title' => 'Title',
+    'dashboard.name' => 'Title',
     'dashboard_id' => 'Dashboard',
     'duplicate' => 'Duplicate',
     'edit' => 'Edit',

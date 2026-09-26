@@ -27,7 +27,7 @@ class WidgetGeneratedDrillDownTest extends TestCase
     {
         return DashboardWidget::create([
             'dashboard_id' => Dashboard::create([
-                'user_id' => auth()->id(), 'title' => 'D', 'order' => 0, 'is_active' => true,
+                'user_id' => auth()->id(), 'name' => 'D', 'order' => 0, 'is_active' => true,
             ])->id,
             'title' => 'Pazienti per etnia',
             'type' => 'Table',

@@ -39,7 +39,7 @@ class MediatoreDashboardSeeder extends Seeder
             $companyId = $group['company_id'] ?? null;
 
             $dashboardId = DB::table('dashboards')
-                ->where('title', $group['dashboard'])
+                ->where('name', $group['dashboard'])
                 ->where('database', self::DATABASE)
                 ->when($companyId === null, fn ($q) => $q->whereNull('company_id'))
                 ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
@@ -51,7 +51,7 @@ class MediatoreDashboardSeeder extends Seeder
                     'company_id' => $companyId,
                     'database' => self::DATABASE,
                     'menu_category_id' => $categories[$group['category']],
-                    'title' => $group['dashboard'],
+                    'name' => $group['dashboard'],
                     'description' => $group['description'],
                     'icon' => $group['icon'],
                     'order' => $order + 1,

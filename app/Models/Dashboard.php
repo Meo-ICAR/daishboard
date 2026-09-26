@@ -19,7 +19,7 @@ class Dashboard extends Model
         'company_id',
         'database',
         'menu_category_id',
-        'title',
+        'name',
         'description',
         'icon',
         'order',
