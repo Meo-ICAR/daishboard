@@ -4,5 +4,9 @@
       "Bash(ssh hassisto-vps *)",
       "Bash(grep -v \"^-\\\\|LEGAL\\\\|authorized\\\\|monitor\\\\|evidence\\\\|consent\\\\|system$\\\\|criminal\\\\|advised\\\\|course\\\\|individuals\\\\|Anyone\")"
     ]
+  },
+  "enabledPlugins": {
+    "laravel-boost@claude-plugins-official": true,
+    "laraclaude@edulazaro": true
   }
 }
