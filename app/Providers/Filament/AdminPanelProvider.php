@@ -41,7 +41,7 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->brandLogo(asset('brand/logos/dai-shboard.jpg'))
-            ->brandLogoHeight('2.5rem')
+            ->brandLogoHeight('5rem')
             ->favicon(asset('brand/icons/dai-shboard-64.png'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
