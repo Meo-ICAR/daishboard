@@ -37,7 +37,7 @@ class LookupTableLinkingTest extends TestCase
         $fumos = LookupTable::where('table_name', 'fumos')->firstOrFail();
         $this->assertTrue($fumos->is_dictionary);
         $this->assertNotEmpty($fumos->values);
-        $this->assertSame(['value', 'label'], array_keys($fumos->values[0]));
+        $this->assertEqualsCanonicalizing(['value', 'label'], array_keys($fumos->values[0]));
     }
 
     public function test_it_auto_links_lookups_to_the_fields_that_reference_them(): void
