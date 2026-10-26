@@ -75,4 +75,25 @@ class DataNavigatorProfile
 
         return is_string($column) && $column !== '' ? $column : null;
     }
+
+    /**
+     * Se valorizzata, la sostituzione dell'`id` vale solo per le query la cui
+     * tabella principale (primo FROM) è questa.
+     */
+    public static function identifierTable(): ?string
+    {
+        $table = static::forCurrentDatabase()['identifier_table'] ?? null;
+
+        return is_string($table) && $table !== '' ? $table : null;
+    }
+
+    /**
+     * Nome con cui compare la colonna identificativa quando è un'espressione.
+     */
+    public static function identifierLabel(): ?string
+    {
+        $label = static::forCurrentDatabase()['identifier_label'] ?? null;
+
+        return is_string($label) && $label !== '' ? $label : null;
+    }
 }

@@ -158,6 +158,11 @@ class DashboardChartsOverview extends Page
         $this->charts = [];
 
         foreach ($widgets as $widget) {
+            // I figli con parametro compaiono solo dopo il click sul grafico master.
+            if ($widget->master_widget_id !== null && $runner->missingParams($widget->query, $this->params) !== []) {
+                continue;
+            }
+
             foreach ($runner->dateFilterMetadata($widget->query) as $key => $meta) {
                 $this->dateFilterCatalog[$key] ??= ['label' => $meta['label'], 'presets' => $meta['presets']];
             }

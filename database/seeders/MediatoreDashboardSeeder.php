@@ -361,7 +361,7 @@ SELECT
     (COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Entrata' THEN pr.importo ELSE 0 END), 0) -
      COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Uscita' THEN pr.importo ELSE 0 END), 0)) AS ricavo_netto
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.annullato = 0
   AND pr.deleted_at IS NULL
 GROUP BY p.id, p.codice_pratica, p.denominazione_banca, p.denominazione_agente, p.erogato
@@ -387,7 +387,7 @@ SELECT
     pr.n_fattura,
     pr.data_fattura
 FROM provvigioni pr
-WHERE pr.id_pratica = :id_pratica
+WHERE pr.pratica_id = :id_pratica
   AND pr.annullato = 0
   AND pr.deleted_at IS NULL
 ORDER BY pr.entrata_uscita ASC, pr.importo DESC
@@ -407,7 +407,7 @@ SELECT
     (COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Entrata' THEN pr.importo ELSE 0 END), 0) -
      COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Uscita' THEN pr.importo ELSE 0 END), 0)) AS margine_netto_totale
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.annullato = 0
   AND pr.deleted_at IS NULL
 GROUP BY p.denominazione_banca
@@ -429,7 +429,7 @@ SELECT
     pr.importo AS importo_provvigione,
     pr.tipo AS tipo_provvigione
 FROM provvigioni pr
-INNER JOIN pratiches p ON pr.id_pratica = p.id
+INNER JOIN pratiches p ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Entrata'
   AND pr.annullato = 0
   AND pr.deleted_at IS NULL
@@ -638,7 +638,7 @@ SELECT
     pr.importo AS provvigione_passiva_slittata,
     DATEDIFF(pr.data_fattura, p.erogated_at) AS giorni_scostamento
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Uscita'
   AND p.erogated_at IS NOT NULL
   AND pr.data_fattura IS NOT NULL
@@ -663,7 +663,7 @@ SELECT
     COUNT(DISTINCT p.id) AS pratiche_disallineate,
     SUM(pr.importo) AS totale_provvigioni_passive_slittate
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Uscita'
   AND p.erogated_at IS NOT NULL
   AND pr.data_fattura IS NOT NULL

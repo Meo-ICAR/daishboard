@@ -141,7 +141,6 @@ class ViewDashboardWidget extends Page implements HasTable
             })
             // Il titolo è già nell'header di pagina e nel breadcrumb: non lo si
             // ripete nell'intestazione della tabella.
-            ->description($this->activeDateFilterDescription())
             ->headerActions($this->tableHeaderActions())
             ->columns($this->buildColumns())
             ->paginated([25, 50, 100, 'all'])
@@ -180,15 +179,20 @@ class ViewDashboardWidget extends Page implements HasTable
 
             // Ogni campo numerico: separatore delle migliaia e somma nel footer.
             if (in_array($name, $this->numericColumns, true)) {
+                $decimals = NumberFormat::columnDecimals($this->queryRows, $name);
+
                 $column
                     ->alignEnd()
-                    ->formatStateUsing(fn (mixed $state): mixed => NumberFormat::formatColumn($name, $state));
+                    ->formatStateUsing(fn (mixed $state): mixed => NumberFormat::formatColumn($name, $state, $decimals));
 
-                $column->summarize(
-                    Summarizer::make()
-                        ->label(__('filament/admin/view_dashboard_widget.somma'))
-                        ->using(fn (): string => $this->columnSum($name)),
-                );
+                // La somma di id/codici/anni non ha significato: niente riepilogo.
+                if (! NumberFormat::isIdentifierColumn($name)) {
+                    $column->summarize(
+                        Summarizer::make()
+                            ->label(__('filament/admin/view_dashboard_widget.somma'))
+                            ->using(fn (): string => $this->columnSum($name)),
+                    );
+                }
             }
 
             $drilldown = in_array($name, $this->numericColumns, true)
@@ -288,7 +292,7 @@ class ViewDashboardWidget extends Page implements HasTable
             }
         }
 
-        return (string) NumberFormat::formatColumn($name, $sum);
+        return (string) NumberFormat::formatColumn($name, $sum, NumberFormat::columnDecimals($this->queryRows, $name));
     }
 
     /**
@@ -321,7 +325,7 @@ class ViewDashboardWidget extends Page implements HasTable
         if ($this->drillFilters === []) {
             $sql = (string) $this->widgetQuery;
 
-            return $identifier !== null ? $model->swapSelectIdentifier($sql, $identifier) : $this->widgetQuery;
+            return $identifier !== null ? $model->swapSelectIdentifier($sql, $identifier, DataNavigatorProfile::identifierTable(), DataNavigatorProfile::identifierLabel()) : $this->widgetQuery;
         }
 
         $predicates = collect($this->drillFilters)
@@ -331,7 +335,7 @@ class ViewDashboardWidget extends Page implements HasTable
         $sql = $model->convertSqlStringToDrillDown((string) $this->widgetQuery, $predicates);
 
         if ($identifier !== null) {
-            $sql = $model->swapSelectIdentifier($sql, $identifier);
+            $sql = $model->swapSelectIdentifier($sql, $identifier, DataNavigatorProfile::identifierTable(), DataNavigatorProfile::identifierLabel());
         }
 
         if (preg_match('/\bLIMIT\s+\d/i', $sql) !== 1) {
@@ -646,14 +650,22 @@ class ViewDashboardWidget extends Page implements HasTable
 
     public function getSubheading(): string|Htmlable|null
     {
+        $parts = [];
+
         if ($this->drillFilters !== []) {
-            return __('filament/admin/view_dashboard_widget.subheading').collect($this->drillFilters)
+            $parts[] = __('filament/admin/view_dashboard_widget.subheading').collect($this->drillFilters)
                 ->map(fn (array $filter): string => ($filter['label'] ?? $filter['expr'] ?? '?')
                     .' = '.Str::limit((string) ($filter['value'] ?? 'NULL'), 60))
                 ->implode('   ·   ');
+        } elseif (filled($this->masterFilterField)) {
+            $parts[] = $this->masterFilterField;
         }
 
-        return filled($this->masterFilterField) ? $this->masterFilterField : null;
+        // I filtri di coorte attivi stanno nel sottotitolo (a tutta larghezza), non
+        // nell'intestazione della tabella dove restano schiacciati dai pulsanti.
+        $parts[] = $this->activeDateFilterDescription();
+
+        return collect($parts)->filter()->implode(' — ') ?: null;
     }
 
     public function getBreadcrumbs(): array

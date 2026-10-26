@@ -89,4 +89,24 @@ class IdentifierColumnSwapTest extends TestCase
         $this->assertContains('pazientecode', $detail->get('queryColumns'));
         $this->assertNotContains('n', $detail->get('queryColumns'));
     }
+
+    public function test_mediatore_profile_swaps_pratiche_id_with_customer_and_product(): void
+    {
+        config(['data_navigator.profile' => 'mediatore']);
+
+        $model = new DashboardWidget;
+        $identifier = DataNavigatorProfile::identifierColumn();
+        $table = DataNavigatorProfile::identifierTable();
+        $label = DataNavigatorProfile::identifierLabel();
+
+        $plain = $model->swapSelectIdentifier('SELECT id, importo FROM pratiches WHERE x = 1', $identifier, $table, $label);
+        $this->assertStringContainsString("CONCAT_WS(' ', cognome_cliente, denominazione_prodotto) AS pratica, importo", $plain);
+
+        $aliased = $model->swapSelectIdentifier('SELECT p.id, p.importo FROM pratiches p', $identifier, $table, $label);
+        $this->assertStringContainsString("CONCAT_WS(' ', p.cognome_cliente, p.denominazione_prodotto) AS pratica", $aliased);
+
+        // Altre tabelle (es. provvigioni) non vengono toccate.
+        $other = 'SELECT id, importo FROM provvigioni';
+        $this->assertSame($other, $model->swapSelectIdentifier($other, $identifier, $table, $label));
+    }
 }

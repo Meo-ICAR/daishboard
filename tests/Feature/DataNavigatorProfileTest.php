@@ -69,7 +69,7 @@ class DataNavigatorProfileTest extends TestCase
 
         $this->assertStringContainsString('entrata_uscita', $text);
         $this->assertStringContainsString('provvigioni.importo', $text);
-        $this->assertStringContainsString('provvigioni.id_pratica', $text);
+        $this->assertStringContainsString('provvigioni.pratica_id', $text);
         // Vocabolario degli stati: le dizioni sono mappate sui campi *_at, e accepted_at non esiste.
         $this->assertStringContainsString('"deliberata"', $text);
         $this->assertStringContainsString('"perfezionata"', $text);

@@ -23,7 +23,7 @@ class NumberFormat
      * Interi senza decimali, valori con parte frazionaria a due decimali.
      * I valori non numerici sono restituiti invariati.
      */
-    public static function format(mixed $value): mixed
+    public static function format(mixed $value, ?int $decimals = null): mixed
     {
         if (! is_numeric($value) || is_string($value) && preg_match('/^0\d/', $value) === 1) {
             return $value;
@@ -31,14 +31,33 @@ class NumberFormat
 
         $number = (float) $value;
 
-        return number_format($number, $number === floor($number) ? 0 : 2, ',', '.');
+        return number_format($number, $decimals ?? ($number === floor($number) ? 0 : 2), ',', '.');
     }
 
     /**
      * Come format(), ma lascia intatte le colonne identificative.
      */
-    public static function formatColumn(string $column, mixed $value): mixed
+    public static function formatColumn(string $column, mixed $value, ?int $decimals = null): mixed
     {
-        return self::isIdentifierColumn($column) ? $value : self::format($value);
+        return self::isIdentifierColumn($column) ? $value : self::format($value, $decimals);
+    }
+
+    /**
+     * Decimali comuni a tutta la colonna: 2 se almeno una riga ha una parte
+     * frazionaria, altrimenti 0, così gli importi restano incolonnati.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public static function columnDecimals(array $rows, string $column): int
+    {
+        foreach ($rows as $row) {
+            $value = $row[$column] ?? null;
+
+            if (is_numeric($value) && (float) $value !== floor((float) $value)) {
+                return 2;
+            }
+        }
+
+        return 0;
     }
 }

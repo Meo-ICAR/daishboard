@@ -31,4 +31,13 @@ class NumberFormatTest extends TestCase
         $this->assertSame('12.345', NumberFormat::formatColumn('numero_pratiche', 12345));
         $this->assertSame('1.000', NumberFormat::formatColumn('importo', '1000.00'));
     }
+
+    public function test_a_column_uses_the_same_decimals_on_every_row(): void
+    {
+        $rows = [['importo' => '257366.00'], ['importo' => '1250.5'], ['importo' => 10]];
+
+        $this->assertSame(2, NumberFormat::columnDecimals($rows, 'importo'));
+        $this->assertSame('257.366,00', NumberFormat::formatColumn('importo', '257366.00', 2));
+        $this->assertSame(0, NumberFormat::columnDecimals([['n' => 3], ['n' => '4']], 'n'));
+    }
 }

@@ -95,6 +95,13 @@ return [
 
             'databases' => ['unicosuite'],
 
+            // Nelle viste tabella l'`id` delle pratiche è sostituito da "cognome
+            // cliente + prodotto". Vale solo per le query su `pratiches` (colonna
+            // `id`, anche qualificata): {alias} è il prefisso di alias della tabella.
+            'identifier_column' => "CONCAT_WS(' ', {alias}cognome_cliente, {alias}denominazione_prodotto)",
+            'identifier_table' => 'pratiches',
+            'identifier_label' => 'pratica',
+
             // Tabelle principali ("Dati" / schema_legends). pratiches_statos e
             // provvigioni_statos NON vanno qui: sono codifiche, vengono catalogate
             // da `legend:sync` come lookup e collegate ai campi via le FK
@@ -184,7 +191,7 @@ return [
 
     ## 6. Privacy e Relazioni
 
-    *   **JOIN Standard**: `JOIN provvigioni ON provvigioni.id_pratica = pratiches.id`.
+    *   **JOIN Standard**: `JOIN provvigioni ON provvigioni.pratica_id = pratiches.id`.
     *   **DATI PERSONALI (PII)**: `nome_cliente`, `cognome_cliente`, `codice_fiscale`, `nome`, `cognome`, `cf`. Escludili sempre dal SELECT salvo richiesta esplicita per persona specifica.
 
     ## 7. Periodi e Range di Date

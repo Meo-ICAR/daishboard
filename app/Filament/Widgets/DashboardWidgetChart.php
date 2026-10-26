@@ -94,12 +94,14 @@ class DashboardWidgetChart extends ChartWidget
 
     protected function getOptions(): array|RawJs|null
     {
+        // Locale italiano per i numeri di assi e tooltip (2.000 invece di 2,000).
         if (! $this->drillable) {
-            return null;
+            return ['locale' => 'it-IT'];
         }
 
         return RawJs::make(str_replace('__WIDGET_ID__', json_encode($this->widgetId), <<<'JS'
 {
+    locale: 'it-IT',
     onClick: (event, elements, chart) => {
         if (! elements.length) {
             return;

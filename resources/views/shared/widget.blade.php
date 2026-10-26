@@ -122,7 +122,7 @@
                                         $value = $row[$column] ?? null;
                                         $isNumeric = in_array($column, $numericColumns, true);
                                         $display = $isNumeric
-                                            ? \App\Support\NumberFormat::formatColumn($column, $value)
+                                            ? \App\Support\NumberFormat::formatColumn($column, $value, \App\Support\NumberFormat::columnDecimals($rows, $column))
                                             : \App\Support\DateDisplay::format($value);
                                         $child = in_array($column, $numericColumns, true) ? $drilldownFor($column) : null;
                                         $link = ($child && $value !== null)

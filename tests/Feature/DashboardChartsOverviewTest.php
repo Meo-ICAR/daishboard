@@ -134,8 +134,8 @@ class DashboardChartsOverviewTest extends TestCase
 
         $page = Livewire::test(DashboardChartsOverview::class, ['master' => $master->id]);
 
-        $before = collect($page->get('charts'))->firstWhere('id', $child->id);
-        $this->assertNotNull($before['error']);
+        // Prima del click il figlio con parametro non compare.
+        $this->assertNull(collect($page->get('charts'))->firstWhere('id', $child->id));
 
         $page->dispatch('chart-drill', label: 'Prestito');
 

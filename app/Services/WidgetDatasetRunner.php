@@ -85,6 +85,20 @@ class WidgetDatasetRunner
     }
 
     /**
+     * Parametri `:nome` della query che non hanno un valore in $params.
+     *
+     * @param  array<string, scalar|null>  $params
+     * @return list<string>
+     */
+    public function missingParams(?string $sql, array $params = []): array
+    {
+        return array_values(array_diff(
+            $this->unboundParams($this->stripLeadingComments((string) $sql)),
+            array_keys($params),
+        ));
+    }
+
+    /**
      * Sostituisce i parametri `:nome` con il valore quotato (solo i nomi presenti in $params).
      *
      * @param  array<string, scalar|null>  $params
