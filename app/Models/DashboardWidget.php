@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\StampsOwnership;
+use App\Support\CompanyScope;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -59,15 +60,15 @@ class DashboardWidget extends Model
             }
 
             // Superadmin: vede tutti i record, nessun filtro.
-            if ($user->isSuperAdmin()) {
+            if ($user->isSuperAdmin() && CompanyScope::activeCompanyId() === null) {
                 return;
             }
 
             // Admin azienda e utente normale: solo i record della propria
             // company (o senza company).
-            $builder->where(function (Builder $query) use ($user): void {
+            $builder->where(function (Builder $query): void {
                 $query->whereNull('company_id')
-                    ->orWhere('company_id', $user->company_id);
+                    ->orWhere('company_id', CompanyScope::activeCompanyId());
             });
 
             // Utente normale: in più, solo i propri record (o senza proprietario).
@@ -95,6 +96,8 @@ class DashboardWidget extends Model
         $sql = preg_replace('/\s+GROUP\s+BY\s+[\s\S]+?(?=\s+HAVING|\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
         $sql = preg_replace('/\s+HAVING\s+[\s\S]+?(?=\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
         $sql = preg_replace('/\s+ORDER\s+BY\s+[\s\S]+?(?=\s+LIMIT|$)/i', '', $sql);
+        // Il LIMIT dell'aggregato non vale per il dettaglio (e i filtri WHERE vanno prima).
+        $sql = preg_replace('/\s+LIMIT\s+\d+(?:\s*,\s*\d+|\s+OFFSET\s+\d+)?\s*$/i', '', $sql);
 
         // 2. SELECT di dettaglio: le voci aggregate vengono "spacchettate" nel
         //    campo interno; COUNT(*)/COUNT(1) non hanno un campo di dettaglio,

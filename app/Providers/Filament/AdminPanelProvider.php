@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\RememberActiveCompany;
+use App\Models\Company;
 use App\Models\SocialiteUser;
 use App\Models\User;
 use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
@@ -15,6 +17,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -23,6 +26,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 
@@ -40,6 +44,14 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): HtmlString => new HtmlString('<style>.fi-header-has-subheading > div:first-child:not(.fi-header-actions-ctn){flex:1 1 0%;width:auto;min-width:0}.fi-header-subheading{max-width:none}</style>'),
+            )
+            ->tenant(Company::class)
+            ->tenantMiddleware([
+                RememberActiveCompany::class,
+            ], isPersistent: true)
             ->brandLogo(asset('brand/logos/dai-shboard.jpg'))
             ->brandLogoHeight('5rem')
             ->favicon(asset('brand/icons/dai-shboard-64.png'))

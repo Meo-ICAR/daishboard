@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\StampsOwnership;
+use App\Support\CompanyScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,13 +49,13 @@ class Dashboard extends Model
             }
 
             // Super-admin (is_admin = true e company_id nullo): vede tutto
-            if ($user->isSuperAdmin()) {
+            if ($user->isSuperAdmin() && CompanyScope::activeCompanyId() === null) {
                 return;
             }
 
             // Admin di azienda: vede i widget della stessa azienda
             if (true || $user->isAdmin()) {
-                $companyId = $user->company_id;
+                $companyId = CompanyScope::activeCompanyId();
                 $builder->where(function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')
                         ->orWhere('company_id', $companyId);
@@ -77,14 +78,14 @@ class Dashboard extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
-
     public function menuCategory(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function widgets(): HasMany

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Filament\Resources\Resource;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Google\GoogleExtendSocialite;
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         // nativi di Socialite: vanno registrati agganciandosi a SocialiteWasCalled.
         Event::listen(SocialiteWasCalled::class, [MicrosoftExtendSocialite::class, 'handle']);
         Event::listen(SocialiteWasCalled::class, [GoogleExtendSocialite::class, 'handle']);
+
+        // Le risorse non sono filtrate dal tenant Filament (nessuna relazione
+        // `company` uniforme): lo scoping per azienda è nei global scope dei modelli.
+        Resource::scopeToTenant(false);
 
         $this->configureTenantByHost();
     }

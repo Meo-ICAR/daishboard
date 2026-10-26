@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             DashboardSeeder::class,
             DashboardWidgetSeeder::class,
             MediatoreDashboardSeeder::class,
+            MediatoreProjectSeeder::class,
             HivDashboardSeeder::class,
             ArchiprevaleatUsersSeeder::class,
             //  ChatHistorySeeder::class,

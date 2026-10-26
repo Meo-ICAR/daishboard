@@ -94,12 +94,12 @@ class MenuCategoryResource extends Resource
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->label(__('filament/admin/menu_category_resource.created_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label(__('filament/admin/menu_category_resource.updated_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

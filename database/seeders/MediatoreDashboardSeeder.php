@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cruscotti del dominio "mediatore creditizio" (database `proforma`): pipeline
+ * Cruscotti del dominio "mediatore creditizio" (database `unicosuite`): pipeline
  * delle pratiche, analisi provvigionale e riconciliazione ENASARCO/OAM.
  *
  * Il seeder è una SINCRONIZZAZIONE: rilanciandolo aggiorna in place le query e i
@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\DB;
  * si aprono cliccando la cella numerica del master. Vedi config/data_navigator.php
  * (profilo `mediatore`, §5) per la convenzione dei parametri.
  *
- * Le dashboard hanno `database = 'proforma'` per lo scoping di
+ * Le dashboard hanno `database = 'unicosuite'` per lo scoping di
  * App\Support\CompanyScope::byDatabase(). I widget "di dominio" hanno
  * `company_id` NULL (contenuto globale); "Gestione Provvigioni & Fatturazione"
  * porta `company_id = 2` (rework dei widget storici della company 1).
  */
 class MediatoreDashboardSeeder extends Seeder
 {
-    private const DATABASE = 'proforma';
+    private const DATABASE = 'unicosuite';
 
     public function run(): void
     {
@@ -905,6 +905,126 @@ SQL,
 SELECT name AS agente, piva, enasarco AS mandato_enasarco
 FROM fornitoris
 ORDER BY name ASC
+SQL,
+                    ],
+                ],
+            ],
+            [
+                'dashboard' => 'ANOMALIE',
+                'description' => 'Pratiche in stato rifiutato (pratiches_statos.isrejected = 1) con dettaglio per tipo prodotto, banca e produttore.',
+                'icon' => 'heroicon-o-exclamation-triangle',
+                'category' => 'Produzione',
+                'widgets' => [
+                    [
+                        'title' => 'Pratiche rifiutate per tipo prodotto',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.tipo_prodotto,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.tipo_prodotto
+ORDER BY numero_pratiche DESC
+SQL,
+                        'children' => [
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per banca',
+                                'type' => 'bar',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.denominazione_banca,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.denominazione_banca
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per produttore',
+                                'type' => 'bar',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.denominazione_agente
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per stato di rifiuto',
+                                'type' => 'pie',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.stato_pratica,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.stato_pratica
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate per banca',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.denominazione_banca,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.denominazione_banca
+ORDER BY numero_pratiche DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate per produttore',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.denominazione_agente
+ORDER BY numero_pratiche DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate: tipo prodotto x banca x produttore',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    p.tipo_prodotto,
+    p.denominazione_banca,
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche,
+    SUM(p.amount) AS importo_richiesto
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.tipo_prodotto, p.denominazione_banca, p.denominazione_agente
+ORDER BY numero_pratiche DESC
 SQL,
                     ],
                 ],

@@ -20,6 +20,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Throwable;
 
@@ -69,6 +70,16 @@ class DashboardChartsOverview extends Page
 
     public ?string $masterTitle = null;
 
+    /**
+     * Parametri di drill-down scelti cliccando il grafico master: nome della
+     * colonna categoria => valore (es. ['tipo_prodotto' => 'Prestito']). Le query
+     * dei figli li usano come `:tipo_prodotto`.
+     *
+     * @var array<string, string>
+     */
+    #[Url]
+    public array $params = [];
+
     public function mount(): void
     {
         // Riprende l'ultima selezione dell'utente quando non arriva dalla URL.
@@ -104,9 +115,31 @@ class DashboardChartsOverview extends Page
         }
     }
 
+    /**
+     * Click su una categoria di un grafico master (anche dall'elenco dei master,
+     * dove apre i suoi figli): il suo valore diventa il
+     * parametro (`:<colonna categoria>`) delle query dei grafici figli.
+     */
+    #[On('chart-drill')]
+    public function drillInto(string $label, ?int $widgetId = null): void
+    {
+        $chart = collect($this->charts)->first(fn (array $c): bool => $c['drillable'] && ($widgetId === null || $c['id'] === $widgetId));
+        $column = $chart['labelColumn'] ?? null;
+
+        if ($column === null) {
+            return;
+        }
+
+        $this->master = $chart['id'];
+        $this->params = [$column => $label];
+        $this->resolveDashboardScope();
+        $this->rebuild();
+    }
+
     public function updatedDashboardId(): void
     {
         $this->master = null;
+        $this->params = [];
         $this->resolveDashboardScope();
         auth()->user()?->rememberSelection(dashboardId: $this->dashboardId);
         $this->rebuild();
@@ -129,7 +162,7 @@ class DashboardChartsOverview extends Page
                 $this->dateFilterCatalog[$key] ??= ['label' => $meta['label'], 'presets' => $meta['presets']];
             }
 
-            $result = $runner->run($widget->query, $this->projectFilters);
+            $result = $runner->run($widget->query, $this->projectFilters, $this->params);
             $columns = $result['columns'];
             $numeric = $result['numericColumns'];
 
@@ -145,7 +178,7 @@ class DashboardChartsOverview extends Page
 
             $this->charts[] = [
                 'id' => $widget->getKey(),
-                'title' => $widget->title ?? ('Widget #'.$widget->getKey()),
+                'title' => ($widget->title ?? ('Widget #'.$widget->getKey())).$this->paramSuffix($widget),
                 'type' => DashboardWidgetChart::resolveType($widget->type),
                 'labelColumn' => $label,
                 'valueColumns' => $values,
@@ -153,6 +186,7 @@ class DashboardChartsOverview extends Page
                 'error' => $result['error'],
                 'isMaster' => $this->master !== null && (int) $widget->getKey() === $this->master,
                 'hasChildren' => $hasChildren,
+                'drillable' => $hasChildren && ($this->master === null || (int) $widget->getKey() === $this->master),
                 'hasProject' => $widget->project_id !== null,
                 'projectName' => $widget->project?->name,
                 'drillUrl' => $hasChildren
@@ -161,6 +195,19 @@ class DashboardChartsOverview extends Page
                 'viewUrl' => DashboardWidgetResource::getUrl('view', ['record' => $widget->getKey()]),
             ];
         }
+    }
+
+    /**
+     * Valori dei parametri cliccati usati dalla query del widget, da accodare al
+     * titolo (es. " — Prestito") così si capisce a cosa si riferisce il dettaglio.
+     */
+    protected function paramSuffix(DashboardWidget $widget): string
+    {
+        $values = collect($this->params)
+            ->filter(fn (string $value, string $name): bool => str_contains((string) $widget->query, ':'.$name))
+            ->values();
+
+        return $values->isEmpty() ? '' : ' — '.$values->implode(', ');
     }
 
     /**
@@ -279,9 +326,9 @@ class DashboardChartsOverview extends Page
                         ? [['column' => null, 'preset' => null, 'from' => null, 'to' => null]]
                         : array_map(fn (array $f): array => [
                             'column' => $f['column'] ?? null,
-                            'preset' => null,
-                            'from' => $f['from'] ?? null,
-                            'to' => $f['to'] ?? null,
+                            'preset' => $f['preset'] ?? null,
+                            'from' => ($f['preset'] ?? null) !== null ? null : ($f['from'] ?? null),
+                            'to' => ($f['preset'] ?? null) !== null ? null : ($f['to'] ?? null),
                         ], $this->projectFilters),
                 ])
                 ->schema([
@@ -366,7 +413,7 @@ class DashboardChartsOverview extends Page
                     $to = $this->normalizeDate($row['to'] ?? null);
                 }
 
-                return ['column' => $column, 'from' => $from, 'to' => $to];
+                return ['column' => $column, 'preset' => $preset, 'from' => $from, 'to' => $to];
             })
             ->filter(fn (array $row): bool => $row['column'] !== null
                 && isset($this->dateFilterCatalog[$row['column']])
@@ -394,7 +441,9 @@ class DashboardChartsOverview extends Page
     public function getSubheading(): string|Htmlable|null
     {
         if ($this->masterTitle !== null) {
-            return "Grafici figlio di: {$this->masterTitle}";
+            $selection = collect($this->params)->map(fn (string $value, string $column): string => "{$column} = {$value}")->implode(', ');
+
+            return "Grafici figlio di: {$this->masterTitle}".($selection !== '' ? " — {$selection}" : ' — clicca una barra del master per il dettaglio');
         }
 
         return collect([$this->dashboardTitle(), $this->studyFilterDescription()])

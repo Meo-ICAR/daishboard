@@ -5,10 +5,14 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasDefaultTenant;
+use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -18,7 +22,7 @@ use Illuminate\Support\Facades\Hash;
 
 #[Fillable(['name', 'email', 'password', 'company_id', 'project_id', 'dashboard_id'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasDefaultTenant, HasTenants
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -120,6 +124,36 @@ class User extends Authenticatable implements FilamentUser
         if ($changes !== []) {
             $this->forceFill($changes)->saveQuietly();
         }
+    }
+
+    /**
+     * Aziende selezionabili nel pannello: il superadmin le vede tutte, gli
+     * altri utenti solo la propria.
+     *
+     * @return Collection<int, Company>
+     */
+    public function getTenants(Panel $panel): Collection
+    {
+        if ($this->isSuperAdmin()) {
+            return Company::query()->orderBy('name')->get();
+        }
+
+        return Company::query()->whereKey($this->company_id)->get();
+    }
+
+    public function canAccessTenant(Model $tenant): bool
+    {
+        return $this->isSuperAdmin() || $tenant->getKey() === $this->company_id;
+    }
+
+    /**
+     * Ultima azienda scelta in sessione, altrimenti la prima accessibile.
+     */
+    public function getDefaultTenant(Panel $panel): ?Model
+    {
+        $tenants = $this->getTenants($panel);
+
+        return $tenants->firstWhere('id', session('active_company_id')) ?? $tenants->first();
     }
 
     public function isAdmin(): bool

@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Support\DateDisplay;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -39,7 +40,7 @@ class WidgetDatasetExport implements FromArray, ShouldAutoSize, WithHeadings, Wi
     {
         return array_map(
             fn (array $row): array => array_map(
-                static fn (string $column) => $row[$column] ?? null,
+                static fn (string $column) => DateDisplay::format($row[$column] ?? null),
                 $this->columns,
             ),
             array_values($this->rows),

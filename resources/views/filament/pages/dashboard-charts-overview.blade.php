@@ -78,8 +78,10 @@
                                 'chartType' => $chart['type'],
                                 'chartHeading' => null,
                                 'maxHeight' => '16rem',
+                                'drillable' => $chart['drillable'],
+                                'widgetId' => $chart['id'],
                             ],
-                            key('ov-chart-'.$chart['id'].'-'.$chart['type'].'-'.implode(',', $chart['valueColumns']).'-'.md5(json_encode($projectFilters)))
+                            key('ov-chart-'.$chart['id'].'-'.$chart['type'].'-'.implode(',', $chart['valueColumns']).'-'.md5(json_encode([$projectFilters, $chart['isMaster'] ? [] : $params])))
                         )
                     @endif
                 </div>

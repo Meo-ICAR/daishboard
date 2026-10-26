@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 /**
@@ -65,6 +66,12 @@ class DashboardWidgetChart extends ChartWidget
     /** Altezza massima del grafico (es. "16rem"); passata dalla pagina che lo incorpora. */
     public ?string $maxHeight = null;
 
+    /** Se true, il click su una barra/settore emette `chart-drill` con l'etichetta della categoria e l'id del widget. */
+    public bool $drillable = false;
+
+    /** Id del DashboardWidget rappresentato, allegato all'evento `chart-drill`. */
+    public ?int $widgetId = null;
+
     /**
      * Normalizza una stringa tipo ("Line Chart", "bar_chart", "pie"...) verso
      * una chiave Chart.js supportata; fallback a "bar".
@@ -83,6 +90,28 @@ class DashboardWidgetChart extends ChartWidget
     protected function getType(): string
     {
         return in_array($this->chartType, self::SUPPORTED_TYPES, true) ? $this->chartType : 'bar';
+    }
+
+    protected function getOptions(): array|RawJs|null
+    {
+        if (! $this->drillable) {
+            return null;
+        }
+
+        return RawJs::make(str_replace('__WIDGET_ID__', json_encode($this->widgetId), <<<'JS'
+{
+    onClick: (event, elements, chart) => {
+        if (! elements.length) {
+            return;
+        }
+
+        Livewire.dispatch('chart-drill', { label: chart.data.labels[elements[0].index], widgetId: __WIDGET_ID__ });
+    },
+    onHover: (event, elements) => {
+        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+    },
+}
+JS));
     }
 
     public function getHeading(): ?string

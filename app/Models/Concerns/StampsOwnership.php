@@ -2,6 +2,7 @@
 
 namespace App\Models\Concerns;
 
+use App\Support\CompanyScope;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -21,12 +22,16 @@ trait StampsOwnership
         static::creating(function (Model $model): void {
             $user = auth()->user();
 
-            if ($user === null || $user->isSuperAdmin()) {
+            if ($user === null) {
                 return;
             }
 
             if ($model->company_id === null) {
-                $model->company_id = $user->company_id;
+                $model->company_id = CompanyScope::activeCompanyId();
+            }
+
+            if ($user->isSuperAdmin()) {
+                return;
             }
 
             if (! $user->isAdmin() && $model->user_id === null) {

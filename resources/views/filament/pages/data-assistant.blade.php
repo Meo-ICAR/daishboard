@@ -48,7 +48,7 @@
                         title="{{ $t['label'] }}">
                     <span class="t-label">{{ $t['label'] }}</span>
                     <span class="t-meta">
-                        {{ $t['last_at']?->format('d/m/Y H:i') ?? '—' }} &middot; {{ $t['messages'] }} msg
+                        {{ $t['last_at']?->format('d/m/Y') ?? '—' }} &middot; {{ $t['messages'] }} msg
                     </span>
                 </button>
             @empty

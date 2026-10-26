@@ -58,6 +58,7 @@
         }
         tbody tr:hover { background: #f9fafb; }
         td.null { color: #9ca3af; font-style: italic; }
+        th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
         td a { color: #2563eb; font-weight: 600; text-decoration: none; }
         td a:hover { text-decoration: underline; }
         .empty, .error {
@@ -109,7 +110,7 @@
                     <thead>
                         <tr>
                             @foreach ($columns as $column)
-                                <th>{{ $column }}</th>
+                                <th @class(['num' => in_array($column, $numericColumns, true)])>{{ $column }}</th>
                             @endforeach
                         </tr>
                     </thead>
@@ -119,6 +120,10 @@
                                 @foreach ($columns as $column)
                                     @php
                                         $value = $row[$column] ?? null;
+                                        $isNumeric = in_array($column, $numericColumns, true);
+                                        $display = $isNumeric
+                                            ? \App\Support\NumberFormat::formatColumn($column, $value)
+                                            : \App\Support\DateDisplay::format($value);
                                         $child = in_array($column, $numericColumns, true) ? $drilldownFor($column) : null;
                                         $link = ($child && $value !== null)
                                             ? $childUrl($child->id, [
@@ -131,9 +136,9 @@
                                     @if (is_null($value))
                                         <td class="null">&mdash;</td>
                                     @elseif ($link)
-                                        <td><a href="{{ $link }}">{{ $value }}</a></td>
+                                        <td @class(['num' => $isNumeric])><a href="{{ $link }}">{{ $display }}</a></td>
                                     @else
-                                        <td>{{ $value }}</td>
+                                        <td @class(['num' => $isNumeric])>{{ $display }}</td>
                                     @endif
                                 @endforeach
                             </tr>
@@ -147,7 +152,7 @@
     <footer>
         {{ count($rows) }} {{ count($rows) === 1 ? 'riga' : 'righe' }}
         @if (! $error && $share->dashboardWidget)
-            &middot; aggiornato al {{ now()->format('d/m/Y H:i') }}
+            &middot; aggiornato al {{ now()->format('d/m/Y') }}
         @endif
     </footer>
 </div>

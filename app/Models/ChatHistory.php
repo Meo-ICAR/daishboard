@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CompanyScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,14 +40,14 @@ class ChatHistory extends Model
             }
 
             // Super-admin (is_admin = true e company_id nullo): vede tutto
-            if ($user->isSuperAdmin()) {
+            if ($user->isSuperAdmin() && CompanyScope::activeCompanyId() === null) {
                 return;
             }
 
             // Admin di azienda: vede le chat degli utenti della stessa azienda
             // (chat_histories non ha company_id: si passa dalla relazione user).
             if ($user->isAdmin()) {
-                $companyId = $user->company_id;
+                $companyId = CompanyScope::activeCompanyId();
                 $builder->whereHas('user', function (Builder $query) use ($companyId): void {
                     $query->whereNull('company_id')
                         ->orWhere('company_id', $companyId);

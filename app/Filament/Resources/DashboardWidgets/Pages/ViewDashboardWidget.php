@@ -8,6 +8,8 @@ use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\DashboardWidget;
 use App\Models\DashboardWidgetShare;
 use App\Support\DataNavigatorProfile;
+use App\Support\DateDisplay;
+use App\Support\NumberFormat;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -173,8 +175,15 @@ class ViewDashboardWidget extends Page implements HasTable
                 $column->searchable();
             }
 
-            // Ogni campo numerico mostra la somma nel footer della tabella.
+            // Campi data: solo giorno, mai ora e minuti.
+            $column->formatStateUsing(fn (mixed $state): mixed => DateDisplay::format($state));
+
+            // Ogni campo numerico: separatore delle migliaia e somma nel footer.
             if (in_array($name, $this->numericColumns, true)) {
+                $column
+                    ->alignEnd()
+                    ->formatStateUsing(fn (mixed $state): mixed => NumberFormat::formatColumn($name, $state));
+
                 $column->summarize(
                     Summarizer::make()
                         ->label(__('filament/admin/view_dashboard_widget.somma'))
@@ -279,9 +288,7 @@ class ViewDashboardWidget extends Page implements HasTable
             }
         }
 
-        return $sum === (float) (int) $sum
-            ? number_format($sum, 0, ',', '.')
-            : rtrim(rtrim(number_format($sum, 2, ',', '.'), '0'), ',');
+        return (string) NumberFormat::formatColumn($name, $sum);
     }
 
     /**
@@ -618,7 +625,7 @@ class ViewDashboardWidget extends Page implements HasTable
     protected function describeShare(DashboardWidgetShare $share): string
     {
         $parts = [
-            'Creato '.($share->created_at?->format('d/m/Y H:i') ?? '—'),
+            'Creato '.($share->created_at?->format('d/m/Y') ?? '—'),
             $share->views.' visite',
             $share->expires_at
                 ? 'scade '.$share->expires_at->format('d/m/Y').($share->isExpired() ? ' (scaduto)' : '')

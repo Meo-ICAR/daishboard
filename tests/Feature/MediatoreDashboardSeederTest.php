@@ -49,7 +49,7 @@ class MediatoreDashboardSeederTest extends TestCase
 
     private function proformaDashboards(): Collection
     {
-        return DB::table('dashboards')->where('database', 'proforma')->get()->keyBy('name');
+        return DB::table('dashboards')->where('database', 'unicosuite')->get()->keyBy('name');
     }
 
     public function test_it_seeds_every_blueprint_dashboard_and_widget(): void
@@ -105,7 +105,7 @@ class MediatoreDashboardSeederTest extends TestCase
         $this->seed([CompanySeeder::class, MediatoreDashboardSeeder::class]);
 
         $masters = DB::table('dashboard_widgets')
-            ->whereIn('dashboard_id', DB::table('dashboards')->where('database', 'proforma')->pluck('id'))
+            ->whereIn('dashboard_id', DB::table('dashboards')->where('database', 'unicosuite')->pluck('id'))
             ->whereNull('master_widget_id')
             ->get();
 
@@ -149,7 +149,7 @@ class MediatoreDashboardSeederTest extends TestCase
 
         $expected = $this->expectedCounts();
         $this->assertSame($expected['masters'] + $expected['children'], DB::table('dashboard_widgets')
-            ->whereIn('dashboard_id', DB::table('dashboards')->where('database', 'proforma')->pluck('id'))
+            ->whereIn('dashboard_id', DB::table('dashboards')->where('database', 'unicosuite')->pluck('id'))
             ->count());
     }
 }

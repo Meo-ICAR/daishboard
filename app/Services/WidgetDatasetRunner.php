@@ -27,13 +27,14 @@ class WidgetDatasetRunner
 
     /**
      * @param  array<int, array<string, mixed>>  $columnFilters  voci data ({column, from, to}) e/o valore ({column, values})
+     * @param  array<string, scalar|null>  $params  valori dei parametri di drill-down (`:nome`) delle query figlie
      * @return array{columns: list<string>, rows: array<int, array<string, mixed>>, numericColumns: list<string>, error: ?string}
      */
-    public function run(?string $sql, array $columnFilters = []): array
+    public function run(?string $sql, array $columnFilters = [], array $params = []): array
     {
         $empty = ['columns' => [], 'rows' => [], 'numericColumns' => [], 'error' => null];
 
-        $query = trim((string) $sql);
+        $query = $this->stripLeadingComments((string) $sql);
 
         if ($query === '') {
             return [...$empty, 'error' => 'Nessuna query definita per questo widget.'];
@@ -41,6 +42,14 @@ class WidgetDatasetRunner
 
         if (! preg_match('/^\s*SELECT\b/i', $query)) {
             return [...$empty, 'error' => 'Sono consentite solo istruzioni SELECT.'];
+        }
+
+        $query = $this->bindParams($query, $params);
+
+        $missing = $this->unboundParams($query);
+
+        if ($missing !== []) {
+            return [...$empty, 'error' => 'Seleziona un valore nel grafico master per il parametro :'.implode(', :', $missing).'.'];
         }
 
         [$query, $bindings] = $this->applyFilters($query, $columnFilters);
@@ -64,6 +73,51 @@ class WidgetDatasetRunner
         ));
 
         return ['columns' => $columns, 'rows' => $rows, 'numericColumns' => $numericColumns, 'error' => null];
+    }
+
+    /**
+     * Toglie spazi e commenti SQL (di riga `--`/`#` e a blocco) che precedono l'istruzione,
+     * così il controllo "solo SELECT" ignora le righe di commento iniziali.
+     */
+    protected function stripLeadingComments(string $sql): string
+    {
+        return trim((string) preg_replace('/\A(?:\s+|--[^\n]*(?:\n|\z)|#[^\n]*(?:\n|\z)|\/\*.*?\*\/)+/s', '', $sql));
+    }
+
+    /**
+     * Sostituisce i parametri `:nome` con il valore quotato (solo i nomi presenti in $params).
+     *
+     * @param  array<string, scalar|null>  $params
+     */
+    protected function bindParams(string $query, array $params): string
+    {
+        if ($params === []) {
+            return $query;
+        }
+
+        $pdo = DB::connection('dbai')->getPdo();
+
+        return (string) preg_replace_callback(
+            '/(?<![:\w]):([A-Za-z_]\w*)/',
+            fn (array $m): string => array_key_exists($m[1], $params)
+                ? ($params[$m[1]] === null ? 'NULL' : $pdo->quote((string) $params[$m[1]]))
+                : $m[0],
+            $query,
+        );
+    }
+
+    /**
+     * Nomi dei parametri `:nome` rimasti senza valore (fuori dai letterali stringa).
+     *
+     * @return list<string>
+     */
+    protected function unboundParams(string $query): array
+    {
+        $withoutStrings = (string) preg_replace("/'(?:[^'\\\\]|\\\\.|'')*'/s", "''", $query);
+
+        preg_match_all('/(?<![:\w]):([A-Za-z_]\w*)/', $withoutStrings, $m);
+
+        return array_values(array_unique($m[1]));
     }
 
     /**

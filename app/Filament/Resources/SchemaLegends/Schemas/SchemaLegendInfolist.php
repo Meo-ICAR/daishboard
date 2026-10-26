@@ -20,7 +20,7 @@ class SchemaLegendInfolist
                         TextEntry::make('connection')->label('Connessione')->badge(),
                         TextEntry::make('label')->label('Nome leggibile'),
                         TextEntry::make('columns_count')->label('Campi')->badge(),
-                        TextEntry::make('synced_at')->label('Ultima sincronizzazione')->dateTime(),
+                        TextEntry::make('synced_at')->label('Ultima sincronizzazione')->date(),
                         TextEntry::make('description')
                             ->label('Descrizione')
                             ->columnSpanFull()

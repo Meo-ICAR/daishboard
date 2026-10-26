@@ -93,7 +93,7 @@ return [
 
             'label' => 'Mediatore creditizio (pratiche, provvigioni, ENASARCO e riconciliazione OAM)',
 
-            'databases' => ['proforma'],
+            'databases' => ['unicosuite'],
 
             // Tabelle principali ("Dati" / schema_legends). pratiches_statos e
             // provvigioni_statos NON vanno qui: sono codifiche, vengono catalogate

@@ -75,6 +75,17 @@ class WidgetGeneratedDrillDownTest extends TestCase
         $this->assertMatchesRegularExpression('/^SELECT \* FROM patients\b/i', $detail);
     }
 
+    public function test_trailing_limit_of_the_aggregate_is_dropped_so_filters_stay_valid(): void
+    {
+        $detail = (new DashboardWidget)->convertSqlStringToDrillDown(
+            'SELECT banca, SUM(importo) AS tot FROM provvigioni WHERE annullato = 0 GROUP BY banca ORDER BY tot DESC LIMIT 30',
+            ['banca' => 'CAPITALFIN'],
+        );
+
+        $this->assertStringNotContainsStringIgnoringCase('LIMIT', $detail);
+        $this->assertStringEndsWith("AND banca = 'CAPITALFIN'", $detail);
+    }
+
     public function test_a_null_dimension_value_becomes_is_null(): void
     {
         $detail = (new DashboardWidget)->convertSqlStringToDrillDown(

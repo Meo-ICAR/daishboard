@@ -49,7 +49,7 @@ class SchemaLegendsTable
                     ->state(fn (SchemaLegend $record): int => $record->columns()->whereNotNull('lookup_table')->count()),
                 TextColumn::make('synced_at')
                     ->label(__('filament/admin/schema_legend_resource.synced_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable(),
             ])
             ->recordActions([

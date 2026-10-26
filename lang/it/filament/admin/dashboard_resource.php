@@ -2,14 +2,25 @@
 
 return [
 
+    'active_only' => 'Solo attive',
+    'all' => 'Tutte',
+    'company.name' => 'Azienda',
+    'company_id' => 'Azienda',
+    'company_id_help' => 'Vuoto = dashboard globale, visibile a tutte le aziende.',
     'created_at' => 'Creato il',
+    'database' => 'Database',
+    'database_help' => 'Database dei dati analizzati (es. unicosuite). Vuoto = visibile su qualsiasi database.',
     'delete' => 'Elimina',
     'delete_bulk' => 'Elimina selezionati',
     'description' => 'Descrizione',
     'edit' => 'Modifica',
+    'empty_heading' => 'Nessuna dashboard',
+    'global' => 'Globale',
     'icon' => 'Icona',
+    'icon_help' => 'Nome di un\'icona Heroicon, es. heroicon-o-chart-bar.',
+    'inactive_only' => 'Solo disattivate',
     'is_active' => 'Attivo',
-    'menu_category.name' => 'Nome',
+    'menu_category.name' => 'Categoria',
     'menu_category_id' => 'Categoria menu',
     'model_label' => 'dashboard',
     'name' => 'Nome',
@@ -17,7 +28,8 @@ return [
     'order' => 'Ordine',
     'plural_model_label' => 'dashboard',
     'updated_at' => 'Aggiornato il',
-    'user.name' => 'Nome',
+    'user.name' => 'Utente',
+    'widgets_count' => 'Widget',
     'user_id' => 'Utente',
 
 ];
