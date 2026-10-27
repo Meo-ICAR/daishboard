@@ -32,12 +32,12 @@ class ProjectsTable
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->label(__('filament/admin/project_resource.created_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label(__('filament/admin/project_resource.updated_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

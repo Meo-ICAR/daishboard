@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cruscotti del dominio "mediatore creditizio" (database `proforma`): pipeline
+ * Cruscotti del dominio "mediatore creditizio" (database `unicosuite`): pipeline
  * delle pratiche, analisi provvigionale e riconciliazione ENASARCO/OAM.
  *
  * Il seeder è una SINCRONIZZAZIONE: rilanciandolo aggiorna in place le query e i
@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\DB;
  * si aprono cliccando la cella numerica del master. Vedi config/data_navigator.php
  * (profilo `mediatore`, §5) per la convenzione dei parametri.
  *
- * Le dashboard hanno `database = 'proforma'` per lo scoping di
+ * Le dashboard hanno `database = 'unicosuite'` per lo scoping di
  * App\Support\CompanyScope::byDatabase(). I widget "di dominio" hanno
  * `company_id` NULL (contenuto globale); "Gestione Provvigioni & Fatturazione"
  * porta `company_id = 2` (rework dei widget storici della company 1).
  */
 class MediatoreDashboardSeeder extends Seeder
 {
-    private const DATABASE = 'proforma';
+    private const DATABASE = 'unicosuite';
 
     public function run(): void
     {
@@ -361,7 +361,7 @@ SELECT
     (COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Entrata' THEN pr.importo ELSE 0 END), 0) -
      COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Uscita' THEN pr.importo ELSE 0 END), 0)) AS ricavo_netto
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.annullato = 0
   AND pr.deleted_at IS NULL
 GROUP BY p.id, p.codice_pratica, p.denominazione_banca, p.denominazione_agente, p.erogato
@@ -387,7 +387,7 @@ SELECT
     pr.n_fattura,
     pr.data_fattura
 FROM provvigioni pr
-WHERE pr.id_pratica = :id_pratica
+WHERE pr.pratica_id = :id_pratica
   AND pr.annullato = 0
   AND pr.deleted_at IS NULL
 ORDER BY pr.entrata_uscita ASC, pr.importo DESC
@@ -407,7 +407,7 @@ SELECT
     (COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Entrata' THEN pr.importo ELSE 0 END), 0) -
      COALESCE(SUM(CASE WHEN pr.entrata_uscita = 'Uscita' THEN pr.importo ELSE 0 END), 0)) AS margine_netto_totale
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.annullato = 0
   AND pr.deleted_at IS NULL
 GROUP BY p.denominazione_banca
@@ -429,7 +429,7 @@ SELECT
     pr.importo AS importo_provvigione,
     pr.tipo AS tipo_provvigione
 FROM provvigioni pr
-INNER JOIN pratiches p ON pr.id_pratica = p.id
+INNER JOIN pratiches p ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Entrata'
   AND pr.annullato = 0
   AND pr.deleted_at IS NULL
@@ -638,7 +638,7 @@ SELECT
     pr.importo AS provvigione_passiva_slittata,
     DATEDIFF(pr.data_fattura, p.erogated_at) AS giorni_scostamento
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Uscita'
   AND p.erogated_at IS NOT NULL
   AND pr.data_fattura IS NOT NULL
@@ -663,7 +663,7 @@ SELECT
     COUNT(DISTINCT p.id) AS pratiche_disallineate,
     SUM(pr.importo) AS totale_provvigioni_passive_slittate
 FROM pratiches p
-INNER JOIN provvigioni pr ON pr.id_pratica = p.id
+INNER JOIN provvigioni pr ON pr.pratica_id = p.id
 WHERE pr.entrata_uscita = 'Uscita'
   AND p.erogated_at IS NOT NULL
   AND pr.data_fattura IS NOT NULL
@@ -905,6 +905,126 @@ SQL,
 SELECT name AS agente, piva, enasarco AS mandato_enasarco
 FROM fornitoris
 ORDER BY name ASC
+SQL,
+                    ],
+                ],
+            ],
+            [
+                'dashboard' => 'ANOMALIE',
+                'description' => 'Pratiche in stato rifiutato (pratiches_statos.isrejected = 1) con dettaglio per tipo prodotto, banca e produttore.',
+                'icon' => 'heroicon-o-exclamation-triangle',
+                'category' => 'Produzione',
+                'widgets' => [
+                    [
+                        'title' => 'Pratiche rifiutate per tipo prodotto',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.tipo_prodotto,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.tipo_prodotto
+ORDER BY numero_pratiche DESC
+SQL,
+                        'children' => [
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per banca',
+                                'type' => 'bar',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.denominazione_banca,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.denominazione_banca
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per produttore',
+                                'type' => 'bar',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.denominazione_agente
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                            [
+                                'title' => 'Pratiche rifiutate del prodotto — per stato di rifiuto',
+                                'type' => 'pie',
+                                'filter_column' => 'numero_pratiche',
+                                'query' => <<<'SQL'
+-- Parametro di input: :tipo_prodotto
+SELECT
+    p.stato_pratica,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+  AND p.tipo_prodotto = :tipo_prodotto
+GROUP BY p.stato_pratica
+ORDER BY numero_pratiche DESC
+SQL,
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate per banca',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.denominazione_banca,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.denominazione_banca
+ORDER BY numero_pratiche DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate per produttore',
+                        'type' => 'bar',
+                        'query' => <<<'SQL'
+SELECT
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.denominazione_agente
+ORDER BY numero_pratiche DESC
+SQL,
+                    ],
+                    [
+                        'title' => 'Pratiche rifiutate: tipo prodotto x banca x produttore',
+                        'type' => 'table',
+                        'query' => <<<'SQL'
+SELECT
+    p.tipo_prodotto,
+    p.denominazione_banca,
+    p.denominazione_agente AS produttore,
+    COUNT(p.id) AS numero_pratiche,
+    SUM(p.amount) AS importo_richiesto
+FROM pratiches p
+JOIN pratiches_statos ps ON p.stato_pratica = ps.stato_pratica
+WHERE ps.isrejected = 1
+GROUP BY p.tipo_prodotto, p.denominazione_banca, p.denominazione_agente
+ORDER BY numero_pratiche DESC
 SQL,
                     ],
                 ],

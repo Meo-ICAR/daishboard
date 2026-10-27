@@ -89,7 +89,7 @@ class WidgetProjectFilterTest extends TestCase
         $project = Project::create([
             'user_id' => $this->user->id,
             'name' => 'Solo caucasici',
-            'is_current' => true,
+            'is_current' => false, // non è lo studio corrente: si applica solo ai widget che lo referenziano
             'date_filters' => [],
             'value_filters' => [
                 ['column' => 'patients.etnia_id', 'values' => ['caucasico']],
@@ -159,5 +159,28 @@ class WidgetProjectFilterTest extends TestCase
             ->assertOk()
             ->assertSee('caucasico')
             ->assertDontSee('africano');
+    }
+
+    public function test_users_current_study_date_filters_carry_over_to_the_table_and_are_saved_back(): void
+    {
+        Project::create([
+            'user_id' => $this->user->id,
+            'name' => 'Studio in corso',
+            'is_current' => true,
+            'date_filters' => [['column' => 'patients.arruolato', 'from' => '2020-01-01', 'to' => '2020-12-31']],
+        ]);
+
+        $widget = $this->widget($this->dashboard(), 'SELECT etnia_id, COUNT(*) AS n FROM patients GROUP BY etnia_id');
+
+        $page = Livewire::test(ViewDashboardWidget::class, ['record' => $widget->id]);
+
+        $this->assertSame('patients.arruolato', $page->get('dateFilters')[0]['column']);
+        $this->assertSame('2020-01-01', $page->get('dateFilters')[0]['from']);
+
+        $apply = new \ReflectionMethod($page->instance(), 'applyDateFilter');
+        $apply->setAccessible(true);
+        $apply->invoke($page->instance(), ['filters' => []]);
+
+        $this->assertSame([], Project::currentFor($this->user->id)->date_filters);
     }
 }

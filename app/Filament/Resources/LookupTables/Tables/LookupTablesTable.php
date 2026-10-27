@@ -53,7 +53,7 @@ class LookupTablesTable
                     ->disabled(fn (): bool => ! (auth()->user()?->isSuperAdmin() ?? false)),
                 TextColumn::make('synced_at')
                     ->label(__('filament/admin/lookup_table_resource.synced_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

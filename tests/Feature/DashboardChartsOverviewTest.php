@@ -7,6 +7,7 @@ use App\Models\Dashboard;
 use App\Models\DashboardWidget;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\WidgetDatasetRunner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -94,5 +95,70 @@ class DashboardChartsOverviewTest extends TestCase
         $this->assertFalse($charts[$withoutProject->id]['hasProject']);
 
         $page->assertSee('Studio: Coorte 2015');
+    }
+
+    public function test_runner_ignores_leading_comment_lines_before_select(): void
+    {
+        $result = app(WidgetDatasetRunner::class)->run("-- commento\n/* altro */\nSELECT 1 AS x");
+
+        $this->assertNull($result['error']);
+        $this->assertSame([['x' => 1]], $result['rows']);
+    }
+
+    public function test_runner_still_rejects_non_select_after_comments(): void
+    {
+        $result = app(WidgetDatasetRunner::class)->run("-- commento\nDELETE FROM x");
+
+        $this->assertSame('Sono consentite solo istruzioni SELECT.', $result['error']);
+    }
+
+    public function test_runner_binds_named_params_and_reports_missing_ones(): void
+    {
+        $sql = "-- Parametro di input: :tipo\nSELECT :tipo AS tipo, 1 AS n";
+        $runner = app(WidgetDatasetRunner::class);
+
+        $this->assertSame('Prestito', $runner->run($sql, [], ['tipo' => 'Prestito'])['rows'][0]['tipo']);
+        $this->assertSame("O'Hara", $runner->run($sql, [], ['tipo' => "O'Hara"])['rows'][0]['tipo']);
+        $this->assertStringContainsString(':tipo', (string) $runner->run($sql)['error']);
+    }
+
+    public function test_clicking_a_master_category_feeds_it_as_param_to_the_children(): void
+    {
+        $master = $this->widget(['type' => 'bar', 'query' => "SELECT 'Prestito' AS tipo_prodotto, 3 AS n"]);
+        $child = $this->widget([
+            'type' => 'bar',
+            'master_widget_id' => $master->id,
+            'master_filter_column' => 'n',
+            'query' => "-- Parametro di input: :tipo_prodotto\nSELECT :tipo_prodotto AS banca, 2 AS n",
+        ]);
+
+        $page = Livewire::test(DashboardChartsOverview::class, ['master' => $master->id]);
+
+        // Prima del click il figlio con parametro non compare.
+        $this->assertNull(collect($page->get('charts'))->firstWhere('id', $child->id));
+
+        $page->dispatch('chart-drill', label: 'Prestito');
+
+        $after = collect($page->get('charts'))->firstWhere('id', $child->id);
+        $this->assertNull($after['error']);
+        $this->assertSame('Prestito', $after['rows'][0]['banca']);
+        $this->assertSame($child->title.' — Prestito', $after['title']);
+        $this->assertSame($master->title, collect($page->get('charts'))->firstWhere('id', $master->id)['title']);
+    }
+
+    public function test_clicking_a_category_on_the_overview_opens_the_children_with_the_param(): void
+    {
+        $master = $this->widget(['type' => 'bar', 'query' => "SELECT 'Prestito' AS tipo_prodotto, 3 AS n"]);
+        $child = $this->widget([
+            'type' => 'bar',
+            'master_widget_id' => $master->id,
+            'query' => 'SELECT :tipo_prodotto AS banca, 2 AS n',
+        ]);
+
+        $page = Livewire::test(DashboardChartsOverview::class)
+            ->dispatch('chart-drill', label: 'Prestito', widgetId: $master->id);
+
+        $page->assertSet('master', $master->id)->assertSet('params', ['tipo_prodotto' => 'Prestito']);
+        $this->assertSame('Prestito', collect($page->get('charts'))->firstWhere('id', $child->id)['rows'][0]['banca']);
     }
 }

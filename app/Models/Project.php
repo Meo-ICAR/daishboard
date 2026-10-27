@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\StampsOwnership;
+use App\Support\CohortFilterCatalog;
+use App\Support\CompanyScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -51,13 +53,13 @@ class Project extends Model
             }
 
             // Super-admin (is_admin = true e company_id nullo): vede tutto
-            if ($user->isSuperAdmin()) {
+            if ($user->isSuperAdmin() && CompanyScope::activeCompanyId() === null) {
                 return;
             }
 
             // Admin di azienda: vede i widget della stessa azienda
 
-            $companyId = $user->company_id;
+            $companyId = CompanyScope::activeCompanyId();
             $builder->where(function (Builder $query) use ($companyId): void {
                 $query->whereNull('company_id')
                     ->orWhere('company_id', $companyId);
@@ -137,8 +139,21 @@ class Project extends Model
      */
     public function cohortFilters(): array
     {
+        $dateFilters = array_map(function ($filter) {
+            if (! is_array($filter) || blank($filter['column'] ?? null) || blank($filter['preset'] ?? null)) {
+                return $filter;
+            }
+
+            // I periodi mobili (ultimi N giorni, anno in corso) si risolvono alla data odierna.
+            $range = CohortFilterCatalog::presetRange($filter['column'], $filter['preset']);
+
+            return ($range['from'] ?? null) !== null || ($range['to'] ?? null) !== null
+                ? [...$filter, 'from' => $range['from'], 'to' => $range['to']]
+                : $filter;
+        }, (array) $this->date_filters);
+
         return array_values(array_filter(
-            array_merge((array) $this->date_filters, (array) $this->value_filters),
+            array_merge($dateFilters, (array) $this->value_filters),
             static fn ($filter): bool => is_array($filter) && ! empty($filter['column']),
         ));
     }

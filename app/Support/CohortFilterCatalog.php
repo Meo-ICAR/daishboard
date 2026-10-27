@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use App\Enums\DateRangePreset;
 use App\Models\SchemaLegend;
 use App\Models\SchemaLegendColumn;
+use App\Services\DateRangeResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -137,6 +139,16 @@ class CohortFilterCatalog
 
         foreach ((array) $match->date_ranges as $range) {
             if (($range['value'] ?? null) === $preset) {
+                // I periodi mobili si ricalcolano a ogni uso: le date salvate dal
+                // sync sarebbero quelle del giorno della sincronizzazione.
+                $rolling = DateRangePreset::tryFrom($preset);
+
+                if ($rolling !== null && $rolling !== DateRangePreset::Custom && $match->date_category === null) {
+                    $resolved = app(DateRangeResolver::class)->resolve($rolling);
+
+                    return ['from' => $resolved['from']->toDateString(), 'to' => $resolved['to']->toDateString()];
+                }
+
                 return [
                     'from' => $range['from'] ?? null,
                     'to' => $range['to'] ?? null,

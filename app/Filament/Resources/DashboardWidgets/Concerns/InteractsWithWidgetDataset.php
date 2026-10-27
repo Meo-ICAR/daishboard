@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DashboardWidgets\Concerns;
 
 use App\Filament\Resources\DashboardWidgets\DashboardWidgetResource;
 use App\Models\DashboardWidget;
+use App\Models\Project;
 use App\Services\WidgetDatasetRunner;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -97,7 +98,22 @@ trait InteractsWithWidgetDataset
         $this->widgetType = $widget->type;
         $this->widgetQuery = $widget->query;
         $this->widgetProjectId = $widget->project_id;
-        $this->projectCohortFilters = $widget->project?->cohortFilters() ?? [];
+        // Filtri dello studio dell'utente (gli stessi della dashboard grafici): quelli per
+        // valore sono fissi, quelli data restano modificabili nella pagina e si mantengono
+        // passando da grafici a tabella e ai dettagli.
+        $studyFilters = $this->userStudyFilters();
+
+        $this->projectCohortFilters = [
+            ...($widget->project?->cohortFilters() ?? []),
+            ...array_values(array_filter($studyFilters, fn (array $f): bool => isset($f['values']))),
+        ];
+
+        $this->dateFilters = array_values(array_map(fn (array $f): array => [
+            'column' => $f['column'],
+            'preset' => $f['preset'] ?? null,
+            'from' => $f['from'] ?? null,
+            'to' => $f['to'] ?? null,
+        ], array_filter($studyFilters, fn (array $f): bool => ! isset($f['values']))));
 
         $metadata = app(WidgetDatasetRunner::class)->dateFilterMetadata($widget->query);
 
@@ -213,7 +229,36 @@ trait InteractsWithWidgetDataset
             ->values()
             ->all();
 
+        $this->storeStudyDateFilters();
         $this->runQuery();
+    }
+
+    /**
+     * Filtri (data + valore) dello studio corrente dell'utente.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function userStudyFilters(): array
+    {
+        return (auth()->user()?->project ?? Project::currentFor(auth()->id()))?->cohortFilters() ?? [];
+    }
+
+    /**
+     * Memorizza i filtri data impostati qui nello studio corrente, così si
+     * ritrovano nelle altre pagine. I filtri su colonne non applicabili a questo
+     * widget restano invariati.
+     */
+    protected function storeStudyDateFilters(): void
+    {
+        if (auth()->id() === null) {
+            return;
+        }
+
+        $others = collect($this->userStudyFilters())
+            ->filter(fn (array $f): bool => ! isset($f['values']) && ! isset($this->dateFilterColumns[$f['column'] ?? '']))
+            ->all();
+
+        Project::storeCurrentFilters(auth()->id(), [...$others, ...$this->activeDateFilters()]);
     }
 
     protected function normalizeDate(mixed $value): ?string
@@ -244,7 +289,7 @@ trait InteractsWithWidgetDataset
                 ->badgeColor('warning')
                 ->visible(fn (): bool => filled($this->dateFilterOptions))
                 ->modalHeading('Filtra la coorte per data')
-                ->modalDescription('I filtri restringono i pazienti (in AND) prima del raggruppamento.')
+                ->modalDescription('I filtri restringono i record (in AND) prima del raggruppamento.')
                 ->fillForm(fn (): array => [
                     'filters' => $this->dateFilters === []
                         ? [['column' => null, 'preset' => null, 'from' => null, 'to' => null]]
@@ -296,6 +341,7 @@ trait InteractsWithWidgetDataset
                 ->visible(fn (): bool => $this->hasActiveDateFilter())
                 ->action(function (): void {
                     $this->dateFilters = [];
+                    $this->storeStudyDateFilters();
                     $this->runQuery();
                 }),
         ];

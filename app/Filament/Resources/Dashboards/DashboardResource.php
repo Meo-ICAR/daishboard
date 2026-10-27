@@ -18,6 +18,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use UnitEnum;
 
@@ -49,14 +51,26 @@ class DashboardResource extends Resource
                 Select::make('menu_category_id')
                     ->label(__('filament/admin/dashboard_resource.menu_category_id'))
                     ->relationship('menuCategory', 'name'),
+                Select::make('company_id')
+                    ->label(__('filament/admin/dashboard_resource.company_id'))
+                    ->relationship('company', 'name')
+                    ->helperText(__('filament/admin/dashboard_resource.company_id_help'))
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
+                TextInput::make('database')
+                    ->label(__('filament/admin/dashboard_resource.database'))
+                    ->helperText(__('filament/admin/dashboard_resource.database_help'))
+                    ->maxLength(255),
                 TextInput::make('name')
                     ->label(__('filament/admin/dashboard_resource.name'))
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
                 Textarea::make('description')
                     ->label(__('filament/admin/dashboard_resource.description'))
                     ->columnSpanFull(),
                 TextInput::make('icon')
-                    ->label(__('filament/admin/dashboard_resource.icon')),
+                    ->label(__('filament/admin/dashboard_resource.icon'))
+                    ->placeholder('heroicon-o-chart-bar')
+                    ->helperText(__('filament/admin/dashboard_resource.icon_help')),
                 TextInput::make('order')
                     ->label(__('filament/admin/dashboard_resource.order'))
                     ->required()
@@ -64,6 +78,7 @@ class DashboardResource extends Resource
                     ->default(0),
                 Toggle::make('is_active')
                     ->label(__('filament/admin/dashboard_resource.is_active'))
+                    ->default(true)
                     ->required(),
             ]);
     }
@@ -72,39 +87,73 @@ class DashboardResource extends Resource
     {
         return $table
             ->recordTitleAttribute('name')
+            ->defaultSort('order')
+            ->emptyStateHeading(__('filament/admin/dashboard_resource.empty_heading'))
             ->columns([
-                TextColumn::make('user.name')
-                    ->label(__('filament/admin/dashboard_resource.user.name'))
-                    ->searchable(),
-                TextColumn::make('menuCategory.name')
-                    ->label(__('filament/admin/dashboard_resource.menu_category.name'))
-                    ->searchable(),
                 TextColumn::make('name')
                     ->label(__('filament/admin/dashboard_resource.name'))
-                    ->searchable(),
+                    ->weight('medium')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('menuCategory.name')
+                    ->label(__('filament/admin/dashboard_resource.menu_category.name'))
+                    ->badge()
+                    ->placeholder('—')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('company.name')
+                    ->label(__('filament/admin/dashboard_resource.company.name'))
+                    ->placeholder(__('filament/admin/dashboard_resource.global'))
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('database')
+                    ->label(__('filament/admin/dashboard_resource.database'))
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(),
+                TextColumn::make('widgets_count')
+                    ->label(__('filament/admin/dashboard_resource.widgets_count'))
+                    ->counts('widgets')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('user.name')
+                    ->label(__('filament/admin/dashboard_resource.user.name'))
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('icon')
                     ->label(__('filament/admin/dashboard_resource.icon'))
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('order')
                     ->label(__('filament/admin/dashboard_resource.order'))
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_active')
                     ->label(__('filament/admin/dashboard_resource.is_active'))
-                    ->boolean(),
+                    ->boolean()
+                    ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('filament/admin/dashboard_resource.created_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label(__('filament/admin/dashboard_resource.updated_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                TernaryFilter::make('is_active')
+                    ->label(__('filament/admin/dashboard_resource.is_active'))
+                    ->placeholder(__('filament/admin/dashboard_resource.all'))
+                    ->trueLabel(__('filament/admin/dashboard_resource.active_only'))
+                    ->falseLabel(__('filament/admin/dashboard_resource.inactive_only')),
+                SelectFilter::make('menu_category_id')
+                    ->label(__('filament/admin/dashboard_resource.menu_category_id'))
+                    ->relationship('menuCategory', 'name'),
             ])
             ->recordActions([
                 EditAction::make()

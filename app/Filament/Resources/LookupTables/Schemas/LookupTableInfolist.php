@@ -38,7 +38,7 @@ class LookupTableInfolist
                             ->label('Campi collegati')
                             ->badge()
                             ->state(fn (LookupTable $record): int => $record->columns()->count()),
-                        TextEntry::make('synced_at')->label('Aggiornato')->dateTime(),
+                        TextEntry::make('synced_at')->label('Aggiornato')->date(),
                         TextEntry::make('description')->label('Descrizione')->columnSpanFull()->placeholder('—'),
                     ]),
 

@@ -25,16 +25,16 @@ class UsersTable
                     ->searchable(),
                 TextColumn::make('email_verified_at')
                     ->label(__('filament/admin/user_resource.email_verified_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('filament/admin/user_resource.created_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label(__('filament/admin/user_resource.updated_at'))
-                    ->dateTime()
+                    ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

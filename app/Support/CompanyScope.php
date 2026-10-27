@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Company;
+use Filament\Facades\Filament;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 
 /**
@@ -15,7 +17,23 @@ class CompanyScope
      */
     public static function currentDatabase(): ?string
     {
-        return auth()->user()?->company?->database;
+        return self::activeCompany()?->database;
+    }
+
+    /**
+     * Azienda attiva: il tenant selezionato nel pannello (il superadmin può
+     * sceglierla), altrimenti la company dell'utente autenticato.
+     */
+    public static function activeCompany(): ?Company
+    {
+        return Filament::getTenant() ?? auth()->user()?->company;
+    }
+
+    public static function activeCompanyId(): ?int
+    {
+        $id = self::activeCompany()?->getKey();
+
+        return $id === null ? null : (int) $id;
     }
 
     /**
@@ -39,8 +57,8 @@ class CompanyScope
     /**
      * Limita la visibilità in base al ruolo dell'utente autenticato, includendo
      * sempre i record con `user_id`/`company_id` a NULL (record globali):
-     *  - nessun utente / superadmin → nessun filtro;
-     *  - admin azienda → solo `(company_id IS NULL OR company_id = <sua company>)`;
+     *  - nessun utente / superadmin senza azienda selezionata → nessun filtro;
+     *  - admin azienda (o superadmin con azienda selezionata) → solo `(company_id IS NULL OR company_id = <azienda attiva>)`;
      *  - utente normale → in più `(user_id IS NULL OR user_id = <suo id>)`.
      *
      * Stessa semantica del global scope `owned` di DashboardWidget.
@@ -49,13 +67,15 @@ class CompanyScope
     {
         $user = auth()->user();
 
-        if ($user === null || $user->isSuperAdmin()) {
+        $companyId = self::activeCompanyId();
+
+        if ($user === null || ($user->isSuperAdmin() && $companyId === null)) {
             return $query;
         }
 
         $query->where(fn (Builder $inner) => $inner
             ->whereNull($companyColumn)
-            ->orWhere($companyColumn, $user->company_id));
+            ->orWhere($companyColumn, $companyId));
 
         if (! $user->isAdmin()) {
             $query->where(fn (Builder $inner) => $inner

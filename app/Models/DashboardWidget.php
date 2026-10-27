@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\StampsOwnership;
+use App\Support\CompanyScope;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -59,15 +60,15 @@ class DashboardWidget extends Model
             }
 
             // Superadmin: vede tutti i record, nessun filtro.
-            if ($user->isSuperAdmin()) {
+            if ($user->isSuperAdmin() && CompanyScope::activeCompanyId() === null) {
                 return;
             }
 
             // Admin azienda e utente normale: solo i record della propria
             // company (o senza company).
-            $builder->where(function (Builder $query) use ($user): void {
+            $builder->where(function (Builder $query): void {
                 $query->whereNull('company_id')
-                    ->orWhere('company_id', $user->company_id);
+                    ->orWhere('company_id', CompanyScope::activeCompanyId());
             });
 
             // Utente normale: in più, solo i propri record (o senza proprietario).
@@ -95,6 +96,8 @@ class DashboardWidget extends Model
         $sql = preg_replace('/\s+GROUP\s+BY\s+[\s\S]+?(?=\s+HAVING|\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
         $sql = preg_replace('/\s+HAVING\s+[\s\S]+?(?=\s+ORDER\s+BY|\s+LIMIT|$)/i', '', $sql);
         $sql = preg_replace('/\s+ORDER\s+BY\s+[\s\S]+?(?=\s+LIMIT|$)/i', '', $sql);
+        // Il LIMIT dell'aggregato non vale per il dettaglio (e i filtri WHERE vanno prima).
+        $sql = preg_replace('/\s+LIMIT\s+\d+(?:\s*,\s*\d+|\s+OFFSET\s+\d+)?\s*$/i', '', $sql);
 
         // 2. SELECT di dettaglio: le voci aggregate vengono "spacchettate" nel
         //    campo interno; COUNT(*)/COUNT(1) non hanno un campo di dettaglio,
@@ -301,22 +304,34 @@ class DashboardWidget extends Model
      * mantenendo il prefisso di alias. Non tocca `id` dentro funzioni,
      * sottoquery o espressioni composte.
      */
-    public function swapSelectIdentifier(string $sql, string $identifier): string
+    public function swapSelectIdentifier(string $sql, string $identifier, ?string $onlyTable = null, ?string $label = null): string
     {
         if ($identifier === ''
             || ! preg_match('/^\s*SELECT\s+(?:DISTINCT\s+)?(.*?)\s+FROM\s+/is', $sql, $match)) {
             return $sql;
         }
 
-        $items = array_map(function (string $item) use ($identifier): string {
+        // Con `$onlyTable` la sostituzione vale solo se il primo FROM è quella tabella.
+        if ($onlyTable !== null
+            && (! preg_match('/\bFROM\s+`?([A-Za-z_]\w*)`?/i', $sql, $from) || strcasecmp($from[1], $onlyTable) !== 0)) {
+            return $sql;
+        }
+
+        // {alias} = prefisso di alias della tabella ("p." o vuoto) nelle espressioni.
+        $expression = fn (string $prefix): string => str_replace('{alias}', $prefix, $identifier)
+            .($label !== null && str_contains($identifier, '{alias}') ? ' AS '.$label : '');
+
+        $items = array_map(function (string $item) use ($identifier, $expression): string {
             $item = trim(preg_replace('/\s+AS\s+`?id`?$/i', '', trim($item)));
 
             if (preg_match('/^`?([A-Za-z_]\w*)`?\.`?id`?$/i', $item, $qualified)) {
-                return $qualified[1].'.'.$identifier;
+                return str_contains($identifier, '{alias}')
+                    ? $expression($qualified[1].'.')
+                    : $qualified[1].'.'.$identifier;
             }
 
             if (preg_match('/^`?id`?$/i', $item)) {
-                return $identifier;
+                return str_contains($identifier, '{alias}') ? $expression('') : $identifier;
             }
 
             return $item;

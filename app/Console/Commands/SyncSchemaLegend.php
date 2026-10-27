@@ -6,6 +6,7 @@ use App\Models\LookupTable;
 use App\Models\SchemaLegend;
 use App\Models\SchemaLegendColumn;
 use App\Services\DateFieldSemanticsMap;
+use App\Services\DateRangeResolver;
 use App\Services\ResearchDateRangeResolver;
 use App\Services\TableSchemaInspector;
 use App\Support\DataNavigatorProfile;
@@ -31,6 +32,7 @@ class SyncSchemaLegend extends Command
         TableSchemaInspector $inspector,
         DateFieldSemanticsMap $semantics,
         ResearchDateRangeResolver $research,
+        DateRangeResolver $dateRanges,
     ): int {
         $connection = config('legend.connection', 'dbai');
         $database = DB::connection($connection)->getDatabaseName();
@@ -81,7 +83,11 @@ class SyncSchemaLegend extends Command
                         'position' => $column['position'],
                         'comment' => $column['comment'],
                         'date_category' => $category?->value,
-                        'date_ranges' => $category !== null ? $research->presetsFor($category) : null,
+                        'date_ranges' => match (true) {
+                            $category !== null => $research->presetsFor($category),
+                            $this->isDateType($column['type']) => $dateRanges->rollingPresetsWithRanges(),
+                            default => null,
+                        },
                         'foreign_key_name' => $lookup['name'] ?? null,
                         'lookup_table' => $lookup['table'] ?? null,
                         'lookup_key' => $lookup['key'] ?? null,
@@ -310,5 +316,10 @@ class SyncSchemaLegend extends Command
             'name' => $constraintName,
             'values' => $listValues ? $inspector->getLookupValues($target, $key, $connection, $limit) : null,
         ];
+    }
+
+    private function isDateType(?string $type): bool
+    {
+        return in_array(strtolower((string) $type), SchemaLegendColumn::DATE_TYPES, true);
     }
 }
