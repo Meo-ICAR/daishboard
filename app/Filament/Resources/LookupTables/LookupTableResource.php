@@ -30,7 +30,7 @@ class LookupTableResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Legenda';
+    protected static string|UnitEnum|null $navigationGroup = 'Configurazioni';
 
     protected static ?string $recordTitleAttribute = 'table_name';
 
