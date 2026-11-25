@@ -14,7 +14,6 @@ use NeuronAI\Agent\SystemPrompt;
 use NeuronAI\Chat\History\ChatHistoryInterface;
 use NeuronAI\Chat\History\EloquentChatHistory;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Tools\ToolInterface;
 use NeuronAI\Tools\Toolkits\MySQL\MySQLSchemaTool;
 use NeuronAI\Tools\Toolkits\MySQL\MySQLSelectTool;
@@ -120,11 +119,11 @@ class DataNavigatorAgent extends Agent
             throw new RuntimeException('Chiave API Anthropic mancante: imposta ANTHROPIC_API_KEY nel file .env');
         }
 
-        return new Anthropic(
+        return (new CachedAnthropic(
             key: (string) $key,
             model: (string) env('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
-            max_tokens: 8192,
-        );
+            max_tokens: 4096,
+        ))->withPromptCaching();
     }
 
     protected function instructions(): string
@@ -234,12 +233,30 @@ class DataNavigatorAgent extends Agent
     }
 
     /**
+     * Tabelle che lo strumento di schema può descrivere: quelle principali del
+     * profilo e le tabelle di lookup dichiarate nei suoi hint.
+     *
+     * @return list<string>
+     */
+    protected function inspectableTables(): array
+    {
+        $lookups = collect((array) ($this->profile['lookups'] ?? []))
+            ->pluck('table')
+            ->filter(fn (mixed $table): bool => is_string($table));
+
+        return $lookups->merge($this->profileTables())->unique()->values()->all();
+    }
+
+    /**
      * @return array<int, ToolInterface>
      */
     protected function tools(): array
     {
         return [
-            MySQLSchemaTool::make($this->pdodbai),
+            // Senza elenco di tabelle lo strumento descrive l'INTERO database
+            // (decine di migliaia di token a ogni chiamata): si limita alle
+            // tabelle del profilo e alle lookup di cui parla.
+            MySQLSchemaTool::make($this->pdodbai, $this->inspectableTables() ?: null),
             MySQLSelectTool::make($this->pdodbai),
         ];
     }
@@ -253,7 +270,7 @@ class DataNavigatorAgent extends Agent
         return new EloquentChatHistory(
             threadId: $this->threadId,
             modelClass: ChatMessage::class,
-            contextWindow: 150000,
+            contextWindow: 30000,
         );
     }
 }
