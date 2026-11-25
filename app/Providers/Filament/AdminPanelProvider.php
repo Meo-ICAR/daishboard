@@ -63,11 +63,10 @@ class AdminPanelProvider extends PanelProvider
                 //
             ])
             ->navigationGroups([
+                NavigationGroup::make('Manuali'),
                 NavigationGroup::make('Impostazioni')->collapsed(),
                 NavigationGroup::make('Legenda')->collapsed(),
-                NavigationGroup::make('Documentazione')->collapsed(),
                 NavigationGroup::make('Configurazioni')->collapsed(),
-                NavigationGroup::make('Manuali')->collapsed(),
             ])
             ->navigationItems([
                 NavigationItem::make('Manuale utente')
