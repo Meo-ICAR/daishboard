@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\RememberActiveCompany;
+use App\Http\Middleware\UseClinicalDbWhenComingFromClinicalDb;
 use App\Models\Company;
 use App\Models\SocialiteUser;
 use App\Models\User;
@@ -91,6 +92,9 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->middleware([
+                UseClinicalDbWhenComingFromClinicalDb::class,
+            ], isPersistent: true)
             ->authMiddleware([
                 Authenticate::class,
             ])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\UseClinicalDbWhenComingFromClinicalDb;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,6 +79,7 @@ class BpmBridgeController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put(UseClinicalDbWhenComingFromClinicalDb::SESSION_KEY, $source === 'clinicaldb');
 
         Log::info('BPM bridge: accesso riuscito.', [
             'email' => $userEmail,
